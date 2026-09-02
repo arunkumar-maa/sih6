@@ -1,0 +1,247 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #0a1628;
+    --bg-secondary: #0f2040;
+    --bg-panel: #152d5a;
+    --bg-card: #1a2744;
+    --accent-blue: #3b82f6;
+    --accent-amber: #f59e0b;
+    --accent-emerald: #10b981;
+    --accent-red: #ef4444;
+    --accent-orange: #f97316;
+    --text-primary: #f0f6ff;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --border-subtle: #1e3f7a;
+    --border-glow: #3b82f6;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a1628;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1e3f7a;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-[#0f2040] border border-[#1e3f7a] rounded-lg;
+  }
+
+  .panel-card {
+    @apply bg-[#1a2744] border border-[#1e3f7a] rounded-lg;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-md transition-colors duration-150 text-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-[#1e3f7a] hover:bg-[#2a52a0] text-blue-200 font-medium px-4 py-2 rounded-md transition-colors duration-150 text-sm border border-[#2a52a0];
+  }
+
+  .btn-danger {
+    @apply bg-red-900/40 hover:bg-red-800/60 text-red-300 font-medium px-4 py-2 rounded-md transition-colors duration-150 text-sm border border-red-800/50;
+  }
+
+  .btn-success {
+    @apply bg-emerald-900/40 hover:bg-emerald-800/60 text-emerald-300 font-medium px-4 py-2 rounded-md transition-colors duration-150 text-sm border border-emerald-800/50;
+  }
+
+  .kpi-card {
+    @apply bg-[#0f2040] border border-[#1e3f7a] rounded-lg p-4 relative overflow-hidden;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, currentColor, transparent);
+    opacity: 0.6;
+  }
+
+  .risk-high {
+    @apply bg-red-950/60 border-red-800/60 text-red-300;
+  }
+
+  .risk-medium {
+    @apply bg-amber-950/60 border-amber-800/60 text-amber-300;
+  }
+
+  .risk-low {
+    @apply bg-emerald-950/60 border-emerald-800/60 text-emerald-300;
+  }
+
+  .badge-high {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-900/60 text-red-300 border border-red-700/50;
+  }
+
+  .badge-medium {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-900/60 text-amber-300 border border-amber-700/50;
+  }
+
+  .badge-low {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50;
+  }
+
+  .badge-info {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-900/60 text-blue-300 border border-blue-700/50;
+  }
+
+  .text-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-slate-500;
+  }
+
+  .grid-bg {
+    background-image: 
+      linear-gradient(rgba(30, 63, 122, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(30, 63, 122, 0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white hover:bg-[#1e3f7a]/50 transition-all duration-150 cursor-pointer whitespace-nowrap;
+  }
+
+  .nav-item.active {
+    @apply text-blue-300 bg-[#1e3f7a]/80 border border-[#2a52a0]/60;
+  }
+
+  .progress-bar {
+    @apply h-1.5 rounded-full bg-[#1e3f7a] overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  .data-row {
+    @apply grid gap-2 py-2.5 border-b border-[#1e3f7a]/50 last:border-0;
+  }
+
+  .anomaly-card {
+    @apply panel-card p-4 hover:border-[#2a52a0] transition-colors duration-150 cursor-pointer;
+  }
+
+  .section-header {
+    @apply flex items-center gap-2 mb-1;
+  }
+
+  .section-title {
+    @apply text-base font-semibold text-white;
+  }
+
+  .section-subtitle {
+    @apply text-xs text-slate-500;
+  }
+
+  /* Leaflet overrides */
+  .leaflet-container {
+    background: #0a1628 !important;
+    font-family: 'Inter', sans-serif !important;
+  }
+
+  .leaflet-popup-content-wrapper {
+    background: #0f2040 !important;
+    border: 1px solid #1e3f7a !important;
+    color: #f0f6ff !important;
+    border-radius: 8px !important;
+  }
+
+  .leaflet-popup-tip {
+    background: #0f2040 !important;
+  }
+
+  .leaflet-tile-pane {
+    filter: brightness(0.7) saturate(0.4) hue-rotate(200deg);
+  }
+
+  /* Table styles */
+  table {
+    @apply w-full border-collapse;
+  }
+
+  th {
+    @apply text-xs font-semibold uppercase tracking-wider text-slate-500 py-3 px-4 text-left border-b border-[#1e3f7a] bg-[#0a1628]/60;
+  }
+
+  td {
+    @apply py-3 px-4 text-sm text-slate-300 border-b border-[#1e3f7a]/30;
+  }
+
+  tr:hover td {
+    @apply bg-[#1e3f7a]/20;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-12px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  @keyframes blinkDot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.1) 50%, transparent 100%);
+    background-size: 200% auto;
+    animation: shimmer 2s linear infinite;
+  }
+
+  .blink-dot {
+    animation: blinkDot 2s ease-in-out infinite;
+  }
+}
