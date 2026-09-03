@@ -17,48 +17,49 @@ export function KPICard({
   value,
   subValue,
   Icon,
-  accentColor = '#3b82f6',
+  accentColor = '#005eb2',
   trend,
   trendLabel,
   loading = false,
 }: KPICardProps) {
   return (
-    <div
-      className="kpi-card group hover:border-opacity-80 transition-all duration-200"
-      style={{ borderTopColor: accentColor }}
-    >
-      {/* Top accent line */}
+    <div className="kpi-card group">
+      {/* Colored top accent line */}
       <div
         className="absolute top-0 left-0 right-0 h-0.5"
-        style={{ background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)` }}
+        style={{ backgroundColor: accentColor }}
       />
 
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-label mb-2" style={{ color: accentColor }}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: accentColor }}>
             {label}
           </p>
           {loading ? (
-            <div className="h-7 w-24 bg-[#1e3f7a] rounded animate-pulse" />
+            <div className="h-7 w-24 bg-[#e0e9f2] rounded-sm animate-pulse" />
           ) : (
-            <p className="text-2xl font-bold text-white leading-none">{value}</p>
+            <p className="text-2xl font-bold text-[#000a1f] leading-none"
+               style={{ fontFamily: 'Montserrat, sans-serif' }}>
+              {value}
+            </p>
           )}
           {subValue && !loading && (
-            <p className="text-xs text-slate-500 mt-1.5">{subValue}</p>
+            <p className="text-[11px] text-[#747780] mt-1.5 leading-tight">{subValue}</p>
           )}
           {trendLabel && (
-            <div className={`flex items-center gap-1 mt-2 text-xs ${
-              trend === 'up' ? 'text-emerald-400' : 
-              trend === 'down' ? 'text-red-400' : 'text-slate-500'
+            <div className={`flex items-center gap-1 mt-2 text-xs font-semibold ${
+              trend === 'up'   ? 'text-[#198754]' :
+              trend === 'down' ? 'text-[#DC3545]' : 'text-[#747780]'
             }`}>
               <span>{trend === 'up' ? '↑' : trend === 'down' ? '↓' : '—'}</span>
               <span>{trendLabel}</span>
             </div>
           )}
         </div>
+        {/* Icon */}
         <div
-          className="ml-3 p-2.5 rounded-lg flex-shrink-0"
-          style={{ background: `${accentColor}18` }}
+          className="p-2.5 rounded-sm flex-shrink-0"
+          style={{ backgroundColor: `${accentColor}14` }}
         >
           <Icon size={20} style={{ color: accentColor }} />
         </div>

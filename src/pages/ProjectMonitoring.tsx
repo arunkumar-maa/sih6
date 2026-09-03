@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
-  Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown,
-  X, ExternalLink, SlidersHorizontal
+  Search, ChevronLeft, ChevronRight, ArrowUpDown,
+  X, SlidersHorizontal, FolderOpen
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
 import { RiskBadge } from '../components/RiskBadge';
@@ -58,11 +58,11 @@ export function ProjectMonitoring() {
     list.sort((a, b) => {
       let av: number | string = 0, bv: number | string = 0;
       switch (sortField) {
-        case 'risk': av = a.risk.score; bv = b.risk.score; break;
+        case 'risk':   av = a.risk.score; bv = b.risk.score; break;
         case 'amount': av = a.sanctionAmount ?? 0; bv = b.sanctionAmount ?? 0; break;
         case 'district': av = a.district; bv = b.district; break;
         case 'status': av = a.workStatus; bv = b.workStatus; break;
-        case 'fy': av = a.financialYear; bv = b.financialYear; break;
+        case 'fy':     av = a.financialYear; bv = b.financialYear; break;
       }
       if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv as string) : (bv as string).localeCompare(av);
       return sortDir === 'asc' ? (av - (bv as number)) : ((bv as number) - av);
@@ -98,25 +98,48 @@ export function ProjectMonitoring() {
   }
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 animate-fade-in">
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">Project Monitoring</h1>
-          <p className="text-xs text-slate-500">{filtered.length} works · Click a row to open Project Intelligence</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
+            <FolderOpen size={11} />
+            Project Intelligence List
+          </p>
+          <h1 className="text-2xl font-bold text-[#000a1f]"
+              style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            Project Monitoring
+          </h1>
+          <p className="text-xs text-[#747780] mt-0.5">
+            {filtered.length} works · Click a row to open Project Intelligence Profile
+          </p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="panel p-3">
+      {/* Filter Bar */}
+      <div className="panel p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <SlidersHorizontal size={13} className="text-[#44474f]" />
+          <span className="text-xs font-semibold text-[#44474f] uppercase tracking-wider">Filters</span>
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              className="ml-auto flex items-center gap-1 text-xs font-semibold text-[#DC3545] hover:text-red-700 transition-colors"
+            >
+              <X size={12} /> Clear all
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-2 items-center">
+          {/* Search */}
           <div className="relative flex-1 min-w-48">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#747780]" />
             <input
               type="text"
-              placeholder="Search works, ID, MP, district..."
+              placeholder="Search works, ID, MP, district…"
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-8 pr-3 py-1.5 bg-[#0a1628] border border-[#1e3f7a] rounded-md text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-600"
+              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E9ECEF] rounded-sm text-sm text-[#141d23] placeholder-[#c4c6d0] focus:outline-none focus:border-[#005eb2] focus:ring-1 focus:ring-[#005eb2]/20"
             />
           </div>
 
@@ -131,18 +154,12 @@ export function ProjectMonitoring() {
               key={label}
               value={value}
               onChange={e => { setter(e.target.value); setPage(1); }}
-              className="px-2 py-1.5 bg-[#0a1628] border border-[#1e3f7a] rounded-md text-xs text-slate-300 focus:outline-none focus:border-blue-600 max-w-36"
+              className="px-3 py-2 bg-white border border-[#E9ECEF] rounded-sm text-xs text-[#141d23] focus:outline-none focus:border-[#005eb2] max-w-40"
             >
               <option value="">{label}</option>
               {opts.map(o => <option key={o} value={o}>{o}</option>)}
             </select>
           ))}
-
-          {hasFilters && (
-            <button onClick={clearFilters} className="flex items-center gap-1 text-xs text-slate-400 hover:text-red-400 px-2 py-1.5">
-              <X size={12} /> Clear
-            </button>
-          )}
         </div>
       </div>
 
@@ -157,7 +174,7 @@ export function ProjectMonitoring() {
                 <th>Description</th>
                 <th>District · Constituency</th>
                 <th
-                  className="cursor-pointer hover:text-blue-400"
+                  className="cursor-pointer hover:text-[#005eb2] transition-colors"
                   onClick={() => toggleSort('amount')}
                 >
                   <div className="flex items-center gap-1">
@@ -166,19 +183,19 @@ export function ProjectMonitoring() {
                 </th>
                 <th>Disbursed</th>
                 <th
-                  className="cursor-pointer hover:text-blue-400"
+                  className="cursor-pointer hover:text-[#005eb2] transition-colors"
                   onClick={() => toggleSort('status')}
                 >
                   Status
                 </th>
                 <th
-                  className="cursor-pointer hover:text-blue-400"
+                  className="cursor-pointer hover:text-[#005eb2] transition-colors"
                   onClick={() => toggleSort('fy')}
                 >
                   FY
                 </th>
                 <th
-                  className="cursor-pointer hover:text-blue-400"
+                  className="cursor-pointer hover:text-[#005eb2] transition-colors"
                   onClick={() => toggleSort('risk')}
                 >
                   <div className="flex items-center gap-1">
@@ -194,41 +211,41 @@ export function ProjectMonitoring() {
                   className="cursor-pointer"
                   onClick={() => selectProject(p.workId)}
                 >
-                  <td className="text-slate-600 text-xs font-mono">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                  <td className="text-[#c4c6d0] text-xs font-mono">{(page - 1) * PAGE_SIZE + i + 1}</td>
                   <td>
-                    <span className="font-mono text-xs text-blue-400">
+                    <span className="font-mono text-xs text-[#005eb2] font-semibold">
                       {p.workId.split('/').slice(0, 3).join('/')}
                     </span>
                   </td>
                   <td>
                     <div className="max-w-xs">
-                      <div className="text-sm text-white font-medium truncate">
+                      <div className="text-sm text-[#000a1f] font-medium truncate">
                         {truncate(p.workDescription || 'No description', 55)}
                       </div>
-                      <div className="text-[10px] text-slate-600 truncate">{truncate(p.workCategory, 45)}</div>
+                      <div className="text-[10px] text-[#747780] truncate">{truncate(p.workCategory, 45)}</div>
                     </div>
                   </td>
                   <td>
                     <div className="text-xs">
-                      <div className="text-slate-300">{p.district}</div>
-                      <div className="text-slate-600">{p.constituency}</div>
+                      <div className="text-[#141d23] font-medium">{p.district}</div>
+                      <div className="text-[#747780]">{p.constituency}</div>
                     </div>
                   </td>
-                  <td className="text-sm font-medium text-slate-200">
+                  <td className="text-sm font-semibold text-[#141d23]">
                     {formatCurrency(p.sanctionAmount)}
                   </td>
-                  <td className="text-sm text-slate-400">
+                  <td className="text-sm text-[#44474f]">
                     {formatCurrency(p.totalPaid)}
                   </td>
                   <td>
                     <StatusPill status={p.workStatus} />
                   </td>
-                  <td className="text-xs font-mono text-slate-500">{p.financialYear}</td>
+                  <td className="text-xs font-mono text-[#747780]">{p.financialYear}</td>
                   <td>
                     <div className="flex items-center gap-2">
                       <RiskBadge level={p.risk.level} size="sm" />
                       <span className="text-xs font-bold" style={{
-                        color: p.risk.level === 'HIGH' ? '#ef4444' : p.risk.level === 'MEDIUM' ? '#f59e0b' : '#10b981'
+                        color: p.risk.level === 'HIGH' ? '#DC3545' : p.risk.level === 'MEDIUM' ? '#FFC107' : '#198754'
                       }}>
                         {p.risk.score}
                       </span>
@@ -241,25 +258,25 @@ export function ProjectMonitoring() {
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-[#1e3f7a]">
-          <span className="text-xs text-slate-500">
-            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-[#E9ECEF] bg-[#F8F9FA]">
+          <span className="text-xs text-[#747780]">
+            Showing {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} works
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-[#1e3f7a] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-1.5 rounded-sm text-[#44474f] hover:text-[#000a1f] hover:bg-[#e0e9f2] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft size={14} />
             </button>
-            <span className="text-xs text-slate-400 px-2">
+            <span className="text-xs text-[#44474f] font-semibold px-2">
               {page} / {totalPages}
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-[#1e3f7a] disabled:opacity-40 disabled:cursor-not-allowed"
+              className="p-1.5 rounded-sm text-[#44474f] hover:text-[#000a1f] hover:bg-[#e0e9f2] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight size={14} />
             </button>
@@ -272,16 +289,16 @@ export function ProjectMonitoring() {
 
 function StatusPill({ status }: { status: string }) {
   const configs: Record<string, string> = {
-    'Work Completed': 'text-emerald-400 bg-emerald-900/30 border-emerald-800/50',
-    'Work In Progress': 'text-blue-400 bg-blue-900/30 border-blue-800/50',
-    'Physical Inspection': 'text-cyan-400 bg-cyan-900/30 border-cyan-800/50',
-    'Vendor Identification': 'text-amber-400 bg-amber-900/30 border-amber-800/50',
-    'Sanction': 'text-slate-400 bg-slate-900/30 border-slate-700/50',
-    'Unknown': 'text-slate-600 bg-transparent border-slate-800/30',
+    'Work Completed':         'text-[#065f46] bg-[#d1fae5] border-[#6ee7b7]',
+    'Work In Progress':       'text-[#1e40af] bg-[#dbeafe] border-[#93c5fd]',
+    'Physical Inspection':    'text-[#0e7490] bg-[#cffafe] border-[#67e8f9]',
+    'Vendor Identification':  'text-[#92400e] bg-[#fef3c7] border-[#fcd34d]',
+    'Sanction':               'text-[#44474f] bg-[#F8F9FA] border-[#E9ECEF]',
+    'Unknown':                'text-[#747780] bg-[#F8F9FA] border-transparent',
   };
   const cls = configs[status] ?? configs['Unknown'];
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${cls}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${cls}`}>
       {status}
     </span>
   );

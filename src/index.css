@@ -4,20 +4,55 @@
 
 @layer base {
   :root {
-    --bg-primary: #0a1628;
-    --bg-secondary: #0f2040;
-    --bg-panel: #152d5a;
-    --bg-card: #1a2744;
-    --accent-blue: #3b82f6;
-    --accent-amber: #f59e0b;
-    --accent-emerald: #10b981;
-    --accent-red: #ef4444;
-    --accent-orange: #f97316;
-    --text-primary: #f0f6ff;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
-    --border-subtle: #1e3f7a;
-    --border-glow: #3b82f6;
+    /* Stitch Design System Colors */
+    --surface:                 #f6faff;
+    --surface-container-low:   #ecf5fe;
+    --surface-container:       #e6eff8;
+    --surface-container-high:  #e0e9f2;
+    --surface-container-lowest:#ffffff;
+    --surface-muted:           #F8F9FA;
+    --surface-dim:             #d2dbe4;
+    --surface-variant:         #dbe4ed;
+
+    --on-surface:              #141d23;
+    --on-surface-variant:      #44474f;
+    --outline:                 #747780;
+    --outline-variant:         #c4c6d0;
+    --border-subtle:           #E9ECEF;
+
+    --primary:                 #000a1f;
+    --primary-container:       #00204a;
+    --on-primary:              #ffffff;
+    --on-primary-container:    #7189b8;
+    --inverse-primary:         #aec7fa;
+
+    --secondary:               #005eb2;
+    --secondary-container:     #4a99ff;
+    --on-secondary:            #ffffff;
+    --on-secondary-container:  #003161;
+
+    --risk-high:               #DC3545;
+    --risk-medium:             #FFC107;
+    --risk-low:                #198754;
+    --cyan-accent:             #2EC7C9;
+    --error:                   #ba1a1a;
+    --error-container:         #ffdad6;
+    --on-error-container:      #93000a;
+
+    /* Legacy aliases kept for backward compatibility */
+    --bg-primary:   #f6faff;
+    --bg-secondary: #ecf5fe;
+    --bg-panel:     #ffffff;
+    --bg-card:      #ffffff;
+    --accent-blue:  #005eb2;
+    --accent-amber: #d97706;
+    --accent-emerald:#198754;
+    --accent-red:   #DC3545;
+    --accent-orange:#ea580c;
+    --text-primary: #141d23;
+    --text-secondary:#44474f;
+    --text-muted:   #747780;
+    --border-glow:  #005eb2;
   }
 
   * {
@@ -25,8 +60,8 @@
   }
 
   body {
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
+    background-color: var(--surface);
+    color: var(--on-surface);
     font-family: 'Inter', system-ui, sans-serif;
     margin: 0;
     padding: 0;
@@ -34,126 +69,104 @@
     overflow-x: hidden;
   }
 
+  h1, h2, h3, .font-headline {
+    font-family: 'Montserrat', 'Inter', system-ui, sans-serif;
+  }
+
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #0a1628;
+    background: var(--surface-container-low);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #1e3f7a;
+    background: var(--outline-variant);
     border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #3b82f6;
+    background: var(--secondary);
   }
 }
 
 @layer components {
+  /* ─── PANELS & CARDS ─── */
   .panel {
-    @apply bg-[#0f2040] border border-[#1e3f7a] rounded-lg;
+    @apply bg-white border border-[#E9ECEF] rounded-sm shadow-[0_1px_4px_rgba(0,10,31,0.06)];
   }
 
   .panel-card {
-    @apply bg-[#1a2744] border border-[#1e3f7a] rounded-lg;
+    @apply bg-white border border-[#E9ECEF] rounded-sm;
   }
 
+  .panel-muted {
+    @apply bg-[#F8F9FA] border border-[#E9ECEF] rounded-sm;
+  }
+
+  /* ─── BUTTONS ─── */
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-500 text-white font-medium px-4 py-2 rounded-md transition-colors duration-150 text-sm;
+    @apply bg-[#00204a] hover:bg-[#000a1f] text-white font-semibold px-4 py-2 rounded-sm transition-colors duration-150 text-sm;
   }
 
   .btn-secondary {
-    @apply bg-[#1e3f7a] hover:bg-[#2a52a0] text-blue-200 font-medium px-4 py-2 rounded-md transition-colors duration-150 text-sm border border-[#2a52a0];
+    @apply bg-white hover:bg-[#ecf5fe] text-[#005eb2] font-semibold px-4 py-2 rounded-sm transition-colors duration-150 text-sm border border-[#00204a];
   }
 
   .btn-danger {
-    @apply bg-red-900/40 hover:bg-red-800/60 text-red-300 font-medium px-4 py-2 rounded-md transition-colors duration-150 text-sm border border-red-800/50;
+    @apply bg-[#fde8e8] hover:bg-[#fca5a5] text-[#991b1b] font-semibold px-4 py-2 rounded-sm transition-colors duration-150 text-sm border border-[#fca5a5];
   }
 
   .btn-success {
-    @apply bg-emerald-900/40 hover:bg-emerald-800/60 text-emerald-300 font-medium px-4 py-2 rounded-md transition-colors duration-150 text-sm border border-emerald-800/50;
+    @apply bg-[#d1fae5] hover:bg-[#6ee7b7] text-[#065f46] font-semibold px-4 py-2 rounded-sm transition-colors duration-150 text-sm border border-[#6ee7b7];
   }
 
+  /* ─── KPI CARDS ─── */
   .kpi-card {
-    @apply bg-[#0f2040] border border-[#1e3f7a] rounded-lg p-4 relative overflow-hidden;
+    @apply bg-white border border-[#E9ECEF] rounded-sm p-5 relative overflow-hidden shadow-[0_1px_4px_rgba(0,10,31,0.06)];
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
   }
 
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, currentColor, transparent);
-    opacity: 0.6;
+  .kpi-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 10, 31, 0.1);
+    border-color: #c4c6d0;
   }
 
+  /* ─── RISK LEVEL STYLES ─── */
   .risk-high {
-    @apply bg-red-950/60 border-red-800/60 text-red-300;
+    @apply bg-[#fde8e8] border-[#f87171] text-[#991b1b];
   }
 
   .risk-medium {
-    @apply bg-amber-950/60 border-amber-800/60 text-amber-300;
+    @apply bg-[#fef3c7] border-[#fbbf24] text-[#92400e];
   }
 
   .risk-low {
-    @apply bg-emerald-950/60 border-emerald-800/60 text-emerald-300;
+    @apply bg-[#d1fae5] border-[#34d399] text-[#065f46];
   }
 
+  /* ─── RISK BADGES ─── */
   .badge-high {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-red-900/60 text-red-300 border border-red-700/50;
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#fde8e8] text-[#991b1b] border border-[#fca5a5] uppercase tracking-wider;
   }
 
   .badge-medium {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-900/60 text-amber-300 border border-amber-700/50;
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#fef3c7] text-[#92400e] border border-[#fcd34d] uppercase tracking-wider;
   }
 
   .badge-low {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50;
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#d1fae5] text-[#065f46] border border-[#6ee7b7] uppercase tracking-wider;
   }
 
   .badge-info {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-900/60 text-blue-300 border border-blue-700/50;
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-[#dbeafe] text-[#1e40af] border border-[#93c5fd] uppercase tracking-wider;
   }
 
+  /* ─── TYPOGRAPHY ─── */
   .text-label {
-    @apply text-xs font-semibold uppercase tracking-widest text-slate-500;
-  }
-
-  .grid-bg {
-    background-image: 
-      linear-gradient(rgba(30, 63, 122, 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(30, 63, 122, 0.08) 1px, transparent 1px);
-    background-size: 40px 40px;
-  }
-
-  .nav-item {
-    @apply flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-slate-400 hover:text-white hover:bg-[#1e3f7a]/50 transition-all duration-150 cursor-pointer whitespace-nowrap;
-  }
-
-  .nav-item.active {
-    @apply text-blue-300 bg-[#1e3f7a]/80 border border-[#2a52a0]/60;
-  }
-
-  .progress-bar {
-    @apply h-1.5 rounded-full bg-[#1e3f7a] overflow-hidden;
-  }
-
-  .progress-fill {
-    @apply h-full rounded-full transition-all duration-500;
-  }
-
-  .data-row {
-    @apply grid gap-2 py-2.5 border-b border-[#1e3f7a]/50 last:border-0;
-  }
-
-  .anomaly-card {
-    @apply panel-card p-4 hover:border-[#2a52a0] transition-colors duration-150 cursor-pointer;
+    @apply text-xs font-semibold uppercase tracking-widest text-[#44474f];
   }
 
   .section-header {
@@ -161,52 +174,90 @@
   }
 
   .section-title {
-    @apply text-base font-semibold text-white;
+    @apply text-base font-semibold text-[#000a1f];
+    font-family: 'Montserrat', sans-serif;
   }
 
   .section-subtitle {
-    @apply text-xs text-slate-500;
+    @apply text-xs text-[#747780];
   }
 
-  /* Leaflet overrides */
+  /* ─── SIDEBAR NAV ─── */
+  .nav-item {
+    @apply flex items-center gap-3 mx-2 my-0.5 px-4 py-2.5 rounded-sm text-sm font-semibold text-[#44474f] hover:text-[#000a1f] hover:bg-[#e0e9f2] transition-all duration-150 cursor-pointer whitespace-nowrap;
+  }
+
+  .nav-item.active {
+    @apply text-[#003161] bg-[#4a99ff]/20 border border-[#4a99ff]/40;
+  }
+
+  /* ─── PROGRESS BARS ─── */
+  .progress-bar {
+    @apply h-1.5 rounded-full bg-[#e0e9f2] overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  /* ─── TABLE ROWS ─── */
+  .data-row {
+    @apply grid gap-2 py-2.5 border-b border-[#E9ECEF] last:border-0;
+  }
+
+  /* ─── ANOMALY CARDS ─── */
+  .anomaly-card {
+    @apply bg-white border border-[#E9ECEF] rounded-sm p-4 hover:border-[#c4c6d0] hover:shadow-[0_2px_8px_rgba(0,10,31,0.08)] transition-all duration-150 cursor-pointer;
+  }
+
+  /* ─── GRID BACKGROUND (subtle topo) ─── */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(0, 32, 74, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 32, 74, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* ─── LEAFLET MAP OVERRIDES ─── */
   .leaflet-container {
-    background: #0a1628 !important;
+    background: #e6eff8 !important;
     font-family: 'Inter', sans-serif !important;
   }
 
   .leaflet-popup-content-wrapper {
-    background: #0f2040 !important;
-    border: 1px solid #1e3f7a !important;
-    color: #f0f6ff !important;
-    border-radius: 8px !important;
+    background: #ffffff !important;
+    border: 1px solid #E9ECEF !important;
+    color: #141d23 !important;
+    border-radius: 4px !important;
+    box-shadow: 0 4px 16px rgba(0,10,31,0.12) !important;
   }
 
   .leaflet-popup-tip {
-    background: #0f2040 !important;
+    background: #ffffff !important;
   }
 
   .leaflet-tile-pane {
-    filter: brightness(0.7) saturate(0.4) hue-rotate(200deg);
+    filter: brightness(0.95) saturate(0.7) hue-rotate(180deg);
   }
 
-  /* Table styles */
+  /* ─── TABLE STYLES ─── */
   table {
     @apply w-full border-collapse;
   }
 
   th {
-    @apply text-xs font-semibold uppercase tracking-wider text-slate-500 py-3 px-4 text-left border-b border-[#1e3f7a] bg-[#0a1628]/60;
+    @apply text-xs font-semibold uppercase tracking-wider text-[#747780] py-3 px-4 text-left border-b border-[#E9ECEF] bg-[#F8F9FA];
   }
 
   td {
-    @apply py-3 px-4 text-sm text-slate-300 border-b border-[#1e3f7a]/30;
+    @apply py-3 px-4 text-sm text-[#141d23] border-b border-[#E9ECEF]/60;
   }
 
   tr:hover td {
-    @apply bg-[#1e3f7a]/20;
+    @apply bg-[#ecf5fe];
   }
 
-  /* Animations */
+  /* ─── ANIMATIONS ─── */
   @keyframes fadeIn {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
@@ -227,6 +278,10 @@
     50% { opacity: 0.3; }
   }
 
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out;
   }
@@ -236,12 +291,87 @@
   }
 
   .animate-shimmer {
-    background: linear-gradient(90deg, transparent 0%, rgba(59, 130, 246, 0.1) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 94, 178, 0.06) 50%, transparent 100%);
     background-size: 200% auto;
     animation: shimmer 2s linear infinite;
   }
 
   .blink-dot {
     animation: blinkDot 2s ease-in-out infinite;
+  }
+
+  /* ─── RISK CARD BORDERS (bento style) ─── */
+  .risk-border-high {
+    border-left: 4px solid #DC3545;
+  }
+
+  .risk-border-medium {
+    border-left: 4px solid #FFC107;
+  }
+
+  .risk-border-low {
+    border-left: 4px solid #198754;
+  }
+
+  /* ─── SIDEBAR LAYOUT ─── */
+  .app-sidebar {
+    @apply fixed left-0 top-0 h-full bg-[#ecf5fe] border-r border-[#E9ECEF] flex flex-col z-40;
+    width: 264px;
+  }
+
+  .app-main {
+    @apply flex-1 flex flex-col min-h-screen;
+    margin-left: 264px;
+  }
+
+  @media (max-width: 1024px) {
+    .app-sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.2s ease;
+    }
+    .app-sidebar.open {
+      transform: translateX(0);
+    }
+    .app-main {
+      margin-left: 0;
+    }
+  }
+
+  /* ─── CHIP/FILTER PILLS ─── */
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-150 cursor-pointer;
+  }
+
+  .chip-active {
+    @apply bg-[#00204a] text-white border-[#00204a];
+  }
+
+  .chip-inactive {
+    @apply bg-white text-[#44474f] border-[#E9ECEF] hover:border-[#c4c6d0] hover:bg-[#F8F9FA];
+  }
+
+  /* ─── STATUS BADGES ─── */
+  .status-new-alert {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#fef3c7] text-[#92400e] border border-[#fcd34d];
+  }
+
+  .status-under-review {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#dbeafe] text-[#1e40af] border border-[#93c5fd];
+  }
+
+  .status-verified {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#d1fae5] text-[#065f46] border border-[#6ee7b7];
+  }
+
+  .status-inspection {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#f3e8ff] text-[#6b21a8] border border-[#d8b4fe];
+  }
+
+  .status-needs-investigation {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#ffedd5] text-[#9a3412] border border-[#fdba74];
+  }
+
+  .status-dismissed {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-[#F8F9FA] text-[#747780] border border-[#E9ECEF];
   }
 }

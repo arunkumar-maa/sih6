@@ -79,21 +79,27 @@ export function Analytics() {
   }, [projects]);
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 animate-fade-in">
+      <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-xl font-bold text-white">MPLADS Analytics & Empirical Insights</h1>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
+            <BarChart3 size={11} />
+            Performance Observatory — Analytics
+          </p>
+          <h1 className="text-2xl font-bold text-[#000a1f]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            MPLADS Analytics &amp; Empirical Insights
+          </h1>
+          <p className="text-xs text-[#747780] mt-0.5">
             Aggregated statistical analysis derived dynamically from the attached dataset
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 font-medium">Filter District:</span>
+          <span className="text-xs text-[#44474f] font-semibold">Filter District:</span>
           <select
             value={districtFilter}
             onChange={e => setDistrictFilter(e.target.value)}
-            className="bg-[#0a1628] border border-[#1e3f7a] rounded-md px-3 py-1 text-xs text-white focus:outline-none focus:border-blue-500"
+            className="bg-white border border-[#E9ECEF] rounded-sm px-3 py-2 text-xs text-[#141d23] focus:outline-none focus:border-[#005eb2]"
           >
             <option value="ALL">All Districts</option>
             {districts.map(d => (
@@ -105,82 +111,82 @@ export function Analytics() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Chart 1: High Risk Works Concentration by District */}
-        <div className="panel p-4 flex flex-col h-[360px]">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-white flex items-center gap-1.5">
-              <BarChart3 size={14} className="text-red-400" />
+        <div className="panel p-5 flex flex-col h-[360px]">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs font-bold text-[#000a1f] flex items-center gap-1.5">
+              <BarChart3 size={14} className="text-[#DC3545]" />
               High-Risk Project Concentration by District (Top 10)
             </div>
           </div>
           <div className="flex-1 w-full mt-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={riskByDistrict} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                <XAxis dataKey="district" stroke="#64748b" fontSize={10} interval={0} angle={-25} textAnchor="end" />
-                <YAxis stroke="#64748b" fontSize={10} />
+                <XAxis dataKey="district" stroke="#c4c6d0" fontSize={10} interval={0} angle={-25} textAnchor="end" tick={{ fill: '#44474f' }} />
+                <YAxis stroke="#c4c6d0" fontSize={10} tick={{ fill: '#44474f' }} />
                 <Tooltip
-                  contentStyle={{ background: '#0a1628', borderColor: '#1e3f7a', borderRadius: '6px', color: '#fff', fontSize: '11px' }}
+                  contentStyle={{ background: '#ffffff', border: '1px solid #E9ECEF', borderRadius: '4px', color: '#141d23', fontSize: '11px', boxShadow: '0 4px 16px rgba(0,10,31,0.1)' }}
                 />
-                <Bar dataKey="high" name="High Risk" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="med" name="Medium Risk" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="high" name="High Risk" fill="#DC3545" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="med" name="Medium Risk" fill="#FFC107" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Chart 2: Financial Year Spend Trend */}
-        <div className="panel p-4 flex flex-col h-[360px]">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-white flex items-center gap-1.5">
-              <TrendingUp size={14} className="text-emerald-400" />
+        <div className="panel p-5 flex flex-col h-[360px]">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs font-bold text-[#000a1f] flex items-center gap-1.5">
+              <TrendingUp size={14} className="text-[#198754]" />
               Sanction vs Disbursement Trend by FY (₹ Crores)
             </div>
           </div>
           <div className="flex-1 w-full mt-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={fyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
-                <XAxis dataKey="fy" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} />
+                <XAxis dataKey="fy" stroke="#c4c6d0" fontSize={11} tick={{ fill: '#44474f' }} />
+                <YAxis stroke="#c4c6d0" fontSize={11} tick={{ fill: '#44474f' }} />
                 <Tooltip
                   formatter={(value: number) => [`₹${value.toFixed(2)} Cr`, '']}
-                  contentStyle={{ background: '#0a1628', borderColor: '#1e3f7a', borderRadius: '6px', color: '#fff', fontSize: '11px' }}
+                  contentStyle={{ background: '#ffffff', border: '1px solid #E9ECEF', borderRadius: '4px', color: '#141d23', fontSize: '11px', boxShadow: '0 4px 16px rgba(0,10,31,0.1)' }}
                 />
-                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                <Line type="monotone" dataKey="sanctioned" name="Sanctioned (Cr)" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="disbursed" name="Disbursed (Cr)" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} />
+                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px', color: '#44474f' }} />
+                <Line type="monotone" dataKey="sanctioned" name="Sanctioned (Cr)" stroke="#6d28d9" strokeWidth={2} dot={{ r: 4, fill: '#6d28d9' }} />
+                <Line type="monotone" dataKey="disbursed" name="Disbursed (Cr)" stroke="#198754" strokeWidth={2} dot={{ r: 4, fill: '#198754' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Chart 3: Risk by Category */}
-        <div className="panel p-4 flex flex-col h-[360px]">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-white flex items-center gap-1.5">
-              <Layers size={14} className="text-blue-400" />
+        <div className="panel p-5 flex flex-col h-[360px]">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs font-bold text-[#000a1f] flex items-center gap-1.5">
+              <Layers size={14} className="text-[#005eb2]" />
               Risk Distribution by Work Category
             </div>
           </div>
           <div className="flex-1 w-full mt-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={riskByCategory} layout="vertical" margin={{ top: 5, right: 10, left: 40, bottom: 5 }}>
-                <XAxis type="number" stroke="#64748b" fontSize={10} />
-                <YAxis dataKey="category" type="category" stroke="#64748b" fontSize={9} width={130} />
+                <XAxis type="number" stroke="#c4c6d0" fontSize={10} tick={{ fill: '#44474f' }} />
+                <YAxis dataKey="category" type="category" stroke="#c4c6d0" fontSize={9} width={130} tick={{ fill: '#44474f' }} />
                 <Tooltip
-                  contentStyle={{ background: '#0a1628', borderColor: '#1e3f7a', borderRadius: '6px', color: '#fff', fontSize: '11px' }}
+                  contentStyle={{ background: '#ffffff', border: '1px solid #E9ECEF', borderRadius: '4px', color: '#141d23', fontSize: '11px', boxShadow: '0 4px 16px rgba(0,10,31,0.1)' }}
                 />
-                <Bar dataKey="high" name="High Risk" stackId="a" fill="#ef4444" />
-                <Bar dataKey="med" name="Medium Risk" stackId="a" fill="#f59e0b" />
-                <Bar dataKey="low" name="Low Risk" stackId="a" fill="#10b981" />
+                <Bar dataKey="high" name="High Risk" stackId="a" fill="#DC3545" />
+                <Bar dataKey="med" name="Medium Risk" stackId="a" fill="#FFC107" />
+                <Bar dataKey="low" name="Low Risk" stackId="a" fill="#198754" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Chart 4: Work Status Breakdown */}
-        <div className="panel p-4 flex flex-col h-[360px]">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-white flex items-center gap-1.5">
-              <PieIcon size={14} className="text-purple-400" />
+        <div className="panel p-5 flex flex-col h-[360px]">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-xs font-bold text-[#000a1f] flex items-center gap-1.5">
+              <PieIcon size={14} className="text-[#6d28d9]" />
               Overall Work Implementation Status
             </div>
           </div>
@@ -201,9 +207,9 @@ export function Analytics() {
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ background: '#0a1628', borderColor: '#1e3f7a', borderRadius: '6px', color: '#fff', fontSize: '11px' }}
+                  contentStyle={{ background: '#ffffff', border: '1px solid #E9ECEF', borderRadius: '4px', color: '#141d23', fontSize: '11px', boxShadow: '0 4px 16px rgba(0,10,31,0.1)' }}
                 />
-                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                <Legend wrapperStyle={{ fontSize: '11px', color: '#44474f' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>

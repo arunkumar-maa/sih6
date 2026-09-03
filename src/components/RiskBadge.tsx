@@ -1,6 +1,6 @@
 import React from 'react';
 import type { RiskLevel } from '../data/types';
-import { AlertTriangle, CheckCircle, AlertCircle, Shield } from 'lucide-react';
+import { AlertTriangle, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface RiskBadgeProps {
   level: RiskLevel;
@@ -13,22 +13,22 @@ export function RiskBadge({ level, score, size = 'md' }: RiskBadgeProps) {
     HIGH: {
       className: 'badge-high',
       Icon: AlertTriangle,
-      label: 'HIGH RISK',
+      label: 'High Risk',
     },
     MEDIUM: {
       className: 'badge-medium',
       Icon: AlertCircle,
-      label: 'MEDIUM RISK',
+      label: 'Med Risk',
     },
     LOW: {
       className: 'badge-low',
       Icon: CheckCircle,
-      label: 'LOW RISK',
+      label: 'Low Risk',
     },
   };
 
   const { className, Icon, label } = configs[level];
-  const iconSize = size === 'sm' ? 10 : size === 'lg' ? 16 : 12;
+  const iconSize = size === 'sm' ? 10 : size === 'lg' ? 14 : 11;
 
   return (
     <span className={className}>
@@ -50,24 +50,36 @@ export function RiskScoreRing({ score, level, size = 80 }: RiskScoreRingProps) {
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
 
-  const colors = {
-    HIGH: '#ef4444',
-    MEDIUM: '#f59e0b',
-    LOW: '#10b981',
+  const colors: Record<RiskLevel, string> = {
+    HIGH:   '#DC3545',
+    MEDIUM: '#FFC107',
+    LOW:    '#198754',
   };
+  const trackColors: Record<RiskLevel, string> = {
+    HIGH:   '#fde8e8',
+    MEDIUM: '#fef3c7',
+    LOW:    '#d1fae5',
+  };
+
   const color = colors[level];
+  const trackColor = trackColors[level];
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+    <div
+      className="relative inline-flex items-center justify-center flex-shrink-0"
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        {/* Track */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#1e3f7a"
+          stroke={trackColor}
           strokeWidth="6"
         />
+        {/* Progress */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -82,8 +94,22 @@ export function RiskScoreRing({ score, level, size = 80 }: RiskScoreRingProps) {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-lg font-bold text-white leading-none">{score}</span>
-        <span className="text-[9px] font-semibold" style={{ color }}>{level}</span>
+        <span
+          className="font-bold leading-none"
+          style={{
+            fontSize: size < 64 ? '0.75rem' : '1.1rem',
+            color: '#000a1f',
+            fontFamily: 'Montserrat, sans-serif',
+          }}
+        >
+          {score}
+        </span>
+        <span
+          className="text-[8px] font-bold uppercase tracking-wider mt-0.5"
+          style={{ color }}
+        >
+          {level}
+        </span>
       </div>
     </div>
   );

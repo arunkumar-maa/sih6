@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
-  AlertTriangle, Clock, DollarSign, Users, FileSearch,
-  ChevronRight, TrendingUp, Info, Shield
+  AlertTriangle, Clock, DollarSign, Users, TrendingUp,
+  ChevronRight, Info, Shield
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
 import { RiskBadge } from '../components/RiskBadge';
@@ -11,11 +11,11 @@ import type { EnrichedProject } from '../data/types';
 type AnomalyTab = 'pending' | 'stale' | 'cost' | 'disbursement' | 'vendor';
 
 const TAB_CONFIG: { id: AnomalyTab; label: string; Icon: React.ElementType; color: string }[] = [
-  { id: 'pending', label: 'Unsanctioned Works', Icon: Clock, color: '#f59e0b' },
-  { id: 'stale', label: 'Stale Status', Icon: AlertTriangle, color: '#ef4444' },
-  { id: 'cost', label: 'Cost Anomalies', Icon: DollarSign, color: '#8b5cf6' },
-  { id: 'disbursement', label: 'Disbursement Issues', Icon: TrendingUp, color: '#f97316' },
-  { id: 'vendor', label: 'Vendor Concentration', Icon: Users, color: '#06b6d4' },
+  { id: 'pending',      label: 'Unsanctioned Works',  Icon: Clock,          color: '#92400e' },
+  { id: 'stale',        label: 'Stale Status',        Icon: AlertTriangle,  color: '#DC3545' },
+  { id: 'cost',         label: 'Cost Anomalies',      Icon: DollarSign,     color: '#6d28d9' },
+  { id: 'disbursement', label: 'Disbursement Issues', Icon: TrendingUp,     color: '#ea580c' },
+  { id: 'vendor',       label: 'Vendor Concentration',Icon: Users,          color: '#0891b2' },
 ];
 
 export function RiskAnomaliesCenter() {
@@ -24,17 +24,11 @@ export function RiskAnomaliesCenter() {
 
   const anomalies = useMemo(() => {
     const pending = projects
-      .filter(p => {
-        const f = p.risk.factors.find(f => f.id === 'pending_recommendation');
-        return f?.available && f.score > 30;
-      })
+      .filter(p => { const f = p.risk.factors.find(f => f.id === 'pending_recommendation'); return f?.available && f.score > 30; })
       .sort((a, b) => b.risk.score - a.risk.score);
 
     const stale = projects
-      .filter(p => {
-        const f = p.risk.factors.find(f => f.id === 'stale_status');
-        return f?.available && f.score > 20;
-      })
+      .filter(p => { const f = p.risk.factors.find(f => f.id === 'stale_status'); return f?.available && f.score > 20; })
       .sort((a, b) => {
         const fa = a.risk.factors.find(f => f.id === 'stale_status')!;
         const fb = b.risk.factors.find(f => f.id === 'stale_status')!;
@@ -42,10 +36,7 @@ export function RiskAnomaliesCenter() {
       });
 
     const cost = projects
-      .filter(p => {
-        const f = p.risk.factors.find(f => f.id === 'high_amount_anomaly');
-        return f?.available && f.score > 30;
-      })
+      .filter(p => { const f = p.risk.factors.find(f => f.id === 'high_amount_anomaly'); return f?.available && f.score > 30; })
       .sort((a, b) => {
         const fa = a.risk.factors.find(f => f.id === 'high_amount_anomaly')!;
         const fb = b.risk.factors.find(f => f.id === 'high_amount_anomaly')!;
@@ -53,10 +44,7 @@ export function RiskAnomaliesCenter() {
       });
 
     const disbursement = projects
-      .filter(p => {
-        const f = p.risk.factors.find(f => f.id === 'disbursement_anomaly');
-        return f?.available && f.score > 20;
-      })
+      .filter(p => { const f = p.risk.factors.find(f => f.id === 'disbursement_anomaly'); return f?.available && f.score > 20; })
       .sort((a, b) => {
         const fa = a.risk.factors.find(f => f.id === 'disbursement_anomaly')!;
         const fb = b.risk.factors.find(f => f.id === 'disbursement_anomaly')!;
@@ -64,10 +52,7 @@ export function RiskAnomaliesCenter() {
       });
 
     const vendor = projects
-      .filter(p => {
-        const f = p.risk.factors.find(f => f.id === 'vendor_concentration');
-        return f?.available && f.score > 10;
-      })
+      .filter(p => { const f = p.risk.factors.find(f => f.id === 'vendor_concentration'); return f?.available && f.score > 10; })
       .sort((a, b) => {
         const fa = a.risk.factors.find(f => f.id === 'vendor_concentration')!;
         const fb = b.risk.factors.find(f => f.id === 'vendor_concentration')!;
@@ -102,78 +87,90 @@ export function RiskAnomaliesCenter() {
     vendor: 'Review vendor allocation process. Ensure competitive bidding compliance.',
   };
 
+  const activeTabConfig = TAB_CONFIG.find(t => t.id === activeTab)!;
+
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
+      {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-white">Risk & Anomaly Intelligence Center</h1>
-        <p className="text-xs text-slate-500 mt-0.5">
-          Automatically detected risk patterns from the MPLADS dataset · For human verification only
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#DC3545] mb-1 flex items-center gap-2">
+          <AlertTriangle size={11} />
+          Anomaly Center — Risk Observatory
+        </p>
+        <h1 className="text-2xl font-bold text-[#000a1f]"
+            style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          Risk &amp; Anomaly Intelligence
+        </h1>
+        <p className="text-xs text-[#747780] mt-0.5">
+          Automatically detected risk patterns · For human verification only
         </p>
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-5 gap-2">
+      {/* Category Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {TAB_CONFIG.map(({ id, label, Icon, color }) => {
           const count = tabData[id].length;
+          const isActive = activeTab === id;
           return (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`p-3 rounded-lg border text-left transition-all duration-150 ${
-                activeTab === id
-                  ? 'border-opacity-80 shadow-lg'
-                  : 'border-[#1e3f7a] bg-[#0f2040] hover:border-[#2a52a0]'
+              className={`p-4 border text-left transition-all duration-150 rounded-sm shadow-[0_1px_4px_rgba(0,10,31,0.04)] ${
+                isActive
+                  ? 'border-opacity-60 shadow-[0_4px_16px_rgba(0,10,31,0.1)]'
+                  : 'bg-white border-[#E9ECEF] hover:border-[#c4c6d0] hover:shadow-[0_2px_8px_rgba(0,10,31,0.06)]'
               }`}
-              style={activeTab === id ? {
+              style={isActive ? {
                 borderColor: color,
-                background: `${color}12`,
+                backgroundColor: `${color}08`,
               } : {}}
             >
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Icon size={12} style={{ color: activeTab === id ? color : '#64748b' }} />
-                <span className="text-[10px] font-semibold uppercase tracking-wider" style={{
-                  color: activeTab === id ? color : '#64748b'
-                }}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1 rounded-sm" style={{ backgroundColor: `${color}14` }}>
+                  <Icon size={12} style={{ color }} />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: isActive ? color : '#747780' }}>
                   {label}
                 </span>
               </div>
-              <div className="text-xl font-bold" style={{ color: activeTab === id ? color : '#94a3b8' }}>
+              <div className="text-2xl font-bold" style={{ color: isActive ? color : '#000a1f', fontFamily: 'Montserrat, sans-serif' }}>
                 {count}
               </div>
-              <div className="text-[10px] text-slate-600">anomalies</div>
+              <div className="text-[10px] text-[#747780] mt-0.5">anomalies</div>
             </button>
           );
         })}
       </div>
 
-      {/* Active anomaly list */}
-      <div className="panel p-4">
-        {(() => {
-          const tab = TAB_CONFIG.find(t => t.id === activeTab)!;
-          return (
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md" style={{ background: `${tab.color}20` }}>
-                  <tab.Icon size={14} style={{ color: tab.color }} />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-white">{tab.label}</h2>
-                  <p className="text-[11px] text-slate-500">{currentList.length} detected anomalies</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-950/30 border border-amber-900/30">
-                <Shield size={11} className="text-amber-400" />
-                <span className="text-[10px] text-amber-300 font-medium">Recommended Action: </span>
-                <span className="text-[10px] text-slate-400">{RECOMMENDED_ACTIONS[activeTab]}</span>
-              </div>
+      {/* Active Anomaly List */}
+      <div className="panel p-5">
+        {/* Section header */}
+        <div className="flex items-start justify-between gap-4 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-sm" style={{ backgroundColor: `${activeTabConfig.color}14` }}>
+              <activeTabConfig.Icon size={16} style={{ color: activeTabConfig.color }} />
             </div>
-          );
-        })()}
+            <div>
+              <h2 className="text-sm font-bold text-[#000a1f]"
+                  style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                {activeTabConfig.label}
+              </h2>
+              <p className="text-[11px] text-[#747780]">{currentList.length} detected anomalies</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-2 px-3 py-2 bg-[#fef3c7] border border-[#fcd34d] rounded-sm max-w-sm">
+            <Shield size={12} className="text-[#92400e] flex-shrink-0 mt-0.5" />
+            <div>
+              <span className="text-[10px] font-bold text-[#92400e]">Recommended Action: </span>
+              <span className="text-[10px] text-[#78350f]">{RECOMMENDED_ACTIONS[activeTab]}</span>
+            </div>
+          </div>
+        </div>
 
         {currentList.length === 0 ? (
-          <div className="py-12 text-center">
-            <div className="text-slate-600 text-sm">No anomalies detected in this category.</div>
-            <div className="text-slate-700 text-xs mt-1">Run AI Analysis to refresh detection.</div>
+          <div className="py-16 text-center">
+            <div className="text-[#44474f] text-sm font-semibold">No anomalies detected in this category.</div>
+            <div className="text-[#747780] text-xs mt-1">Run AI Analysis to refresh detection.</div>
           </div>
         ) : (
           <div className="space-y-2">
@@ -189,19 +186,21 @@ export function RiskAnomaliesCenter() {
                   <div className="flex items-start gap-3">
                     <div
                       className="w-1 self-stretch rounded-full flex-shrink-0"
-                      style={{ background: tab.color, opacity: 0.7 }}
+                      style={{ backgroundColor: tab.color, opacity: 0.8 }}
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                            <span className="text-sm font-medium text-white">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="text-sm font-semibold text-[#000a1f]">
                               {truncate(project.workDescription || project.workCategory, 70)}
                             </span>
                             <RiskBadge level={project.risk.level} size="sm" />
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] text-slate-500">
-                            <span className="font-mono text-blue-400">{project.workId.split('/').slice(0, 3).join('/')}</span>
+                          <div className="flex items-center gap-2 text-[11px] text-[#747780]">
+                            <span className="font-mono text-[#005eb2] font-semibold">
+                              {project.workId.split('/').slice(0, 3).join('/')}
+                            </span>
                             <span>·</span>
                             <span>{project.district}</span>
                             <span>·</span>
@@ -209,33 +208,36 @@ export function RiskAnomaliesCenter() {
                             {project.sanctionAmount !== null && (
                               <>
                                 <span>·</span>
-                                <span className="text-slate-400">{formatCurrency(project.sanctionAmount)}</span>
+                                <span className="font-semibold text-[#44474f]">{formatCurrency(project.sanctionAmount)}</span>
                               </>
                             )}
                           </div>
                         </div>
                         <div className="flex-shrink-0 text-right">
-                          <div className="text-base font-bold" style={{ color: tab.color }}>
+                          <div className="text-base font-bold" style={{ color: tab.color, fontFamily: 'Montserrat, sans-serif' }}>
                             +{factor?.score ?? 0}
                           </div>
-                          <div className="text-[10px] text-slate-600">factor score</div>
+                          <div className="text-[10px] text-[#747780]">factor score</div>
                         </div>
                       </div>
 
                       {factor && (
                         <div
-                          className="mt-2 px-2 py-1.5 rounded-md text-[11px] text-slate-300"
-                          style={{ background: `${tab.color}10`, borderLeft: `2px solid ${tab.color}` }}
+                          className="mt-2 px-3 py-2 rounded-sm text-[11px] text-[#141d23]"
+                          style={{
+                            backgroundColor: `${tab.color}08`,
+                            borderLeft: `2px solid ${tab.color}`,
+                          }}
                         >
-                          <span className="font-semibold" style={{ color: tab.color }}>{factor.label}: </span>
-                          {factor.description}
+                          <span className="font-bold" style={{ color: tab.color }}>{factor.label}: </span>
+                          <span className="text-[#44474f]">{factor.description}</span>
                           {factor.value !== undefined && (
-                            <span className="ml-1 font-mono text-slate-500"> [{String(factor.value)}]</span>
+                            <span className="ml-1 font-mono text-[#747780]"> [{String(factor.value)}]</span>
                           )}
                         </div>
                       )}
                     </div>
-                    <ChevronRight size={14} className="text-slate-600 flex-shrink-0 mt-1" />
+                    <ChevronRight size={14} className="text-[#c4c6d0] flex-shrink-0 mt-1" />
                   </div>
                 </div>
               );
@@ -245,11 +247,12 @@ export function RiskAnomaliesCenter() {
       </div>
 
       {/* Info box */}
-      <div className="panel-card p-3 flex items-start gap-2">
-        <Info size={13} className="text-blue-400 mt-0.5 flex-shrink-0" />
-        <div className="text-[11px] text-slate-500">
-          <strong className="text-slate-400">About Anomaly Detection:</strong> These patterns are identified using rule-based statistical analysis of the MPLADS dataset.
-          They are <em>risk indicators for human verification</em>, not evidence of wrongdoing.
+      <div className="panel-muted p-4 border border-[#E9ECEF] flex items-start gap-3">
+        <Info size={14} className="text-[#005eb2] mt-0.5 flex-shrink-0" />
+        <div className="text-[11px] text-[#44474f] leading-relaxed">
+          <strong className="text-[#141d23] font-bold">About Anomaly Detection:</strong>{' '}
+          These patterns are identified using rule-based statistical analysis of the MPLADS dataset.
+          They are <em className="font-semibold">risk indicators for human verification</em>, not evidence of wrongdoing.
           Officers should investigate flagged projects using official records and site visits before taking any action.
         </div>
       </div>
