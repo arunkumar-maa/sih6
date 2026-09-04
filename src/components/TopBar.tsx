@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Shield, Activity } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useAppStore } from '../data/store';
 
 const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
@@ -11,6 +11,9 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   analytics:    { title: 'Performance Observatory', subtitle: 'Analytics & Insights' },
   methodology:  { title: 'Methodology', subtitle: 'Under the Hood' },
   explorer:     { title: 'Dataset Explorer', subtitle: 'Raw Data Exploration' },
+  sanctioned:   { title: 'Sanctioned Works Intelligence', subtitle: 'Command Center › Sanctioned Amount' },
+  disbursed:    { title: 'Disbursement Intelligence', subtitle: 'Command Center › Amount Disbursed' },
+  completed:    { title: 'Completed Works Intelligence', subtitle: 'Command Center › Works Completed' },
 };
 
 interface TopBarProps {
@@ -54,10 +57,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           </div>
         )}
 
-        <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-full bg-[#fef3c7] border border-[#fcd34d]">
-          <Shield size={9} className="text-[#92400e]" />
-          <span className="text-[9px] font-bold text-[#92400e] uppercase tracking-wider">
-            SIH Prototype
+        <div className="hidden md:flex items-center gap-1 px-2 py-1 rounded-full bg-[#d1fae5] border border-[#6ee7b7]">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#198754]" />
+          <span className="text-[9px] font-bold text-[#065f46] uppercase tracking-wider">
+            MPLADS Sentinel
           </span>
         </div>
 

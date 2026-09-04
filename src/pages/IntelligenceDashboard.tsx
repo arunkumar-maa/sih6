@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import {
   TrendingUp, Building2, DollarSign, AlertTriangle,
   ClipboardCheck, FolderOpen, ChevronRight, Clock,
-  Zap, Activity, ArrowRight
+  Zap, Activity, ArrowRight, ExternalLink
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
 import { KPICard } from '../components/KPICard';
@@ -85,46 +85,132 @@ export function IntelligenceDashboard() {
 
       {/* ── KPI Cards ────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <KPICard
-          label="Total Works"
-          value={stats?.total ?? 0}
-          subValue="Sanctioned + Recommended"
-          Icon={FolderOpen}
-          accentColor="#005eb2"
-          loading={!stats}
-        />
-        <KPICard
-          label="Sanctioned Amount"
-          value={stats ? formatCurrency(stats.totalSanctionAmount) : '—'}
-          subValue="Across all works"
-          Icon={DollarSign}
-          accentColor="#6d28d9"
-          loading={!stats}
-        />
-        <KPICard
-          label="Amount Disbursed"
-          value={stats ? formatCurrency(stats.totalDisbursed) : '—'}
-          subValue="Payments processed"
-          Icon={TrendingUp}
-          accentColor="#0d9488"
-          loading={!stats}
-        />
-        <KPICard
-          label="Works Completed"
-          value={stats?.completed ?? 0}
-          subValue={stats ? `${((stats.completed / stats.total) * 100).toFixed(0)}% of total` : ''}
-          Icon={Building2}
-          accentColor="#0891b2"
-          loading={!stats}
-        />
-        <KPICard
-          label="High Risk Works"
-          value={stats?.highRisk ?? 0}
-          subValue={`+ ${stats?.medRisk ?? 0} medium risk`}
-          Icon={AlertTriangle}
-          accentColor="#DC3545"
-          loading={!stats}
-        />
+        <div className="kpi-card">
+          <div className="absolute top-0 left-0 right-0 h-0.5" style={{ backgroundColor: '#005eb2' }} />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#005eb2' }}>Total Works</p>
+              <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                {stats?.total ?? 0}
+              </p>
+              <p className="text-[11px] text-[#747780] mt-1.5">Sanctioned + Recommended</p>
+            </div>
+            <div className="p-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: '#005eb214' }}>
+              <FolderOpen size={20} style={{ color: '#005eb2' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* CLICKABLE: Sanctioned Amount */}
+        <button
+          onClick={() => setCurrentPage('sanctioned')}
+          className="kpi-card text-left group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/30"
+          title="Click to view Sanctioned Works Intelligence"
+        >
+          <div className="absolute top-0 left-0 right-0 h-0.5" style={{ backgroundColor: '#6d28d9' }} />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1" style={{ color: '#6d28d9' }}>
+                Sanctioned Amount
+                <ExternalLink size={9} className="opacity-60" />
+              </p>
+              {!stats ? (
+                <div className="h-7 w-24 bg-[#e0e9f2] rounded-sm animate-pulse" />
+              ) : (
+                <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  {formatCurrency(stats.totalSanctionAmount)}
+                </p>
+              )}
+              <p className="text-[11px] text-[#747780] mt-1.5">Across all works · Click to drill down</p>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="p-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: '#6d28d914' }}>
+                <DollarSign size={20} style={{ color: '#6d28d9' }} />
+              </div>
+              <ChevronRight size={12} className="text-[#6d28d9] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+        </button>
+
+        {/* CLICKABLE: Amount Disbursed */}
+        <button
+          onClick={() => setCurrentPage('disbursed')}
+          className="kpi-card text-left group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0d9488]/30"
+          title="Click to view Disbursement Intelligence"
+        >
+          <div className="absolute top-0 left-0 right-0 h-0.5" style={{ backgroundColor: '#0d9488' }} />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1" style={{ color: '#0d9488' }}>
+                Amount Disbursed
+                <ExternalLink size={9} className="opacity-60" />
+              </p>
+              {!stats ? (
+                <div className="h-7 w-24 bg-[#e0e9f2] rounded-sm animate-pulse" />
+              ) : (
+                <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  {formatCurrency(stats.totalDisbursed)}
+                </p>
+              )}
+              <p className="text-[11px] text-[#747780] mt-1.5">Payments processed · Click to drill down</p>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="p-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: '#0d948814' }}>
+                <TrendingUp size={20} style={{ color: '#0d9488' }} />
+              </div>
+              <ChevronRight size={12} className="text-[#0d9488] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+        </button>
+
+        {/* CLICKABLE: Works Completed */}
+        <button
+          onClick={() => setCurrentPage('completed')}
+          className="kpi-card text-left group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0891b2]/30"
+          title="Click to view Completed Works Intelligence"
+        >
+          <div className="absolute top-0 left-0 right-0 h-0.5" style={{ backgroundColor: '#0891b2' }} />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2 flex items-center gap-1" style={{ color: '#0891b2' }}>
+                Works Completed
+                <ExternalLink size={9} className="opacity-60" />
+              </p>
+              {!stats ? (
+                <div className="h-7 w-24 bg-[#e0e9f2] rounded-sm animate-pulse" />
+              ) : (
+                <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                  {stats.completed}
+                </p>
+              )}
+              <p className="text-[11px] text-[#747780] mt-1.5">
+                {stats ? `${((stats.completed / stats.total) * 100).toFixed(0)}% of total` : ''} · Click to drill down
+              </p>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <div className="p-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: '#0891b214' }}>
+                <Building2 size={20} style={{ color: '#0891b2' }} />
+              </div>
+              <ChevronRight size={12} className="text-[#0891b2] opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+        </button>
+
+        <div className="kpi-card">
+          <div className="absolute top-0 left-0 right-0 h-0.5" style={{ backgroundColor: '#DC3545' }} />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#DC3545' }}>High Risk Works</p>
+              <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                {stats?.highRisk ?? 0}
+              </p>
+              <p className="text-[11px] text-[#747780] mt-1.5">+ {stats?.medRisk ?? 0} medium risk</p>
+            </div>
+            <div className="p-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: '#DC354514' }}>
+              <AlertTriangle size={20} style={{ color: '#DC3545' }} />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Main Intelligence Grid ─────────────────── */}
@@ -322,7 +408,7 @@ export function IntelligenceDashboard() {
               <Zap size={13} className="text-[#005eb2] mt-0.5 flex-shrink-0" />
               <div>
                 <div className="text-[10px] font-bold text-[#005eb2] uppercase tracking-wider mb-1">
-                  Prototype AI Scoring
+                  AI Risk Scoring
                 </div>
                 <div className="text-[11px] text-[#747780] leading-relaxed">
                   Rule-based statistical risk intelligence. Future: Isolation Forest + XGBoost + SHAP.

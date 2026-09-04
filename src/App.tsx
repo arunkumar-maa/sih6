@@ -10,6 +10,9 @@ import { OfficerVerification } from './pages/OfficerVerification';
 import { Analytics } from './pages/Analytics';
 import { Methodology } from './pages/Methodology';
 import { DatasetExplorer } from './pages/DatasetExplorer';
+import { SanctionedDrillDown } from './pages/SanctionedDrillDown';
+import { DisbursementDrillDown } from './pages/DisbursementDrillDown';
+import { CompletedWorksDrillDown } from './pages/CompletedWorksDrillDown';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -114,6 +117,9 @@ export function MainContent() {
           {currentPage === 'analytics'    && <Analytics />}
           {currentPage === 'methodology'  && <Methodology />}
           {currentPage === 'explorer'     && <DatasetExplorer />}
+          {currentPage === 'sanctioned'   && <SanctionedDrillDown />}
+          {currentPage === 'disbursed'    && <DisbursementDrillDown />}
+          {currentPage === 'completed'    && <CompletedWorksDrillDown />}
         </main>
       </div>
     </div>

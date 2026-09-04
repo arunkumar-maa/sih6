@@ -138,11 +138,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </>
             )}
           </button>
-          <div className="px-1">
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-bold bg-[#fef3c7] text-[#92400e] border border-[#fcd34d] uppercase tracking-wider">
-              Internal Prototype
-            </span>
-          </div>
+
         </div>
       </nav>
     </>
