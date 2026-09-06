@@ -132,9 +132,15 @@ export async function getProjects(params: ProjectQueryParams): Promise<Paginated
   if (category) {
     query = query.eq('work_category', category);
   }
-  if (tenure) {
+  // Tenure / Financial Year filter
+  if (tenure === '18th Lok Sabha') {
+    query = query.or('financial_year.gte.2024-2025,financial_year.eq.Unknown');
+  } else if (tenure === '17th Lok Sabha') {
+    query = query.gte('financial_year', '2019-2020').lte('financial_year', '2023-2024');
+  } else if (tenure && tenure !== 'Current Rajya Sabha' && tenure !== 'All') {
     query = query.eq('financial_year', tenure);
   }
+
   if (isSanctioned !== undefined) {
     query = query.eq('is_sanctioned', isSanctioned);
   }
@@ -142,7 +148,7 @@ export async function getProjects(params: ProjectQueryParams): Promise<Paginated
     query = query.eq('is_completed', isCompleted);
   }
   if (hasDisbursement !== undefined) {
-    query = hasDisbursement ? query.gt('total_paid', 0) : query.eq('total_paid', 0);
+    query = hasDisbursement ? query.gt('total_paid', 0) : query.or('total_paid.eq.0,total_paid.is.null');
   }
 
   // Free text search

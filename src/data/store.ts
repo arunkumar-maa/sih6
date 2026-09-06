@@ -174,7 +174,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const [kpiData, optionsData, paginatedData] = await Promise.all([
           getDashboardKPIs('Lok Sabha'),
           getDistinctFilterOptions('Lok Sabha'),
-          getProjects({ house: 'Lok Sabha', page: 1, pageSize: 20 }),
+          getProjects({ house: 'Lok Sabha', page: 1, pageSize: 500, sortField: 'risk', sortDir: 'desc' }),
         ]);
 
         const datasetSummary: DatasetSummary = {
@@ -268,7 +268,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         const [kpiData, optionsData, paginatedData] = await Promise.all([
           getDashboardKPIs('Rajya Sabha'),
           getDistinctFilterOptions('Rajya Sabha'),
-          getProjects({ house: 'Rajya Sabha', page: 1, pageSize: 20 }),
+          getProjects({ house: 'Rajya Sabha', page: 1, pageSize: 500, sortField: 'risk', sortDir: 'desc' }),
         ]);
 
         const { activeHouse } = get();
@@ -340,7 +340,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       get().loadKPIs();
       get().loadFilterOptions();
 
-      getProjects({ house, page: 1, pageSize: 20 }).then(res => {
+      getProjects({ house, page: 1, pageSize: 500, sortField: 'risk', sortDir: 'desc' }).then(res => {
         if (get().activeHouse === house) {
           set({ projects: applyVerificationOverrides(res.projects) });
         }
