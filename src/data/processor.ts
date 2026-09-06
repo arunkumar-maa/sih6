@@ -95,7 +95,8 @@ export function processDatasets(
   recommended: RawRecommendedWork[],
   completed: RawCompletedWork[],
   expenditure: RawExpenditure[],
-  allocated: RawAllocatedLimit[]
+  allocated: RawAllocatedLimit[],
+  house: 'Lok Sabha' | 'Rajya Sabha' = 'Lok Sabha'
 ): ProcessedDataset {
 
   // Build lookup maps
@@ -160,6 +161,7 @@ export function processDatasets(
       constituency: s.constituency,
       workDescription: s.workDescription,
       financialYear: fy,
+      house,
 
       recommendedDate: recDate,
       sanctionDate,
@@ -231,6 +233,7 @@ export function processDatasets(
       constituency: r.constituency,
       workDescription: r.workDescription,
       financialYear: fy,
+      house,
 
       recommendedDate: recDate,
       sanctionDate: null,

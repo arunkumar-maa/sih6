@@ -4,6 +4,16 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    watch: {
+      ignored: [
+        '**/dataset/**',
+        '**/lok_sabha_dataset/**',
+        '**/rajya_sabha_dataset/**',
+        '**/*.csv',
+      ],
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

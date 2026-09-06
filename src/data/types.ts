@@ -130,6 +130,7 @@ export interface EnrichedProject {
   constituency: string;
   workDescription: string;
   financialYear: string;      // extracted from workId
+  house: 'Lok Sabha' | 'Rajya Sabha'; // Source house — NEVER mix
 
   // Dates
   recommendedDate: Date | null;

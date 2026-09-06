@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
 import { RiskBadge } from '../components/RiskBadge';
+import { OfficialFilterBar, OfficialFilterState } from '../components/OfficialFilterBar';
 import { formatCurrency, truncate } from '../utils';
 import type { EnrichedProject, RiskLevel } from '../data/types';
 
@@ -147,13 +148,35 @@ function SummaryCard({ label, value, sub, color, Icon }: {
 }
 
 export function CompletedWorksDrillDown() {
-  const { projects, selectProject, setCurrentPage } = useAppStore();
+  const { projects, selectProject, setCurrentPage, activeHouse } = useAppStore();
 
-  const [search, setSearch] = useState('');
-  const [filterRisk, setFilterRisk] = useState('');
-  const [filterConstituency, setFilterConstituency] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [filterFY, setFilterFY] = useState('');
+  const [filters, setFilters] = useState<OfficialFilterState>({
+    search: '',
+    house: activeHouse,
+    tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+    state: '',
+    constituency: '',
+    mpName: '',
+    riskLevel: '',
+    status: '',
+    category: '',
+  });
+
+  // Sync house when global activeHouse changes
+  const prevHouseRef = React.useRef(activeHouse);
+  React.useEffect(() => {
+    if (prevHouseRef.current !== activeHouse) {
+      prevHouseRef.current = activeHouse;
+      setFilters(f => ({
+        ...f,
+        house: activeHouse,
+        tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+        state: '', constituency: '', mpName: '', riskLevel: '', status: '', category: '', search: '',
+      }));
+      setPage(1);
+    }
+  }, [activeHouse]);
+
   const [sortField, setSortField] = useState<SortField>('risk');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [page, setPage] = useState(1);
@@ -164,39 +187,10 @@ export function CompletedWorksDrillDown() {
     [projects]
   );
 
-  const constituencies = useMemo(() =>
-    Array.from(new Set(completedProjects.map(p => p.constituency))).filter(Boolean).sort(),
-    [completedProjects]
-  );
-  const categories = useMemo(() =>
-    Array.from(new Set(completedProjects.map(p => p.workCategory))).filter(Boolean).sort(),
-    [completedProjects]
-  );
-  const financialYears = useMemo(() =>
-    Array.from(new Set(completedProjects.map(p => p.financialYear))).filter(Boolean).sort().reverse(),
-    [completedProjects]
-  );
-  const states = useMemo(() =>
-    Array.from(new Set(completedProjects.map(p => p.state))).filter(Boolean).sort(),
-    [completedProjects]
-  );
-
-  const stats = useMemo(() => {
-    const total = completedProjects.length;
-    const totalExpenditure = completedProjects.reduce((s, p) => s + (p.amountDisbursed ?? p.totalPaid ?? 0), 0);
-    const statesCount = new Set(completedProjects.map(p => p.state)).size;
-    const highRisk = completedProjects.filter(p => p.risk.level === 'HIGH').length;
-    const withDays = completedProjects.filter(p => p.daysToComplete !== null && p.daysToComplete > 0);
-    const avgDays = withDays.length > 0
-      ? Math.round(withDays.reduce((s, p) => s + (p.daysToComplete ?? 0), 0) / withDays.length)
-      : null;
-    return { total, totalExpenditure, statesCount, highRisk, avgDays };
-  }, [completedProjects]);
-
   const filtered = useMemo(() => {
     let list = [...completedProjects];
-    if (search) {
-      const q = search.toLowerCase();
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
       list = list.filter(p =>
         p.workDescription?.toLowerCase().includes(q) ||
         p.workId?.toLowerCase().includes(q) ||
@@ -206,12 +200,30 @@ export function CompletedWorksDrillDown() {
         p.workCategory?.toLowerCase().includes(q)
       );
     }
-    if (filterRisk) list = list.filter(p => p.risk.level === filterRisk);
-    if (filterConstituency) list = list.filter(p => p.constituency === filterConstituency);
-    if (filterCategory) list = list.filter(p => p.workCategory === filterCategory);
-    if (filterFY) list = list.filter(p => p.financialYear === filterFY);
+    if (filters.state) list = list.filter(p => p.state === filters.state);
+    if (filters.constituency) list = list.filter(p => p.constituency === filters.constituency);
+    if (filters.mpName) list = list.filter(p => p.mp === filters.mpName);
+    if (filters.riskLevel) list = list.filter(p => p.risk.level === filters.riskLevel);
+    if (filters.category) list = list.filter(p => p.workCategory === filters.category);
+    if (filters.tenure === '18th Lok Sabha') {
+      list = list.filter(p => p.financialYear >= '2024-2025' || p.financialYear === 'Unknown');
+    } else if (filters.tenure === '17th Lok Sabha') {
+      list = list.filter(p => p.financialYear >= '2019-2020' && p.financialYear <= '2023-2024');
+    }
     return riskFirstSort(list, sortField, sortDir);
-  }, [completedProjects, search, filterRisk, filterConstituency, filterCategory, filterFY, sortField, sortDir]);
+  }, [completedProjects, filters, sortField, sortDir]);
+
+  const stats = useMemo(() => {
+    const total = filtered.length;
+    const totalExpenditure = filtered.reduce((s, p) => s + (p.amountDisbursed ?? p.totalPaid ?? 0), 0);
+    const statesCount = new Set(filtered.map(p => p.state)).size;
+    const highRisk = filtered.filter(p => p.risk.level === 'HIGH').length;
+    const withDays = filtered.filter(p => p.daysToComplete !== null && p.daysToComplete > 0);
+    const avgDays = withDays.length > 0
+      ? Math.round(withDays.reduce((s, p) => s + (p.daysToComplete ?? 0), 0) / withDays.length)
+      : null;
+    return { total, totalExpenditure, statesCount, highRisk, avgDays };
+  }, [filtered]);
 
   const paginated = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -225,14 +237,6 @@ export function CompletedWorksDrillDown() {
     else { setSortField(field); setSortDir('desc'); }
     setPage(1);
   };
-
-  const clearFilters = useCallback(() => {
-    setSearch(''); setFilterRisk(''); setFilterConstituency('');
-    setFilterCategory(''); setFilterFY('');
-    setPage(1);
-  }, []);
-
-  const hasFilters = search || filterRisk || filterConstituency || filterCategory || filterFY;
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => {
@@ -315,48 +319,32 @@ export function CompletedWorksDrillDown() {
         />
       </div>
 
-      {/* Filter Bar */}
+      {/* ── Official Filter Bar ───────────────────────────────────────── */}
       <div className="panel p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <SlidersHorizontal size={13} className="text-[#44474f]" />
-          <span className="text-xs font-semibold text-[#44474f] uppercase tracking-wider">Filters</span>
-          {hasFilters && (
-            <button onClick={clearFilters}
-              className="ml-auto flex items-center gap-1 text-xs font-semibold text-[#DC3545] hover:text-red-700 transition-colors">
-              <X size={12} /> Reset
-            </button>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
-          <div className="relative flex-1 min-w-48">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#747780]" />
-            <input
-              type="text"
-              placeholder="Search by project ID, name, district, constituency, MP…"
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-8 pr-3 py-2 bg-white border border-[#E9ECEF] rounded-sm text-sm text-[#141d23] placeholder-[#c4c6d0] focus:outline-none focus:border-[#0891b2] focus:ring-1 focus:ring-[#0891b2]/20"
-            />
-          </div>
-          {[
-            { label: 'Risk Indicator', value: filterRisk, setter: setFilterRisk, opts: ['HIGH', 'MEDIUM', 'LOW'] },
-            { label: 'Constituency', value: filterConstituency, setter: setFilterConstituency, opts: constituencies.slice(0, 50) },
-            { label: 'Category', value: filterCategory, setter: setFilterCategory, opts: categories.slice(0, 30) },
-            { label: 'Financial Year', value: filterFY, setter: setFilterFY, opts: financialYears },
-          ].map(({ label, value, setter, opts }) => (
-            <select key={label} value={value} onChange={e => { setter(e.target.value); setPage(1); }}
-              className="px-3 py-2 bg-white border border-[#E9ECEF] rounded-sm text-xs text-[#141d23] focus:outline-none focus:border-[#0891b2] max-w-44">
-              <option value="">{label}</option>
-              {opts.map(o => <option key={o} value={o}>{o}</option>)}
-            </select>
-          ))}
-        </div>
-        {hasFilters && (
-          <div className="mt-2 flex items-center gap-2">
-            <span className="text-[10px] font-semibold text-[#0891b2] uppercase tracking-wider">Filtered View</span>
-            <span className="text-[10px] text-[#44474f]">· {filtered.length} results</span>
-          </div>
-        )}
+        <OfficialFilterBar
+          projects={completedProjects}
+          filteredProjects={filtered}
+          filteredCount={filtered.length}
+          totalCount={completedProjects.length}
+          filters={filters}
+          onFilterChange={f => { setFilters(f); setPage(1); }}
+          onReset={() => {
+            setFilters({
+              search: '',
+              house: filters.house,
+              tenure: filters.house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+              state: '',
+              constituency: '',
+              mpName: '',
+              riskLevel: '',
+              status: '',
+              category: '',
+            });
+            setPage(1);
+          }}
+          exportFilename="Completed_Works"
+          accentColor="#0891b2"
+        />
       </div>
 
       {/* Table */}

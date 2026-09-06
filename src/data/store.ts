@@ -1,4 +1,5 @@
 // Zustand global store for MPLADS Intelligence Platform
+// CRITICAL: Lok Sabha and Rajya Sabha datasets are ALWAYS kept separate.
 import { create } from 'zustand';
 import type {
   EnrichedProject,
@@ -16,47 +17,84 @@ import {
 } from './parser';
 import { processDatasets } from './processor';
 import { buildCategoryMedians, buildVendorCounts, calculateRiskScore } from './riskEngine';
+import {
+  loadRajyaSabhaDatasets,
+  isRajyaSabhaLoaded,
+  getCachedRajyaSabhaProjects,
+} from './rajyaSabhaLoader';
 
-// Import dataset CSV files directly as raw strings using Vite's ?raw import
-import sanctionedCsv from '../../dataset/Works Sanctioned.csv?raw';
-import recommendedCsv from '../../dataset/Works Recommended.csv?raw';
-import completedCsv from '../../dataset/Works Completed.csv?raw';
-import expenditureCsv from '../../dataset/Expenditure on Completed and On-going Works as on Date.csv?raw';
-import allocatedCsv from '../../dataset/Allocated Limit for Honble MPs.csv?raw';
-import calamityCsv from '../../dataset/Amount consented for Calamity.csv?raw';
+// Import LOK SABHA dataset CSV files directly as raw strings using Vite's ?raw import
+import sanctionedCsv from '../../lok_sabha_dataset/Works Sanctioned.csv?raw';
+import recommendedCsv from '../../lok_sabha_dataset/Works Recommended.csv?raw';
+import completedCsv from '../../lok_sabha_dataset/Works Completed.csv?raw';
+import expenditureCsv from '../../lok_sabha_dataset/Expenditure on Completed and On-going Works as on Date.csv?raw';
+import allocatedCsv from '../../lok_sabha_dataset/Allocated Limit for Honble MPs.csv?raw';
+import calamityCsv from '../../lok_sabha_dataset/Amount consented for Calamity.csv?raw';
 
 interface AppStore {
-  // Data state
+  // ── House-separated datasets ──────────────────────────────────────
+  lokSabhaProjects: EnrichedProject[];
+  rajyaSabhaProjects: EnrichedProject[];
+
+  // Active house selector — determines which dataset all pages use
+  activeHouse: 'Lok Sabha' | 'Rajya Sabha';
+
+  // Derived: returns the currently active house dataset
+  // Use this throughout the app instead of raw lokSabhaProjects/rajyaSabhaProjects
   projects: EnrichedProject[];
+
+  // ── Loading state ─────────────────────────────────────────────────
   isLoading: boolean;
   isAnalyzing: boolean;
   analysisComplete: boolean;
   loadError: string | null;
   datasetSummary: DatasetSummary | null;
 
-  // UI state
+  // Rajya Sabha lazy loading
+  isLoadingRajyaSabha: boolean;
+  rajyaSabhaLoadError: string | null;
+  rajyaSabhaLoaded: boolean;
+
+  // ── UI state ──────────────────────────────────────────────────────
   selectedProjectId: string | null;
   currentPage: string;
+  monitoringFilter: { state?: string; constituency?: string; house?: 'Lok Sabha' | 'Rajya Sabha' } | null;
 
-  // Actions
+  // ── Actions ───────────────────────────────────────────────────────
   loadDatasets: () => void;
+  loadRajyaSabhaDatasets: () => Promise<void>;
   runAnalysis: () => Promise<void>;
   resetAnalysis: () => void;
   selectProject: (id: string | null) => void;
   setCurrentPage: (page: string) => void;
+  setActiveHouse: (house: 'Lok Sabha' | 'Rajya Sabha') => void;
+  setMonitoringFilter: (filter: { state?: string; constituency?: string; house?: 'Lok Sabha' | 'Rajya Sabha' } | null) => void;
   updateVerification: (workId: string, status: VerificationStatus, comment?: string) => void;
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
+  lokSabhaProjects: [],
+  rajyaSabhaProjects: [],
+  activeHouse: 'Lok Sabha',
+
+  // projects = always the currently active house dataset
   projects: [],
+
   isLoading: true,
   isAnalyzing: false,
   analysisComplete: false,
   loadError: null,
   datasetSummary: null,
+
+  isLoadingRajyaSabha: false,
+  rajyaSabhaLoadError: null,
+  rajyaSabhaLoaded: false,
+
   selectedProjectId: null,
   currentPage: 'dashboard',
+  monitoringFilter: null,
 
+  // ── Load Lok Sabha dataset (at startup) ───────────────────────────
   loadDatasets: () => {
     set({ isLoading: true, loadError: null });
     try {
@@ -67,14 +105,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const allocated = parseAllocatedLimit(allocatedCsv);
       const calamity = parseCalamity(calamityCsv);
 
-      const result = processDatasets(sanctioned, recommended, completedList, expenditureList, allocated);
+      // Process with house = 'Lok Sabha' — every project gets tagged
+      const result = processDatasets(
+        sanctioned,
+        recommended,
+        completedList,
+        expenditureList,
+        allocated,
+        'Lok Sabha'
+      );
 
-      // Build dataset summary
+      // Safety check
+      const lokSabhaProjects = result.projects.filter(p => p.house === 'Lok Sabha');
+      console.log(`[LokSabha] Loaded ${lokSabhaProjects.length} projects`);
+
       const datasetSummary: DatasetSummary = {
         datasets: [
           {
-            name: 'Works Sanctioned',
-            filename: 'Works Sanctioned.csv',
+            name: 'Works Sanctioned (Lok Sabha)',
+            filename: 'lok_sabha_dataset/Works Sanctioned.csv',
             records: sanctioned.length,
             columns: ['Work category', 'Work', 'State', 'IDA', 'MP', 'Constituency', 'Work description', 'Recommended date', 'Sanction Date', 'Sanction Amount', 'Work Status'],
             sampleValues: {
@@ -87,8 +136,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
             },
           },
           {
-            name: 'Works Recommended',
-            filename: 'Works Recommended.csv',
+            name: 'Works Recommended (Lok Sabha)',
+            filename: 'lok_sabha_dataset/Works Recommended.csv',
             records: recommended.length,
             columns: ['Work category', 'WORK', 'State', 'IDA', 'MP', 'Constituency', 'Work description', 'Recommended date', 'RECOMMENDED AMOUNT', 'Sanction Date'],
             sampleValues: {
@@ -100,8 +149,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
             },
           },
           {
-            name: 'Works Completed',
-            filename: 'Works Completed.csv',
+            name: 'Works Completed (Lok Sabha)',
+            filename: 'lok_sabha_dataset/Works Completed.csv',
             records: completedList.length,
             columns: ['Work Category', 'Work', 'State', 'IDA', 'Work Description', 'MP', 'Constituency', 'Completion Date', 'Amount Disbursed'],
             sampleValues: {},
@@ -111,8 +160,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
             },
           },
           {
-            name: 'Expenditure (Ongoing)',
-            filename: 'Expenditure on Completed and On-going Works as on Date.csv',
+            name: 'Expenditure (Lok Sabha)',
+            filename: 'lok_sabha_dataset/Expenditure on Completed and On-going Works as on Date.csv',
             records: expenditureList.length,
             columns: ['State', 'Work', 'Work ID', 'IDA', 'MP', 'Constituency', 'Expenditure Date', 'Vendor Name', 'Payment Status', 'Fund Disbursed Amount'],
             sampleValues: {
@@ -124,8 +173,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
             },
           },
           {
-            name: 'Allocated Limit (MPs)',
-            filename: 'Allocated Limit for Honble MPs.csv',
+            name: 'Allocated Limit (Lok Sabha MPs)',
+            filename: 'lok_sabha_dataset/Allocated Limit for Honble MPs.csv',
             records: allocated.length,
             columns: ['Sr. No.', 'State', 'MP', 'Constituency', 'Allocated Amount'],
             sampleValues: {},
@@ -134,8 +183,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
             },
           },
           {
-            name: 'Calamity Consents',
-            filename: 'Amount consented for Calamity.csv',
+            name: 'Calamity Consents (Lok Sabha)',
+            filename: 'lok_sabha_dataset/Amount consented for Calamity.csv',
             records: calamity.length,
             columns: ['Calamity Type', 'Calamity Name', 'MP', 'Date of Consent', 'Consent Amount'],
             sampleValues: {
@@ -144,46 +193,121 @@ export const useAppStore = create<AppStore>((set, get) => ({
             missingValueCounts: {},
           },
         ],
-        totalProjects: result.projects.length,
+        totalProjects: lokSabhaProjects.length,
         loadedAt: new Date().toISOString(),
       };
 
       set({
-        projects: result.projects,
+        lokSabhaProjects,
+        projects: lokSabhaProjects,   // sync projects to LS since LS is default
         isLoading: false,
         analysisComplete: true,
         datasetSummary,
       });
     } catch (err) {
-      console.error("Error parsing dataset:", err);
+      console.error('Error parsing Lok Sabha dataset:', err);
       set({
         isLoading: false,
-        loadError: err instanceof Error ? err.message : 'Unknown error parsing datasets',
+        loadError: err instanceof Error ? err.message : 'Unknown error parsing Lok Sabha datasets',
       });
     }
   },
 
+  // ── Load Rajya Sabha dataset (lazy, on demand) ─────────────────────
+  loadRajyaSabhaDatasets: async () => {
+    if (isRajyaSabhaLoaded()) {
+      // Already loaded — just sync to store
+      const cached = getCachedRajyaSabhaProjects();
+      set({ rajyaSabhaProjects: cached, rajyaSabhaLoaded: true });
+      return;
+    }
+
+    set({ isLoadingRajyaSabha: true, rajyaSabhaLoadError: null });
+    try {
+      const rsProjects = await loadRajyaSabhaDatasets();
+
+      // Run risk scoring for Rajya Sabha
+      const categoryMedians = buildCategoryMedians(rsProjects);
+      const vendorCounts = buildVendorCounts(rsProjects);
+      const scoredProjects = rsProjects.map(p => ({
+        ...p,
+        risk: calculateRiskScore(p, categoryMedians, vendorCounts),
+        house: 'Rajya Sabha' as const,
+      }));
+
+      const { activeHouse } = get();
+      console.log(`[RajyaSabha] Risk-scored ${scoredProjects.length} projects`);
+      set({
+        rajyaSabhaProjects: scoredProjects,
+        // Only update projects if RS is the currently active house
+        ...(activeHouse === 'Rajya Sabha' ? { projects: scoredProjects } : {}),
+        isLoadingRajyaSabha: false,
+        rajyaSabhaLoaded: true,
+      });
+    } catch (err) {
+      console.error('Error loading Rajya Sabha dataset:', err);
+      set({
+        isLoadingRajyaSabha: false,
+        rajyaSabhaLoadError: err instanceof Error ? err.message : 'Unknown error loading Rajya Sabha datasets',
+      });
+    }
+  },
+
+  // ── Switch active house ─────────────────────────────────────────────
+  setActiveHouse: (house) => {
+    const { lokSabhaProjects, rajyaSabhaProjects } = get();
+    const newProjects = house === 'Lok Sabha' ? lokSabhaProjects : rajyaSabhaProjects;
+    set({ activeHouse: house, projects: newProjects });
+
+    // If switching to Rajya Sabha and not yet loaded, trigger load
+    if (house === 'Rajya Sabha' && !get().rajyaSabhaLoaded) {
+      get().loadRajyaSabhaDatasets();
+    }
+  },
+
+  // ── AI Risk Analysis ───────────────────────────────────────────────
   runAnalysis: async () => {
-    const { projects } = get();
-    if (projects.length === 0) return;
+    const { lokSabhaProjects, rajyaSabhaProjects } = get();
 
     set({ isAnalyzing: true });
     await new Promise(r => setTimeout(r, 800));
 
-    const categoryMedians = buildCategoryMedians(projects);
-    const vendorCounts = buildVendorCounts(projects);
+    // Re-score Lok Sabha
+    if (lokSabhaProjects.length > 0) {
+      const lsCategoryMedians = buildCategoryMedians(lokSabhaProjects);
+      const lsVendorCounts = buildVendorCounts(lokSabhaProjects);
+      const updatedLS = lokSabhaProjects.map(p => ({
+        ...p,
+        risk: calculateRiskScore(p, lsCategoryMedians, lsVendorCounts),
+      }));
+      const { activeHouse } = get();
+      set({
+        lokSabhaProjects: updatedLS,
+        ...(activeHouse === 'Lok Sabha' ? { projects: updatedLS } : {}),
+      });
+    }
 
-    const updated = projects.map(p => ({
-      ...p,
-      risk: calculateRiskScore(p, categoryMedians, vendorCounts),
-    }));
+    // Re-score Rajya Sabha if loaded
+    if (rajyaSabhaProjects.length > 0) {
+      const rsCategoryMedians = buildCategoryMedians(rajyaSabhaProjects);
+      const rsVendorCounts = buildVendorCounts(rajyaSabhaProjects);
+      const updatedRS = rajyaSabhaProjects.map(p => ({
+        ...p,
+        risk: calculateRiskScore(p, rsCategoryMedians, rsVendorCounts),
+      }));
+      const { activeHouse } = get();
+      set({
+        rajyaSabhaProjects: updatedRS,
+        ...(activeHouse === 'Rajya Sabha' ? { projects: updatedRS } : {}),
+      });
+    }
 
-    set({ projects: updated, isAnalyzing: false, analysisComplete: true });
+    set({ isAnalyzing: false, analysisComplete: true });
   },
 
   resetAnalysis: () => {
-    const { projects } = get();
-    const reset = projects.map(p => ({
+    const { lokSabhaProjects, rajyaSabhaProjects } = get();
+    const resetLS = lokSabhaProjects.map(p => ({
       ...p,
       risk: {
         score: 0,
@@ -196,25 +320,54 @@ export const useAppStore = create<AppStore>((set, get) => ({
       verificationStatus: 'New Alert' as const,
       verificationHistory: [],
     }));
-    set({ projects: reset, analysisComplete: false });
+    const resetRS = rajyaSabhaProjects.map(p => ({
+      ...p,
+      risk: {
+        score: 0,
+        level: 'LOW' as const,
+        factors: [],
+        explanation: 'Analysis reset. Click Run AI Analysis to re-score.',
+        factorsAvailable: 0,
+        factorsTotal: 5,
+      },
+      verificationStatus: 'New Alert' as const,
+      verificationHistory: [],
+    }));
+    const { activeHouse } = get();
+    set({
+      lokSabhaProjects: resetLS,
+      rajyaSabhaProjects: resetRS,
+      projects: activeHouse === 'Lok Sabha' ? resetLS : resetRS,
+      analysisComplete: false,
+    });
   },
 
   selectProject: (id) => set({ selectedProjectId: id }),
   setCurrentPage: (page) => set({ currentPage: page }),
+  setMonitoringFilter: (filter) => set({ monitoringFilter: filter }),
 
   updateVerification: (workId, status, comment) => {
-    const { projects } = get();
+    const { lokSabhaProjects, rajyaSabhaProjects, activeHouse } = get();
     const event: VerificationEvent = {
       timestamp: new Date().toISOString(),
       action: status,
       comment,
       actor: 'Officer',
     };
-    const updated = projects.map(p =>
-      p.workId === workId
-        ? { ...p, verificationStatus: status, verificationHistory: [...p.verificationHistory, event] }
-        : p
-    );
-    set({ projects: updated });
+
+    const updateList = (list: EnrichedProject[]) =>
+      list.map(p =>
+        p.workId === workId
+          ? { ...p, verificationStatus: status, verificationHistory: [...p.verificationHistory, event] }
+          : p
+      );
+
+    const updatedLS = updateList(lokSabhaProjects);
+    const updatedRS = updateList(rajyaSabhaProjects);
+    set({
+      lokSabhaProjects: updatedLS,
+      rajyaSabhaProjects: updatedRS,
+      projects: activeHouse === 'Lok Sabha' ? updatedLS : updatedRS,
+    });
   },
 }));

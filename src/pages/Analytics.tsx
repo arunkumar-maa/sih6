@@ -5,26 +5,87 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
-import { BarChart3, PieChart as PieIcon, TrendingUp, Layers } from 'lucide-react';
+import {
+  BarChart3, PieChart as PieIcon, TrendingUp, Layers,
+  DollarSign, FolderOpen, AlertTriangle, CheckCircle2
+} from 'lucide-react';
+import { OfficialFilterBar, OfficialFilterState } from '../components/OfficialFilterBar';
 
 export function Analytics() {
-  const { projects } = useAppStore();
-  const [districtFilter, setDistrictFilter] = useState<string>('ALL');
+  const { projects, activeHouse } = useAppStore();
+
+  const [filters, setFilters] = useState<OfficialFilterState>({
+    search: '',
+    house: activeHouse,
+    tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+    state: '',
+    constituency: '',
+    mpName: '',
+    riskLevel: '',
+    status: '',
+    category: '',
+  });
+
+  // Sync house when global activeHouse changes
+  const prevHouseRef = React.useRef(activeHouse);
+  React.useEffect(() => {
+    if (prevHouseRef.current !== activeHouse) {
+      prevHouseRef.current = activeHouse;
+      setFilters(f => ({
+        ...f,
+        house: activeHouse,
+        tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+        state: '', constituency: '', mpName: '', riskLevel: '', status: '', category: '', search: '',
+      }));
+    }
+  }, [activeHouse]);
 
   const filteredProjects = useMemo(() => {
-    if (districtFilter === 'ALL') return projects;
-    return projects.filter(p => p.district === districtFilter);
-  }, [projects, districtFilter]);
+    let list = [...projects];
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      list = list.filter(p =>
+        p.workDescription?.toLowerCase().includes(q) ||
+        p.workId?.toLowerCase().includes(q) ||
+        p.constituency?.toLowerCase().includes(q) ||
+        p.district?.toLowerCase().includes(q) ||
+        p.mp?.toLowerCase().includes(q) ||
+        p.workCategory?.toLowerCase().includes(q)
+      );
+    }
+    if (filters.state) list = list.filter(p => p.state === filters.state);
+    if (filters.constituency) list = list.filter(p => p.constituency === filters.constituency);
+    if (filters.mpName) list = list.filter(p => p.mp === filters.mpName);
+    if (filters.riskLevel) list = list.filter(p => p.risk.level === filters.riskLevel);
+    if (filters.status) list = list.filter(p => p.workStatus === filters.status);
+    if (filters.category) list = list.filter(p => p.workCategory === filters.category);
+    if (filters.tenure === '18th Lok Sabha') {
+      list = list.filter(p => p.financialYear >= '2024-2025' || p.financialYear === 'Unknown');
+    } else if (filters.tenure === '17th Lok Sabha') {
+      list = list.filter(p => p.financialYear >= '2019-2020' && p.financialYear <= '2023-2024');
+    }
+    return list;
+  }, [projects, filters]);
 
-  const districts = useMemo(() => {
-    return Array.from(new Set(projects.map(p => p.district))).filter(Boolean).sort();
-  }, [projects]);
+  // Summary stats for filtered dataset
+  const filteredStats = useMemo(() => {
+    const total = filteredProjects.length;
+    const totalSanctioned = filteredProjects.reduce((s, p) => s + (p.sanctionAmount ?? 0), 0);
+    const totalDisbursed = filteredProjects.reduce((s, p) => s + (p.totalPaid ?? p.amountDisbursed ?? 0), 0);
+    const highRisk = filteredProjects.filter(p => p.risk.level === 'HIGH').length;
+    return {
+      total,
+      totalSanctioned,
+      totalDisbursed,
+      highRisk,
+    };
+  }, [filteredProjects]);
 
   // 1. Risk by District (Top 10)
   const riskByDistrict = useMemo(() => {
     const map = new Map<string, { district: string; high: number; med: number; low: number; total: number }>();
-    projects.forEach(p => {
-      const d = p.district || 'UNKNOWN';
+    filteredProjects.forEach(p => {
+      const d = p.district || p.constituency || 'UNKNOWN';
       if (!map.has(d)) map.set(d, { district: d, high: 0, med: 0, low: 0, total: 0 });
       const item = map.get(d)!;
       item.total++;
@@ -32,8 +93,8 @@ export function Analytics() {
       else if (p.risk.level === 'MEDIUM') item.med++;
       else item.low++;
     });
-    return Array.from(map.values()).sort((a, b) => b.high - a.high).slice(0, 10);
-  }, [projects]);
+    return Array.from(map.values()).sort((a, b) => b.high - a.high || b.total - a.total).slice(0, 10);
+  }, [filteredProjects]);
 
   // 2. Risk by Category (Top 8)
   const riskByCategory = useMemo(() => {
@@ -47,16 +108,16 @@ export function Analytics() {
       else if (p.risk.level === 'MEDIUM') item.med++;
       else item.low++;
     });
-    return Array.from(map.values()).sort((a, b) => b.high - a.high).slice(0, 8);
+    return Array.from(map.values()).sort((a, b) => b.high - a.high || b.total - a.total).slice(0, 8);
   }, [filteredProjects]);
 
   // 3. Status Breakdown Pie
   const statusData = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredProjects.forEach(p => {
-      counts[p.workStatus] = (counts[p.workStatus] || 0) + 1;
+      counts[p.workStatus || 'Unknown'] = (counts[p.workStatus || 'Unknown'] || 0) + 1;
     });
-    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
+    const COLORS = ['#0084ff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
     return Object.entries(counts).map(([name, value], i) => ({
       name,
       value,
@@ -67,45 +128,133 @@ export function Analytics() {
   // 4. Financial Year Trend
   const fyTrend = useMemo(() => {
     const map = new Map<string, { fy: string; sanctioned: number; disbursed: number }>();
-    projects.forEach(p => {
+    filteredProjects.forEach(p => {
       const fy = p.financialYear || 'Unknown';
       if (fy === 'Unknown') return;
       if (!map.has(fy)) map.set(fy, { fy, sanctioned: 0, disbursed: 0 });
       const item = map.get(fy)!;
       item.sanctioned += (p.sanctionAmount || 0) / 10000000; // in Cr
-      item.disbursed += (p.totalPaid || 0) / 10000000; // in Cr
+      item.disbursed += (p.totalPaid || p.amountDisbursed || 0) / 10000000; // in Cr
     });
     return Array.from(map.values()).sort((a, b) => a.fy.localeCompare(b.fy));
-  }, [projects]);
+  }, [filteredProjects]);
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
-            <BarChart3 size={11} />
-            Performance Observatory — Analytics
-          </p>
-          <h1 className="text-2xl font-bold text-[#000a1f]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            MPLADS Analytics &amp; Empirical Insights
-          </h1>
-          <p className="text-xs text-[#747780] mt-0.5">
-            Aggregated statistical analysis derived dynamically from the attached dataset
-          </p>
+      {/* ── Page Header ────────────────────────────────────────────── */}
+      <div>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
+          <BarChart3 size={11} />
+          Performance Observatory — Analytics
+        </p>
+        <h1 className="text-2xl font-bold text-[#000a1f]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+          MPLADS Analytics &amp; Empirical Insights
+        </h1>
+        <p className="text-xs text-[#747780] mt-0.5">
+          Aggregated statistical analysis derived dynamically from active datasets
+        </p>
+      </div>
+
+      {/* ── Official Filter Bar Panel ─────────────────────────────────── */}
+      <div className="bg-white border border-[#E9ECEF] rounded-xl p-4 shadow-sm">
+        <OfficialFilterBar
+          projects={projects}
+          filteredProjects={filteredProjects}
+          filteredCount={filteredProjects.length}
+          totalCount={projects.length}
+          filters={filters}
+          onFilterChange={setFilters}
+          onReset={() => setFilters({
+            search: '',
+            house: filters.house,
+            tenure: filters.house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+            state: '',
+            constituency: '',
+            mpName: '',
+            riskLevel: '',
+            status: '',
+            category: '',
+          })}
+          exportFilename="MPLADS_Analytics"
+          accentColor="#005eb2"
+          showExcel={false}
+          showCSV={false}
+          showPDF={true}
+        />
+      </div>
+
+      {/* ── Dynamic Filter Summary KPI Metrics ──────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="kpi-card">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#0084ff]" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#0084ff] mb-1.5">
+                Filtered Works
+              </p>
+              <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                {filteredStats.total.toLocaleString('en-IN')}
+              </p>
+              <p className="text-[11px] text-[#747780] mt-1.5">Matching criteria</p>
+            </div>
+            <div className="p-2 rounded-sm bg-[#0084ff]/10 text-[#0084ff]">
+              <FolderOpen size={18} />
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[#44474f] font-semibold">Filter District:</span>
-          <select
-            value={districtFilter}
-            onChange={e => setDistrictFilter(e.target.value)}
-            className="bg-white border border-[#E9ECEF] rounded-sm px-3 py-2 text-xs text-[#141d23] focus:outline-none focus:border-[#005eb2]"
-          >
-            <option value="ALL">All Districts</option>
-            {districts.map(d => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
+        <div className="kpi-card">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#6d28d9]" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#6d28d9] mb-1.5">
+                Sanctioned Amount
+              </p>
+              <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                {formatCurrency(filteredStats.totalSanctioned)}
+              </p>
+              <p className="text-[11px] text-[#747780] mt-1.5">Filtered sum</p>
+            </div>
+            <div className="p-2 rounded-sm bg-[#6d28d9]/10 text-[#6d28d9]">
+              <DollarSign size={18} />
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#198754]" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#198754] mb-1.5">
+                Expenditure / Disbursed
+              </p>
+              <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                {formatCurrency(filteredStats.totalDisbursed)}
+              </p>
+              <p className="text-[11px] text-[#747780] mt-1.5">Released funds</p>
+            </div>
+            <div className="p-2 rounded-sm bg-[#198754]/10 text-[#198754]">
+              <CheckCircle2 size={18} />
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-[#DC3545]" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#DC3545] mb-1.5">
+                High-Risk Anomalies
+              </p>
+              <p className="text-2xl font-bold text-[#DC3545] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+                {filteredStats.highRisk.toLocaleString('en-IN')}
+              </p>
+              <p className="text-[11px] text-[#747780] mt-1.5">Priority scrutiny</p>
+            </div>
+            <div className="p-2 rounded-sm bg-[#DC3545]/10 text-[#DC3545]">
+              <AlertTriangle size={18} />
+            </div>
+          </div>
         </div>
       </div>
 
