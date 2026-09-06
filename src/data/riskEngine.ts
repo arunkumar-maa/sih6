@@ -4,6 +4,7 @@
 
 import { differenceInDays, parseISO } from 'date-fns';
 import type { EnrichedProject, RiskFactor, RiskLevel, RiskResult } from './types';
+import type { DuplicateMatch } from '../utils/duplicateDetection';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -291,6 +292,47 @@ function calcVendorConcentration(
   return factor;
 }
 
+/**
+ * Factor 6: Duplicate / Similar Project Anomaly
+ * Scoped to state + constituency + workCategory bucket using TF-IDF + cosine similarity
+ */
+function calcDuplicateRisk(
+  project: EnrichedProject,
+  duplicates?: Map<string, DuplicateMatch>
+): RiskFactor {
+  const factor: RiskFactor = {
+    id: 'duplicate_project',
+    label: 'Duplicate/Similar Project',
+    description: 'No similar project detected.',
+    severity: 'LOW',
+    score: 0,
+    available: true,
+    value: undefined,
+  };
+
+  const match = duplicates?.get(project.workId);
+  if (match && match.similarity >= 0.6) {
+    const pct = Math.round(match.similarity * 100);
+    factor.value = `${pct}% similarity (Work #${match.workId})`;
+    if (match.similarity >= 0.85) {
+      factor.score = 60;
+      factor.severity = 'HIGH';
+      factor.description = `High similarity (${pct}%) with another project (${match.workId}) in the same constituency and category. Potential duplicate work.`;
+    } else {
+      factor.score = 30;
+      factor.severity = 'MEDIUM';
+      factor.description = `Moderate similarity (${pct}%) with another project (${match.workId}) in the same constituency and category.`;
+    }
+  } else {
+    factor.score = 0;
+    factor.severity = 'LOW';
+    factor.description = 'No similar project detected.';
+    factor.value = 'Unique';
+  }
+
+  return factor;
+}
+
 // ─── Main Engine ─────────────────────────────────────────────────────────────
 
 export function buildCategoryMedians(projects: EnrichedProject[]): Map<string, number> {
@@ -327,7 +369,8 @@ export function buildVendorCounts(projects: EnrichedProject[]): Map<string, numb
 export function calculateRiskScore(
   project: EnrichedProject,
   categoryMedians: Map<string, number>,
-  vendorCounts: Map<string, number>
+  vendorCounts: Map<string, number>,
+  duplicates?: Map<string, DuplicateMatch>
 ): RiskResult {
   const factors: RiskFactor[] = [
     calcPendingRecommendationRisk(project),
@@ -335,6 +378,7 @@ export function calculateRiskScore(
     calcHighAmountAnomaly(project, categoryMedians),
     calcDisbursementAnomaly(project),
     calcVendorConcentration(project, vendorCounts),
+    calcDuplicateRisk(project, duplicates),
   ];
 
   const available = factors.filter(f => f.available);

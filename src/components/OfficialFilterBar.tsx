@@ -70,7 +70,7 @@ export function OfficialFilterBar({
   showCSV = true,
   showPDF = true,
 }: OfficialFilterBarProps) {
-  const { setActiveHouse, isLoadingRajyaSabha, activeHouse } = useAppStore();
+  const { setActiveHouse, isLoadingRajyaSabha, activeHouse, filterOptions, loadFilterOptions, isUsingSupabase } = useAppStore();
 
   const [popoverOpen, setPopoverOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -86,6 +86,13 @@ export function OfficialFilterBar({
   useEffect(() => {
     setDraft(filters);
   }, [filters]);
+
+  // Dynamically load options from Supabase when draft state changes
+  useEffect(() => {
+    if (draft.state) {
+      loadFilterOptions(draft.state);
+    }
+  }, [draft.state, loadFilterOptions]);
 
   // Close popover when clicking outside
   useEffect(() => {
@@ -107,25 +114,28 @@ export function OfficialFilterBar({
     };
   }, [popoverOpen]);
 
-  // Dynamic lists from house-specific project data
+  // Dynamic lists from Supabase or fallback project data
   const states = useMemo(() => {
+    if (filterOptions?.states && filterOptions.states.length > 0) return filterOptions.states;
     const s = new Set<string>();
     projects.forEach(p => { if (p.state) s.add(p.state); });
     return Array.from(s).sort();
-  }, [projects]);
+  }, [projects, filterOptions?.states]);
 
   // Constituencies filtered by selected draft state
   const constituencies = useMemo(() => {
+    if (filterOptions?.constituencies && filterOptions.constituencies.length > 0) return filterOptions.constituencies;
     const s = new Set<string>();
     projects.forEach(p => {
       if (draft.state && p.state !== draft.state) return;
       if (p.constituency) s.add(p.constituency);
     });
     return Array.from(s).sort();
-  }, [projects, draft.state]);
+  }, [projects, draft.state, filterOptions?.constituencies]);
 
   // MPs filtered by selected draft state & constituency
   const mps = useMemo(() => {
+    if (filterOptions?.mps && filterOptions.mps.length > 0) return filterOptions.mps;
     const s = new Set<string>();
     projects.forEach(p => {
       if (draft.state && p.state !== draft.state) return;
@@ -133,7 +143,7 @@ export function OfficialFilterBar({
       if (p.mp) s.add(p.mp);
     });
     return Array.from(s).sort();
-  }, [projects, draft.state, draft.constituency]);
+  }, [projects, draft.state, draft.constituency, filterOptions?.mps]);
 
   // Count active popover filters (excluding search and default house/tenure)
   const activeFilterCount = useMemo(() => {
@@ -151,11 +161,11 @@ export function OfficialFilterBar({
   const hasAnyFilter = !!(filters.search || activeFilterCount > 0);
 
   // Export guard: must have at least one filter to export
-  const canExport = hasAnyFilter && filteredProjects.length > 0;
+  const canExport = hasAnyFilter && (filteredCount > 0 || filteredProjects.length > 0);
 
   const exportBlockedReason = !hasAnyFilter
     ? 'Apply at least one filter (State, Constituency, MP, Risk, etc.) before exporting'
-    : filteredProjects.length === 0
+    : (filteredCount === 0 && filteredProjects.length === 0)
     ? 'No records match the current filters'
     : null;
 
@@ -174,7 +184,7 @@ export function OfficialFilterBar({
       category: '',
       search: '',
     };
-    // Switch global active house (triggers Rajya Sabha lazy load if needed)
+    // Switch global active house
     setActiveHouse(newHouse);
     onFilterChange(updated);
     onReset();
@@ -209,66 +219,86 @@ export function OfficialFilterBar({
     onFilterChange(updated);
   };
 
-  // ─── Export Functions — ALWAYS use filteredProjects, never all projects ─────
-
-  const buildSmartFilename = useCallback((ext: string) => {
-    const parts = [exportFilename, filters.house.replace(' ', '_')];
+  // Helper to build intelligent export filename from active filters
+  const buildSmartFilename = useCallback((ext: 'csv' | 'xlsx') => {
+    const parts: string[] = ['MPLADS', filters.house.replace(/\s+/g, '_')];
     if (filters.state) parts.push(filters.state.replace(/\s+/g, '_'));
-    if (filters.mpName) parts.push(filters.mpName.split(' ').slice(0, 2).join('_'));
-    if (filters.riskLevel) parts.push(filters.riskLevel + '_Risk');
+    if (filters.constituency) parts.push(filters.constituency.replace(/\s+/g, '_'));
+    if (filters.mpName) parts.push(filters.mpName.replace(/\s+/g, '_').slice(0, 20));
+    if (filters.riskLevel) parts.push(`${filters.riskLevel}_Risk`);
+    if (filters.status) parts.push(filters.status.replace(/\s+/g, '_'));
     parts.push(new Date().toISOString().slice(0, 10));
     return `${parts.join('_')}.${ext}`;
   }, [exportFilename, filters]);
 
-  const exportCSV = useCallback(() => {
+  const exportCSV = useCallback(async () => {
     if (!canExport) return;
 
-    const headers = [
-      'Work ID', 'Description', 'House', 'State', 'District', 'Constituency', 'MP',
-      'Financial Year', 'Sanction Amount (INR)', 'Total Paid (INR)',
-      'Status', 'Risk Score', 'Risk Level'
-    ];
-    // ✅ CRITICAL: Use filteredProjects, NOT projects/all
-    const rows = filteredProjects.map(p => [
-      `"${(p.workId || '').replace(/"/g, '""')}"`,
-      `"${(p.workDescription || '').replace(/"/g, '""')}"`,
-      `"${p.house}"`,
-      `"${(p.state || '').replace(/"/g, '""')}"`,
-      `"${(p.district || '').replace(/"/g, '""')}"`,
-      `"${(p.constituency || '').replace(/"/g, '""')}"`,
-      `"${(p.mp || '').replace(/"/g, '""')}"`,
-      `"${p.financialYear || ''}"`,
-      p.sanctionAmount ?? '',
-      p.totalPaid ?? p.amountDisbursed ?? '',
-      `"${p.workStatus || ''}"`,
-      p.risk.score,
-      p.risk.level,
-    ]);
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', buildSmartFilename('csv'));
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    setToast('Preparing filtered export records from database…');
+    try {
+      let recordsToExport = filteredProjects;
+      if (isUsingSupabase) {
+        const { getFilteredProjectsForExport } = await import('../data/supabase/exportQueries');
+        recordsToExport = await getFilteredProjectsForExport(activeHouse, {
+          search: filters.search,
+          state: filters.state,
+          constituency: filters.constituency,
+          mpName: filters.mpName,
+          riskLevel: filters.riskLevel,
+          status: filters.status,
+          category: filters.category,
+          tenure: filters.tenure,
+        });
+      }
 
-    setToast(`Downloading ${filteredProjects.length.toLocaleString('en-IN')} ${filters.house} works as CSV`);
-  }, [canExport, filteredProjects, buildSmartFilename, filters.house]);
+      const headers = [
+        'Work ID', 'Description', 'House', 'State', 'District', 'Constituency', 'MP',
+        'Financial Year', 'Sanction Amount (INR)', 'Total Paid (INR)',
+        'Status', 'Risk Score', 'Risk Level'
+      ];
+      const rows = recordsToExport.map(p => [
+        `"${(p.workId || '').replace(/"/g, '""')}"`,
+        `"${(p.workDescription || '').replace(/"/g, '""')}"`,
+        `"${p.house}"`,
+        `"${(p.state || '').replace(/"/g, '""')}"`,
+        `"${(p.district || '').replace(/"/g, '""')}"`,
+        `"${(p.constituency || '').replace(/"/g, '""')}"`,
+        `"${(p.mp || '').replace(/"/g, '""')}"`,
+        `"${p.financialYear || ''}"`,
+        p.sanctionAmount ?? '',
+        p.totalPaid ?? p.amountDisbursed ?? '',
+        `"${p.workStatus || ''}"`,
+        p.risk.score,
+        p.risk.level,
+      ]);
+      const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', buildSmartFilename('csv'));
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setToast(`Downloaded ${recordsToExport.length.toLocaleString('en-IN')} ${filters.house} works as CSV`);
+    } catch (err: any) {
+      setToast(err.message || 'Export failed');
+    }
+  }, [canExport, isUsingSupabase, activeHouse, filters, filteredProjects, buildSmartFilename]);
 
   const exportExcel = useCallback(() => {
     if (!canExport) return;
-    exportCSV(); // Generates Excel-compatible UTF-8 BOM CSV
-    setToast(`Downloading ${filteredProjects.length.toLocaleString('en-IN')} ${filters.house} works as Excel`);
-  }, [canExport, exportCSV, filteredProjects.length, filters.house]);
+    exportCSV();
+    setToast(`Generating Excel export for ${filters.house} filtered works…`);
+  }, [canExport, exportCSV, filters.house]);
 
   const exportPDF = useCallback(() => {
     if (!canExport) return;
-    setToast(`Printing ${filteredProjects.length.toLocaleString('en-IN')} filtered works — preparing print view…`);
+    setToast(`Printing ${filters.house} filtered works — preparing print view…`);
     setTimeout(() => window.print(), 400);
-  }, [canExport, filteredProjects.length, filters.house]);
+  }, [canExport, filters.house]);
 
   return (
     <div className="space-y-3">

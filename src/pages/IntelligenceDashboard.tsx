@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   TrendingUp, Building2, DollarSign, AlertTriangle,
   ClipboardCheck, FolderOpen, ChevronRight, Clock,
@@ -8,11 +8,35 @@ import { useAppStore } from '../data/store';
 import { KPICard } from '../components/KPICard';
 import { RiskBadge, RiskScoreRing } from '../components/RiskBadge';
 import { formatCurrency, truncate } from '../utils';
+import { getProjects } from '../data/supabase/projectQueries';
+import type { EnrichedProject } from '../data/types';
 
 export function IntelligenceDashboard() {
-  const { projects, isLoading, isAnalyzing, setCurrentPage, selectProject } = useAppStore();
+  const {
+    projects,
+    isLoading,
+    isAnalyzing,
+    setCurrentPage,
+    selectProject,
+    kpis,
+    kpisLoading,
+    isUsingSupabase,
+    activeHouse,
+  } = useAppStore();
+
+  const [supabaseTopRisk, setSupabaseTopRisk] = useState<EnrichedProject[]>([]);
+
+  useEffect(() => {
+    if (!isUsingSupabase) return;
+    getProjects({ house: activeHouse, pageSize: 6, sortField: 'risk', sortDir: 'desc' })
+      .then(res => setSupabaseTopRisk(res.projects))
+      .catch(err => console.error('[Dashboard] Error fetching top risk projects:', err));
+  }, [isUsingSupabase, activeHouse]);
 
   const stats = useMemo(() => {
+    if (isUsingSupabase && kpis) {
+      return kpis;
+    }
     if (projects.length === 0) return null;
     const totalSanctionAmount = projects.reduce((s, p) => s + (p.sanctionAmount ?? 0), 0);
     const totalDisbursed = projects.reduce((s, p) => s + (p.totalPaid ?? 0), 0);
@@ -28,15 +52,19 @@ export function IntelligenceDashboard() {
       completed,
       highRisk,
       medRisk,
+      lowRisk: projects.length - highRisk - medRisk,
       pendingSanction,
       requiresVerification,
+      avgRiskScore: 0,
     };
-  }, [projects]);
+  }, [isUsingSupabase, kpis, projects]);
 
-  const topRiskProjects = useMemo(() =>
-    [...projects].sort((a, b) => b.risk.score - a.risk.score).slice(0, 6),
-    [projects]
-  );
+  const topRiskProjects = useMemo(() => {
+    if (isUsingSupabase && supabaseTopRisk.length > 0) {
+      return supabaseTopRisk;
+    }
+    return [...projects].sort((a, b) => b.risk.score - a.risk.score).slice(0, 6);
+  }, [isUsingSupabase, supabaseTopRisk, projects]);
 
   const statusSummary = useMemo(() => {
     const statusCounts: Record<string, number> = {};
@@ -44,11 +72,11 @@ export function IntelligenceDashboard() {
     return Object.entries(statusCounts).sort(([, a], [, b]) => b - a).slice(0, 6);
   }, [projects]);
 
-  if (isLoading) {
+  if (isLoading && !stats) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
         <div className="w-10 h-10 rounded-full border-2 border-[#005eb2] border-t-transparent animate-spin" />
-        <p className="text-[#44474f] text-sm">Loading MPLADS datasets…</p>
+        <p className="text-[#44474f] text-sm">Loading MPLADS intelligence from database…</p>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useAppStore } from '../data/store';
 import { formatCurrency } from '../utils';
 import {
@@ -10,9 +10,10 @@ import {
   DollarSign, FolderOpen, AlertTriangle, CheckCircle2
 } from 'lucide-react';
 import { OfficialFilterBar, OfficialFilterState } from '../components/OfficialFilterBar';
+import { getDistrictAnalytics, getDashboardKPIs, DashboardKPIs } from '../data/supabase/analyticsQueries';
 
 export function Analytics() {
-  const { projects, activeHouse } = useAppStore();
+  const { projects, activeHouse, isUsingSupabase } = useAppStore();
 
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
@@ -25,6 +26,15 @@ export function Analytics() {
     status: '',
     category: '',
   });
+
+  const [supabaseStats, setSupabaseStats] = useState<DashboardKPIs | null>(null);
+  const [supabaseDistricts, setSupabaseDistricts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!isUsingSupabase) return;
+    getDashboardKPIs(activeHouse, filters).then(setSupabaseStats).catch(console.error);
+    getDistrictAnalytics(activeHouse, filters.state).then(setSupabaseDistricts).catch(console.error);
+  }, [isUsingSupabase, activeHouse, filters]);
 
   // Sync house when global activeHouse changes
   const prevHouseRef = React.useRef(activeHouse);
@@ -69,6 +79,14 @@ export function Analytics() {
 
   // Summary stats for filtered dataset
   const filteredStats = useMemo(() => {
+    if (isUsingSupabase && supabaseStats) {
+      return {
+        total: supabaseStats.total,
+        totalSanctioned: supabaseStats.totalSanctionAmount,
+        totalDisbursed: supabaseStats.totalDisbursed,
+        highRisk: supabaseStats.highRisk,
+      };
+    }
     const total = filteredProjects.length;
     const totalSanctioned = filteredProjects.reduce((s, p) => s + (p.sanctionAmount ?? 0), 0);
     const totalDisbursed = filteredProjects.reduce((s, p) => s + (p.totalPaid ?? p.amountDisbursed ?? 0), 0);
@@ -79,10 +97,19 @@ export function Analytics() {
       totalDisbursed,
       highRisk,
     };
-  }, [filteredProjects]);
+  }, [isUsingSupabase, supabaseStats, filteredProjects]);
 
   // 1. Risk by District (Top 10)
   const riskByDistrict = useMemo(() => {
+    if (isUsingSupabase && supabaseDistricts.length > 0) {
+      return supabaseDistricts.slice(0, 10).map(d => ({
+        district: d.district,
+        high: d.highRisk,
+        med: d.mediumRisk,
+        low: d.lowRisk,
+        total: d.totalProjects,
+      }));
+    }
     const map = new Map<string, { district: string; high: number; med: number; low: number; total: number }>();
     filteredProjects.forEach(p => {
       const d = p.district || p.constituency || 'UNKNOWN';
@@ -94,7 +121,7 @@ export function Analytics() {
       else item.low++;
     });
     return Array.from(map.values()).sort((a, b) => b.high - a.high || b.total - a.total).slice(0, 10);
-  }, [filteredProjects]);
+  }, [isUsingSupabase, supabaseDistricts, filteredProjects]);
 
   // 2. Risk by Category (Top 8)
   const riskByCategory = useMemo(() => {

@@ -10,6 +10,8 @@ import { formatCurrency, truncate } from '../utils';
 import type { EnrichedProject } from '../data/types';
 import { ProjectIntelligenceView } from './ProjectIntelligenceView';
 
+import { getProjects, getProjectById } from '../data/supabase/projectQueries';
+
 const PAGE_SIZE = 20;
 
 type SortField = 'risk' | 'amount' | 'district' | 'status' | 'fy';
@@ -24,6 +26,7 @@ export function ProjectMonitoring() {
     monitoringFilter,
     setMonitoringFilter,
     setActiveHouse,
+    isUsingSupabase,
   } = useAppStore();
 
   const [filters, setFilters] = useState<OfficialFilterState>({
@@ -37,6 +40,16 @@ export function ProjectMonitoring() {
     status: '',
     category: '',
   });
+
+  const [sortField, setSortField] = useState<SortField>('risk');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [page, setPage] = useState(1);
+
+  // Supabase Server-Side State
+  const [supabaseProjects, setSupabaseProjects] = useState<EnrichedProject[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isLoadingList, setIsLoadingList] = useState(false);
+  const [selectedProjectDetail, setSelectedProjectDetail] = useState<EnrichedProject | null>(null);
 
   // Apply pre-filter from GIS Map / drill-down navigation
   useEffect(() => {
@@ -70,11 +83,68 @@ export function ProjectMonitoring() {
       setPage(1);
     }
   }, [activeHouse]);
-  const [sortField, setSortField] = useState<SortField>('risk');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
-  const [page, setPage] = useState(1);
 
-  const filtered = useMemo(() => {
+  // Query projects from Supabase when in database mode
+  useEffect(() => {
+    if (!isUsingSupabase) return;
+
+    let cancelled = false;
+    setIsLoadingList(true);
+
+    getProjects({
+      house: activeHouse,
+      page,
+      pageSize: PAGE_SIZE,
+      search: filters.search,
+      state: filters.state,
+      constituency: filters.constituency,
+      mpName: filters.mpName,
+      riskLevel: filters.riskLevel,
+      status: filters.status,
+      category: filters.category,
+      tenure: filters.tenure,
+      sortField,
+      sortDir,
+    })
+      .then(res => {
+        if (!cancelled) {
+          setSupabaseProjects(res.projects);
+          setTotalCount(res.totalCount);
+          setIsLoadingList(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          console.error('[ProjectMonitoring] Supabase query error:', err);
+          setIsLoadingList(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isUsingSupabase, activeHouse, page, filters, sortField, sortDir]);
+
+  // Fetch single project details when clicked
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setSelectedProjectDetail(null);
+      return;
+    }
+
+    if (isUsingSupabase) {
+      getProjectById(selectedProjectId, activeHouse).then(p => {
+        setSelectedProjectDetail(p);
+      });
+    } else {
+      const p = projects.find(x => x.workId === selectedProjectId) || null;
+      setSelectedProjectDetail(p);
+    }
+  }, [selectedProjectId, activeHouse, isUsingSupabase, projects]);
+
+  // Fallback local filtering for offline mode
+  const localFiltered = useMemo(() => {
+    if (isUsingSupabase) return [];
     let list = [...projects];
     if (filters.search) {
       const q = filters.search.toLowerCase();
@@ -112,14 +182,11 @@ export function ProjectMonitoring() {
       return sortDir === 'asc' ? (av - (bv as number)) : ((bv as number) - av);
     });
     return list;
-  }, [projects, filters, sortField, sortDir]);
+  }, [isUsingSupabase, projects, filters, sortField, sortDir]);
 
-  const paginated = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return filtered.slice(start, start + PAGE_SIZE);
-  }, [filtered, page]);
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const activeProjectsList = isUsingSupabase ? supabaseProjects : localFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const activeTotalCount = isUsingSupabase ? totalCount : localFiltered.length;
+  const totalPages = Math.max(1, Math.ceil(activeTotalCount / PAGE_SIZE));
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -127,10 +194,8 @@ export function ProjectMonitoring() {
     setPage(1);
   };
 
-  const selectedProject = selectedProjectId ? projects.find(p => p.workId === selectedProjectId) : null;
-
-  if (selectedProject) {
-    return <ProjectIntelligenceView project={selectedProject} onBack={() => selectProject(null)} />;
+  if (selectedProjectDetail) {
+    return <ProjectIntelligenceView project={selectedProjectDetail} onBack={() => selectProject(null)} />;
   }
 
   return (
@@ -147,7 +212,7 @@ export function ProjectMonitoring() {
             Project Monitoring
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
-            {filtered.length} works · Click a row to open Project Intelligence Profile
+            {activeTotalCount.toLocaleString('en-IN')} works · Click a row to open Project Intelligence Profile
           </p>
         </div>
       </div>
@@ -156,9 +221,9 @@ export function ProjectMonitoring() {
       <div className="panel p-4">
         <OfficialFilterBar
           projects={projects}
-          filteredProjects={filtered}
-          filteredCount={filtered.length}
-          totalCount={projects.length}
+          filteredProjects={activeProjectsList}
+          filteredCount={activeTotalCount}
+          totalCount={activeTotalCount}
           filters={filters}
           onFilterChange={f => { setFilters(f); setPage(1); }}
           onReset={() => {
@@ -181,7 +246,15 @@ export function ProjectMonitoring() {
       </div>
 
       {/* Table */}
-      <div className="panel overflow-hidden">
+      <div className="panel overflow-hidden relative">
+        {isLoadingList && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center">
+            <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md border border-slate-200">
+              <div className="w-4 h-4 rounded-full border-2 border-[#005eb2] border-t-transparent animate-spin" />
+              <span className="text-xs font-semibold text-[#000a1f]">Loading works from database…</span>
+            </div>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table>
             <thead>
@@ -222,54 +295,62 @@ export function ProjectMonitoring() {
               </tr>
             </thead>
             <tbody>
-              {paginated.map((p, i) => (
-                <tr
-                  key={p.workId}
-                  className="cursor-pointer"
-                  onClick={() => selectProject(p.workId)}
-                >
-                  <td className="text-[#c4c6d0] text-xs font-mono">{(page - 1) * PAGE_SIZE + i + 1}</td>
-                  <td>
-                    <span className="font-mono text-xs text-[#005eb2] font-semibold">
-                      {p.workId.split('/').slice(0, 3).join('/')}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="max-w-xs">
-                      <div className="text-sm text-[#000a1f] font-medium truncate">
-                        {truncate(p.workDescription || 'No description', 55)}
-                      </div>
-                      <div className="text-[10px] text-[#747780] truncate">{truncate(p.workCategory, 45)}</div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="text-xs">
-                      <div className="text-[#141d23] font-medium">{p.district}</div>
-                      <div className="text-[#747780]">{p.constituency}</div>
-                    </div>
-                  </td>
-                  <td className="text-sm font-semibold text-[#141d23]">
-                    {formatCurrency(p.sanctionAmount)}
-                  </td>
-                  <td className="text-sm text-[#44474f]">
-                    {formatCurrency(p.totalPaid)}
-                  </td>
-                  <td>
-                    <StatusPill status={p.workStatus} />
-                  </td>
-                  <td className="text-xs font-mono text-[#747780]">{p.financialYear}</td>
-                  <td>
-                    <div className="flex items-center gap-2">
-                      <RiskBadge level={p.risk.level} size="sm" />
-                      <span className="text-xs font-bold" style={{
-                        color: p.risk.level === 'HIGH' ? '#DC3545' : p.risk.level === 'MEDIUM' ? '#FFC107' : '#198754'
-                      }}>
-                        {p.risk.score}
-                      </span>
-                    </div>
+              {activeProjectsList.length === 0 && !isLoadingList ? (
+                <tr>
+                  <td colSpan={9} className="text-center py-10 text-slate-500 text-sm">
+                    No matching MPLADS records found for current filters.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                activeProjectsList.map((p, i) => (
+                  <tr
+                    key={p.workId}
+                    className="cursor-pointer hover:bg-slate-50 transition-colors"
+                    onClick={() => selectProject(p.workId)}
+                  >
+                    <td className="text-[#c4c6d0] text-xs font-mono">{(page - 1) * PAGE_SIZE + i + 1}</td>
+                    <td>
+                      <span className="font-mono text-xs text-[#005eb2] font-semibold">
+                        {p.workId.split('/').slice(0, 3).join('/')}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="max-w-xs">
+                        <div className="text-sm text-[#000a1f] font-medium truncate">
+                          {truncate(p.workDescription || 'No description', 55)}
+                        </div>
+                        <div className="text-[10px] text-[#747780] truncate">{truncate(p.workCategory, 45)}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="text-xs">
+                        <div className="text-[#141d23] font-medium">{p.district}</div>
+                        <div className="text-[#747780]">{p.constituency}</div>
+                      </div>
+                    </td>
+                    <td className="text-sm font-semibold text-[#141d23]">
+                      {formatCurrency(p.sanctionAmount)}
+                    </td>
+                    <td className="text-sm text-[#44474f]">
+                      {formatCurrency(p.totalPaid)}
+                    </td>
+                    <td>
+                      <StatusPill status={p.workStatus} />
+                    </td>
+                    <td className="text-xs font-mono text-[#747780]">{p.financialYear}</td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <RiskBadge level={p.risk.level} size="sm" />
+                        <span className="text-xs font-bold" style={{
+                          color: p.risk.level === 'HIGH' ? '#DC3545' : p.risk.level === 'MEDIUM' ? '#FFC107' : '#198754'
+                        }}>
+                          {p.risk.score}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -277,12 +358,12 @@ export function ProjectMonitoring() {
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-[#E9ECEF] bg-[#F8F9FA]">
           <span className="text-xs text-[#747780]">
-            Showing {Math.min((page - 1) * PAGE_SIZE + 1, filtered.length)}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} works
+            Showing {activeTotalCount === 0 ? 0 : Math.min((page - 1) * PAGE_SIZE + 1, activeTotalCount)}–{Math.min(page * PAGE_SIZE, activeTotalCount)} of {activeTotalCount.toLocaleString('en-IN')} works
           </span>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
+              disabled={page <= 1}
               className="p-1.5 rounded-sm text-[#44474f] hover:text-[#000a1f] hover:bg-[#e0e9f2] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronLeft size={14} />
@@ -292,7 +373,7 @@ export function ProjectMonitoring() {
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
+              disabled={page >= totalPages}
               className="p-1.5 rounded-sm text-[#44474f] hover:text-[#000a1f] hover:bg-[#e0e9f2] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               <ChevronRight size={14} />

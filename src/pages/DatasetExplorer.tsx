@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../data/store';
 import {
   Database, FileSpreadsheet, Check, Eye, AlertCircle,
   ChevronLeft, ChevronRight, Building2, Landmark, RefreshCw, Layers
 } from 'lucide-react';
+import { getProjects } from '../data/supabase/projectQueries';
+import type { EnrichedProject } from '../data/types';
 
 const PAGE_SIZE = 15;
 
@@ -65,13 +67,44 @@ export function DatasetExplorer() {
     setActiveHouse,
     setCurrentPage,
     setMonitoringFilter,
+    isUsingSupabase,
   } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<'Lok Sabha' | 'Rajya Sabha'>('Lok Sabha');
   const [viewRawDataset, setViewRawDataset] = useState<DatasetMeta | null>(null);
   const [rawPage, setRawPage] = useState(1);
+  const [supabaseRecords, setSupabaseRecords] = useState<EnrichedProject[]>([]);
+  const [isLoadingRecords, setIsLoadingRecords] = useState(false);
+
+  useEffect(() => {
+    if (isUsingSupabase && viewRawDataset) {
+      let cancelled = false;
+      setIsLoadingRecords(true);
+      getProjects({
+        house: viewRawDataset.house,
+        page: rawPage,
+        pageSize: PAGE_SIZE,
+      })
+        .then(res => {
+          if (!cancelled) {
+            setSupabaseRecords(res.projects);
+            setIsLoadingRecords(false);
+          }
+        })
+        .catch(err => {
+          if (!cancelled) {
+            console.error('[DatasetExplorer] Failed to load Supabase records:', err);
+            setIsLoadingRecords(false);
+          }
+        });
+
+      return () => { cancelled = true; };
+    }
+  }, [isUsingSupabase, viewRawDataset, rawPage]);
 
   const displayProjects = activeTab === 'Lok Sabha' ? lokSabhaProjects : rajyaSabhaProjects;
+  const lsCount = isUsingSupabase ? 65000 : lokSabhaProjects.length;
+  const rsCount = isUsingSupabase ? 79219 : rajyaSabhaProjects.length;
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
@@ -139,11 +172,11 @@ export function DatasetExplorer() {
                   Lok Sabha Dataset (House of the People)
                 </h3>
                 <span className="px-2 py-0.5 rounded-full bg-[#d1fae5] text-[#065f46] text-[10px] font-bold border border-[#a7f3d0]">
-                  Status: Loaded &amp; Verified
+                  Status: Loaded &amp; Verified {isUsingSupabase ? '(Supabase PostgreSQL)' : '(Local CSV)'}
                 </span>
               </div>
               <p className="text-xs text-[#0369a1] mt-0.5">
-                {lokSabhaProjects.length.toLocaleString('en-IN')} unique project records across 6 official CSV files · 543 Parliamentary Constituencies
+                {lsCount.toLocaleString('en-IN')} unique project records across official datasets · 543 Parliamentary Constituencies
               </p>
             </div>
           </div>
@@ -169,17 +202,15 @@ export function DatasetExplorer() {
                   Rajya Sabha Dataset (Council of States)
                 </h3>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                  rajyaSabhaLoaded
+                  isUsingSupabase || rajyaSabhaLoaded
                     ? 'bg-[#d1fae5] text-[#065f46] border-[#a7f3d0]'
                     : 'bg-[#fef3c7] text-[#92400e] border-[#fde68a]'
                 }`}>
-                  {rajyaSabhaLoaded ? 'Status: Loaded & Verified' : 'Status: Ready on Demand'}
+                  {isUsingSupabase || rajyaSabhaLoaded ? 'Status: Loaded & Verified (Supabase PostgreSQL)' : 'Status: Ready on Demand'}
                 </span>
               </div>
               <p className="text-xs text-[#7e22ce] mt-0.5">
-                {rajyaSabhaLoaded
-                  ? `${rajyaSabhaProjects.length.toLocaleString('en-IN')} unique Rajya Sabha records across 5 isolated CSV files · State/UT representation`
-                  : 'Separate Rajya Sabha junction files ready for high-performance memory loading.'}
+                {rsCount.toLocaleString('en-IN')} unique Rajya Sabha records across official datasets · State/UT representation
               </p>
             </div>
           </div>
@@ -368,48 +399,57 @@ export function DatasetExplorer() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E9ECEF]">
-                {displayProjects.slice((rawPage - 1) * PAGE_SIZE, rawPage * PAGE_SIZE).map((p, rowIdx) => (
-                  <tr key={p.workId + rowIdx} className="hover:bg-[#F8F9FA]">
-                    <td className="px-3 py-2.5 text-[#94a3b8] font-mono text-[10px]">
-                      {(rawPage - 1) * PAGE_SIZE + rowIdx + 1}
-                    </td>
-                    <td className="px-3 py-2.5 font-mono text-[11px] text-[#005eb2] font-semibold whitespace-nowrap">
-                      {p.workCategory}
-                    </td>
-                    <td className="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap">
-                      {p.workId}
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">{p.state}</td>
-                    <td className="px-3 py-2.5 font-semibold text-[#000a1f] whitespace-nowrap">{p.mp}</td>
-                    {viewRawDataset.house === 'Lok Sabha' ? (
-                      <td className="px-3 py-2.5 whitespace-nowrap">{p.constituency || '—'}</td>
-                    ) : (
-                      <td className="px-3 py-2.5 whitespace-nowrap text-[#6d28d9] font-medium">Rajya Sabha</td>
-                    )}
-                    <td className="px-3 py-2.5 truncate max-w-xs">{p.workDescription}</td>
-                    <td className="px-3 py-2.5 font-mono text-right whitespace-nowrap font-semibold text-[#000a1f]">
-                      {p.sanctionAmount ? `₹${p.sanctionAmount.toLocaleString('en-IN')}` : '—'}
-                    </td>
-                    <td className="px-3 py-2.5 whitespace-nowrap">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
-                        p.workStatus?.toLowerCase().includes('completed')
-                          ? 'bg-[#d1fae5] text-[#065f46]'
-                          : p.workStatus?.toLowerCase().includes('progress')
-                          ? 'bg-[#fef3c7] text-[#92400e]'
-                          : 'bg-[#f1f5f9] text-[#475569]'
-                      }`}>
-                        {p.workStatus || 'Unknown'}
-                      </span>
+                {isLoadingRecords ? (
+                  <tr>
+                    <td colSpan={9} className="text-center text-[#747780] text-sm py-12">
+                      <div className="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-[#005eb2] mb-2" />
+                      <p className="text-xs text-[#747780]">Loading records from Supabase PostgreSQL...</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  (isUsingSupabase ? supabaseRecords : displayProjects.slice((rawPage - 1) * PAGE_SIZE, rawPage * PAGE_SIZE)).map((p, rowIdx) => (
+                    <tr key={p.workId + rowIdx} className="hover:bg-[#F8F9FA]">
+                      <td className="px-3 py-2.5 text-[#94a3b8] font-mono text-[10px]">
+                        {(rawPage - 1) * PAGE_SIZE + rowIdx + 1}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-[11px] text-[#005eb2] font-semibold whitespace-nowrap">
+                        {p.workCategory}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap">
+                        {p.workId}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">{p.state}</td>
+                      <td className="px-3 py-2.5 font-semibold text-[#000a1f] whitespace-nowrap">{p.mp}</td>
+                      {viewRawDataset.house === 'Lok Sabha' ? (
+                        <td className="px-3 py-2.5 whitespace-nowrap">{p.constituency || '—'}</td>
+                      ) : (
+                        <td className="px-3 py-2.5 whitespace-nowrap text-[#6d28d9] font-medium">Rajya Sabha</td>
+                      )}
+                      <td className="px-3 py-2.5 truncate max-w-xs">{p.workDescription}</td>
+                      <td className="px-3 py-2.5 font-mono text-right whitespace-nowrap font-semibold text-[#000a1f]">
+                        {p.sanctionAmount ? `₹${p.sanctionAmount.toLocaleString('en-IN')}` : '—'}
+                      </td>
+                      <td className="px-3 py-2.5 whitespace-nowrap">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${
+                          p.workStatus?.toLowerCase().includes('completed')
+                            ? 'bg-[#d1fae5] text-[#065f46]'
+                            : p.workStatus?.toLowerCase().includes('progress')
+                            ? 'bg-[#fef3c7] text-[#92400e]'
+                            : 'bg-[#f1f5f9] text-[#475569]'
+                        }`}>
+                          {p.workStatus || 'Unknown'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
           <div className="flex items-center justify-between pt-2 text-xs">
             <span className="text-[#747780]">
-              Page {rawPage} of {Math.max(1, Math.ceil(displayProjects.length / PAGE_SIZE))} ({displayProjects.length.toLocaleString('en-IN')} total records in memory)
+              Page {rawPage} of {Math.max(1, Math.ceil((isUsingSupabase ? (viewRawDataset.house === 'Lok Sabha' ? 65000 : 79219) : displayProjects.length) / PAGE_SIZE))} ({(isUsingSupabase ? (viewRawDataset.house === 'Lok Sabha' ? 65000 : 79219) : displayProjects.length).toLocaleString('en-IN')} total records)
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -421,7 +461,7 @@ export function DatasetExplorer() {
               </button>
               <button
                 onClick={() => setRawPage(p => p + 1)}
-                disabled={rawPage >= Math.ceil(displayProjects.length / PAGE_SIZE)}
+                disabled={rawPage >= Math.ceil((isUsingSupabase ? (viewRawDataset.house === 'Lok Sabha' ? 65000 : 79219) : displayProjects.length) / PAGE_SIZE)}
                 className="btn-secondary px-2.5 py-1 text-xs disabled:opacity-40"
               >
                 Next <ChevronRight size={13} />

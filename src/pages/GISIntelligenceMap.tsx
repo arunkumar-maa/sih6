@@ -17,6 +17,7 @@ import {
   RotateCcw, Compass, Landmark, Building2, CheckCircle2
 } from 'lucide-react';
 import type { EnrichedProject } from '../data/types';
+import { getConstituencyGISAggregation, getStateGISAggregation } from '../data/supabase/gisQueries';
 
 // In-memory GeoJSON caches for instant tab switching
 let cachedPcGeoJson: any = null;
@@ -85,6 +86,7 @@ export function GISIntelligenceMap() {
     setMonitoringFilter,
     loadRajyaSabhaDatasets,
     isLoadingRajyaSabha,
+    isUsingSupabase,
   } = useAppStore();
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -227,8 +229,50 @@ export function GISIntelligenceMap() {
     return buildGeoIndex(geoJsonData, activeHouse);
   }, [geoJsonData, activeHouse]);
 
-  // Aggregate project metrics by indexed region
-  const regionMetricsMap = useMemo(() => {
+  // Supabase Server-Aggregated GIS Metrics
+  const [supabaseGisMap, setSupabaseGisMap] = useState<Map<string, RegionMetrics>>(new Map());
+  const [isGisLoading, setIsGisLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isUsingSupabase) return;
+
+    let cancelled = false;
+    setIsGisLoading(true);
+
+    const promise = activeHouse === 'Lok Sabha'
+      ? getConstituencyGISAggregation(filters)
+      : getStateGISAggregation(filters);
+
+    promise
+      .then(resMap => {
+        if (!cancelled) {
+          const converted = new Map<string, RegionMetrics>();
+          for (const [key, v] of resMap.entries()) {
+            converted.set(key, {
+              ...v,
+              projects: [],
+              topIndicators: ['Progress vs Expenditure', 'Operational Parameters'],
+            });
+          }
+          setSupabaseGisMap(converted);
+          setIsGisLoading(false);
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          console.error('[GISIntelligenceMap] Error fetching GIS aggregation from Supabase:', err);
+          setIsGisLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isUsingSupabase, activeHouse, filters]);
+
+  // Aggregate project metrics locally (fallback mode)
+  const fallbackRegionMetricsMap = useMemo(() => {
+    if (isUsingSupabase) return new Map<string, RegionMetrics>();
     const map = new Map<string, RegionMetrics>();
 
     for (const p of filteredProjects) {
@@ -281,7 +325,6 @@ export function GISIntelligenceMap() {
       metric.avgRiskScore = metric.projects.length > 0 ? Math.round(sum / metric.projects.length) : 0;
       metric.riskRate = metric.totalWorks > 0 ? metric.highRiskCount / metric.totalWorks : 0;
 
-      // Extract unique factor indicators
       const factors = new Set<string>();
       for (const p of metric.projects) {
         if (p.risk.factors) {
@@ -294,14 +337,16 @@ export function GISIntelligenceMap() {
     }
 
     return map;
-  }, [filteredProjects, geoIndex, activeHouse]);
+  }, [isUsingSupabase, filteredProjects, geoIndex, activeHouse]);
+
+  const regionMetricsMap = isUsingSupabase ? supabaseGisMap : fallbackRegionMetricsMap;
 
   // Output development matching diagnostics to console
   useEffect(() => {
-    if (geoJsonData && filteredProjects.length > 0) {
+    if (!isUsingSupabase && geoJsonData && filteredProjects.length > 0) {
       logGeoMatchingDiagnostics(filteredProjects, geoIndex, activeHouse);
     }
-  }, [filteredProjects, geoIndex, geoJsonData, activeHouse]);
+  }, [isUsingSupabase, filteredProjects, geoIndex, geoJsonData, activeHouse]);
 
   // Leaflet Map Initialization
   useEffect(() => {

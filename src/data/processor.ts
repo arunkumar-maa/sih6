@@ -13,6 +13,7 @@ import type {
 } from './types';
 import { extractDistrict } from './districtCoordinates';
 import { buildCategoryMedians, buildVendorCounts, calculateRiskScore } from './riskEngine';
+import { detectDuplicates } from '../utils/duplicateDetection';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -267,7 +268,7 @@ export function processDatasets(
         factors: [],
         explanation: 'Analysis not yet run.',
         factorsAvailable: 0,
-        factorsTotal: 5,
+        factorsTotal: 6,
       },
 
       verificationStatus: 'New Alert',
@@ -279,9 +280,10 @@ export function processDatasets(
   // Run risk scoring
   const categoryMedians = buildCategoryMedians(projects);
   const vendorCounts = buildVendorCounts(projects);
+  const duplicates = detectDuplicates(projects);
 
   for (const p of projects) {
-    p.risk = calculateRiskScore(p, categoryMedians, vendorCounts);
+    p.risk = calculateRiskScore(p, categoryMedians, vendorCounts, duplicates);
     // Only flag as 'New Alert' if risk is MEDIUM or HIGH
     if (p.risk.level === 'LOW') {
       p.verificationStatus = 'New Alert';
