@@ -28,6 +28,14 @@ import {
 import { checkSupabaseConnection } from './supabase/client';
 import { getProjects, getProjectById, updateProjectVerification } from './supabase/projectQueries';
 import { getDashboardKPIs, getDistinctFilterOptions, DashboardKPIs, FilterOptions } from './supabase/analyticsQueries';
+import {
+  getAnomalyCounts,
+  getAnomalyProjects,
+  runHouseAnomalyAnalysis,
+  AnomalyTab,
+  AnomalyCounts,
+  AnalysisSummary,
+} from './supabase/anomalyQueries';
 
 function applyVerificationOverrides(projects: EnrichedProject[]): EnrichedProject[] {
   const overrides = loadVerificationOverrides();
@@ -68,6 +76,13 @@ interface AppStore {
   kpisLoading: boolean;
   filterOptions: FilterOptions | null;
 
+  // Anomaly Center State
+  anomalyCounts: AnomalyCounts | null;
+  anomalyProjects: Record<AnomalyTab, EnrichedProject[]>;
+  anomalyLoading: boolean;
+  anomalyError: string | null;
+  lastAnalysisSummary: AnalysisSummary | null;
+
   // ── Loading state ─────────────────────────────────────────────────
   isLoading: boolean;
   isAnalyzing: boolean;
@@ -89,6 +104,7 @@ interface AppStore {
   loadDatasets: () => Promise<void>;
   loadKPIs: (filters?: Record<string, string>) => Promise<void>;
   loadFilterOptions: (state?: string) => Promise<void>;
+  loadAnomalyData: (house?: 'Lok Sabha' | 'Rajya Sabha') => Promise<void>;
   loadRajyaSabhaDatasets: () => Promise<void>;
   runAnalysis: () => Promise<void>;
   resetAnalysis: () => void;
@@ -110,6 +126,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
   kpis: null,
   kpisLoading: false,
   filterOptions: null,
+
+  anomalyCounts: null,
+  anomalyProjects: {
+    pending: [],
+    stale: [],
+    cost: [],
+    disbursement: [],
+    vendor: [],
+  },
+  anomalyLoading: false,
+  anomalyError: null,
+  lastAnalysisSummary: null,
 
   isLoading: true,
   isAnalyzing: false,
@@ -155,6 +183,41 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }));
     } catch (err) {
       console.warn('[Store] Failed to fetch distinct filter options:', err);
+    }
+  },
+
+  // Load Anomaly Center Intelligence
+  loadAnomalyData: async (targetHouse) => {
+    const house = targetHouse || get().activeHouse;
+    set({ anomalyLoading: true, anomalyError: null });
+    try {
+      const [counts, pending, stale, cost, disbursement] = await Promise.all([
+        getAnomalyCounts(house),
+        getAnomalyProjects(house, 'pending', 25),
+        getAnomalyProjects(house, 'stale', 25),
+        getAnomalyProjects(house, 'cost', 25),
+        getAnomalyProjects(house, 'disbursement', 25),
+      ]);
+
+      if (get().activeHouse === house) {
+        set({
+          anomalyCounts: counts,
+          anomalyProjects: {
+            pending,
+            stale,
+            cost,
+            disbursement,
+            vendor: [],
+          },
+          anomalyLoading: false,
+        });
+      }
+    } catch (err) {
+      console.error('[Store] Failed to load anomaly data:', err);
+      set({
+        anomalyLoading: false,
+        anomalyError: err instanceof Error ? err.message : 'Unable to load anomaly analysis',
+      });
     }
   },
 
@@ -215,6 +278,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
           analysisComplete: true,
           datasetSummary,
         });
+        // Pre-load Anomaly Center intelligence for Lok Sabha
+        get().loadAnomalyData('Lok Sabha');
         return;
       } catch (err) {
         console.warn('[Store] Error querying Supabase initial batch, falling back to local CSV parser:', err);
@@ -336,9 +401,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({
         activeHouse: house,
         totalProjectCount: house === 'Lok Sabha' ? 65000 : 79219,
+        anomalyProjects: {
+          pending: [],
+          stale: [],
+          cost: [],
+          disbursement: [],
+          vendor: [],
+        },
       });
       get().loadKPIs();
       get().loadFilterOptions();
+      get().loadAnomalyData(house);
 
       getProjects({ house, page: 1, pageSize: 500, sortField: 'risk', sortDir: 'desc' }).then(res => {
         if (get().activeHouse === house) {
@@ -353,9 +426,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   runAnalysis: async () => {
-    const { lokSabhaProjects, rajyaSabhaProjects, projects } = get();
+    const { isUsingSupabase, activeHouse, lokSabhaProjects, rajyaSabhaProjects, projects } = get();
 
     set({ isAnalyzing: true });
+
+    if (isUsingSupabase) {
+      try {
+        const summary = await runHouseAnomalyAnalysis(activeHouse);
+        await get().loadAnomalyData(activeHouse);
+        set({
+          lastAnalysisSummary: summary,
+          isAnalyzing: false,
+          analysisComplete: true,
+        });
+        return;
+      } catch (err) {
+        console.error('[Store] Error running Supabase AI anomaly analysis:', err);
+      }
+    }
+
     await new Promise(r => setTimeout(r, 400));
 
     // Re-score Lok Sabha
