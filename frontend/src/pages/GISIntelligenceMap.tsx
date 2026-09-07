@@ -102,7 +102,7 @@ export function GISIntelligenceMap() {
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
     house: activeHouse,
-    tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+    tenure: '',
     state: '',
     constituency: '',
     mpName: '',
@@ -126,7 +126,7 @@ export function GISIntelligenceMap() {
     setFilters({
       search: '',
       house,
-      tenure: house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+      tenure: '',
       state: '',
       constituency: '',
       mpName: '',
@@ -168,16 +168,6 @@ export function GISIntelligenceMap() {
 
     return list;
   }, [activeHouseProjects, filters]);
-
-  // Overall KPI statistics from filtered projects
-  const stats = useMemo(() => {
-    const total = filteredProjects.length;
-    const totalSanctioned = filteredProjects.reduce((s, p) => s + (p.sanctionAmount ?? 0), 0);
-    const totalDisbursed = filteredProjects.reduce((s, p) => s + (p.totalPaid ?? p.amountDisbursed ?? 0), 0);
-    const completed = filteredProjects.filter(p => p.isCompleted || p.workStatus?.toLowerCase().includes('complete')).length;
-    const highRisk = filteredProjects.filter(p => p.risk.level === 'HIGH').length;
-    return { total, totalSanctioned, totalDisbursed, completed, highRisk };
-  }, [filteredProjects]);
 
   // Load GeoJSON data for active house
   useEffect(() => {
@@ -340,6 +330,34 @@ export function GISIntelligenceMap() {
   }, [isUsingSupabase, filteredProjects, geoIndex, activeHouse]);
 
   const regionMetricsMap = isUsingSupabase ? supabaseGisMap : fallbackRegionMetricsMap;
+
+  // Overall KPI statistics from filtered projects (or Supabase region metrics)
+  const stats = useMemo(() => {
+    if (isUsingSupabase) {
+      let total = 0;
+      let totalSanctioned = 0;
+      let totalDisbursed = 0;
+      let completed = 0;
+      let highRisk = 0;
+
+      for (const m of regionMetricsMap.values()) {
+        total += m.totalWorks;
+        totalSanctioned += m.sanctionedAmount;
+        totalDisbursed += m.disbursedAmount;
+        completed += m.completedWorks;
+        highRisk += m.highRiskCount;
+      }
+
+      return { total, totalSanctioned, totalDisbursed, completed, highRisk };
+    }
+
+    const total = filteredProjects.length;
+    const totalSanctioned = filteredProjects.reduce((s, p) => s + (p.sanctionAmount ?? 0), 0);
+    const totalDisbursed = filteredProjects.reduce((s, p) => s + (p.totalPaid ?? p.amountDisbursed ?? 0), 0);
+    const completed = filteredProjects.filter(p => p.isCompleted || p.workStatus?.toLowerCase().includes('complete')).length;
+    const highRisk = filteredProjects.filter(p => p.risk.level === 'HIGH').length;
+    return { total, totalSanctioned, totalDisbursed, completed, highRisk };
+  }, [isUsingSupabase, regionMetricsMap, filteredProjects]);
 
   // Output development matching diagnostics to console
   useEffect(() => {
@@ -729,8 +747,8 @@ export function GISIntelligenceMap() {
         <OfficialFilterBar
           projects={activeHouseProjects}
           filteredProjects={filteredProjects}
-          filteredCount={filteredProjects.length}
-          totalCount={activeHouseProjects.length}
+          filteredCount={isUsingSupabase ? stats.total : filteredProjects.length}
+          totalCount={isUsingSupabase ? (activeHouse === 'Lok Sabha' ? 65000 : 79219) : activeHouseProjects.length}
           filters={filters}
           onFilterChange={(f) => {
             if (f.house !== activeHouse) {
@@ -743,7 +761,7 @@ export function GISIntelligenceMap() {
             setFilters({
               search: '',
               house: activeHouse,
-              tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+              tenure: '',
               state: '',
               constituency: '',
               mpName: '',
@@ -990,7 +1008,7 @@ export function GISIntelligenceMap() {
         </div>
       </div>
 
-      {/* ── Geographic Methodology Note ────────────────────────────── */}
+      {/* ── Geographic Reference Note ────────────────────────────── */}
       <div className="panel-muted p-4 border border-[#E9ECEF] flex items-center gap-3 text-xs text-[#44474f]">
         <Info size={15} className="text-[#005eb2] flex-shrink-0" />
         <span>

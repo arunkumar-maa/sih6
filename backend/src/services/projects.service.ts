@@ -54,7 +54,7 @@ export async function fetchProjects(filters: ProjectFilters) {
   const house = filters.house || 'Lok Sabha';
   const tableName = getTableName(house);
   const page = Math.max(1, Number(filters.page) || 1);
-  const pageSize = Math.min(100, Math.max(1, Number(filters.pageSize) || 20));
+  const pageSize = Math.min(500, Math.max(1, Number(filters.pageSize) || 20));
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
@@ -71,6 +71,9 @@ export async function fetchProjects(filters: ProjectFilters) {
   if (filters.constituency) {
     query = query.eq('constituency', filters.constituency);
   }
+  if (filters.mpName) {
+    query = query.ilike('mp_name', `%${filters.mpName}%`);
+  }
   if (filters.workCategory) {
     query = query.eq('work_category', filters.workCategory);
   }
@@ -80,12 +83,36 @@ export async function fetchProjects(filters: ProjectFilters) {
   if (filters.financialYear) {
     query = query.eq('financial_year', filters.financialYear);
   }
+  if (filters.tenure && filters.tenure !== 'All Tenures' && filters.tenure.trim() !== '') {
+    if (filters.tenure === '18th Lok Sabha') {
+      query = query.or('financial_year.gte.2024-2025,financial_year.eq.Unknown');
+    } else if (filters.tenure === '17th Lok Sabha') {
+      query = query.gte('financial_year', '2019-2020').lte('financial_year', '2023-2024');
+    }
+  }
+  if (filters.riskLevel) {
+    query = query.eq('risk_level', filters.riskLevel);
+  }
+  if (filters.isSanctioned !== undefined) {
+    query = query.eq('is_sanctioned', filters.isSanctioned);
+  }
+  if (filters.isCompleted !== undefined) {
+    query = query.eq('is_completed', filters.isCompleted);
+  }
+  if (filters.hasDisbursement) {
+    query = query.gt('total_paid', 0);
+  }
   if (filters.search) {
     const s = filters.search.trim();
     query = query.or(`work_id.ilike.%${s}%,work_description.ilike.%${s}%,mp_name.ilike.%${s}%,constituency.ilike.%${s}%`);
   }
 
-  const sortField = filters.sortBy || 'sanction_amount';
+  let sortField = filters.sortBy || 'sanction_amount';
+  if (sortField === 'risk') sortField = 'risk_score';
+  else if (sortField === 'amount') sortField = 'sanction_amount';
+  else if (sortField === 'status') sortField = 'work_status';
+  else if (sortField === 'fy') sortField = 'financial_year';
+
   const sortAsc = filters.sortOrder === 'asc';
   query = query.order(sortField, { ascending: sortAsc }).range(from, to);
 

@@ -151,7 +151,7 @@ export function OfficialFilterBar({
     if (filters.state) count++;
     if (filters.constituency) count++;
     if (filters.mpName) count++;
-    if (filters.tenure && filters.tenure !== '18th Lok Sabha' && filters.tenure !== 'Current Rajya Sabha' && filters.tenure !== 'All Tenures') count++;
+    if (filters.tenure && filters.tenure !== 'All Tenures' && filters.tenure.trim() !== '') count++;
     if (filters.riskLevel) count++;
     if (filters.status) count++;
     if (filters.category) count++;
@@ -171,11 +171,10 @@ export function OfficialFilterBar({
 
   // Handlers
   const handleHouseChange = (newHouse: 'Lok Sabha' | 'Rajya Sabha') => {
-    const defaultTenure = newHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha';
     const updated: OfficialFilterState = {
       ...filters,
       house: newHouse,
-      tenure: defaultTenure,
+      tenure: '',
       state: '',
       constituency: '',
       mpName: '',
@@ -200,7 +199,7 @@ export function OfficialFilterBar({
     const resetState: OfficialFilterState = {
       search: '',
       house: filters.house,
-      tenure: filters.house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+      tenure: '',
       state: '',
       constituency: '',
       mpName: '',
@@ -376,14 +375,14 @@ export function OfficialFilterBar({
                   >
                     {draft.house === 'Lok Sabha' ? (
                       <>
+                        <option value="">All Tenures</option>
                         <option value="18th Lok Sabha">18th Lok Sabha</option>
                         <option value="17th Lok Sabha">17th Lok Sabha</option>
-                        <option value="All Tenures">All Tenures</option>
                       </>
                     ) : (
                       <>
+                        <option value="">All Tenures</option>
                         <option value="Current Rajya Sabha">Current Rajya Sabha</option>
-                        <option value="All Tenures">All Tenures</option>
                       </>
                     )}
                   </select>

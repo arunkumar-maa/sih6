@@ -22,12 +22,11 @@ const NAV_ITEMS = [
   { id: 'gis', label: 'GIS Map', Icon: Map },
   { id: 'verification', label: 'Verification', Icon: ClipboardCheck },
   { id: 'analytics', label: 'Analytics', Icon: BarChart2 },
-  { id: 'methodology', label: 'Methodology', Icon: BookOpen },
   { id: 'explorer', label: 'Dataset', Icon: Database },
 ];
 
 export function Nav() {
-  const { currentPage, setCurrentPage, isAnalyzing, analysisComplete, runAnalysis, projects } = useAppStore();
+  const { currentPage, setCurrentPage, projects } = useAppStore();
 
   const highRiskCount = projects.filter(p => p.risk.level === 'HIGH').length;
 
@@ -39,7 +38,7 @@ export function Nav() {
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 blink-dot" />
             <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">
-              MPLADS Intelligence Platform · Tamil Nadu
+              MPLADS Intelligence Platform · National
             </span>
           </div>
         </div>
@@ -84,33 +83,6 @@ export function Nav() {
               )}
             </button>
           ))}
-        </div>
-
-        {/* Run Analysis button */}
-        <div className="ml-2 pl-2 border-l border-[#1e3f7a] flex items-center gap-2">
-          {analysisComplete && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              Analysis Active
-            </span>
-          )}
-          <button
-            onClick={() => runAnalysis()}
-            disabled={isAnalyzing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isAnalyzing ? (
-              <>
-                <RefreshCw size={11} className="animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Cpu size={11} />
-                Run AI Analysis
-              </>
-            )}
-          </button>
         </div>
       </div>
     </nav>

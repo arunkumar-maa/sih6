@@ -106,7 +106,7 @@ function WhyAttentionPanel({ project }: { project: EnrichedProject }) {
     return (
       <div className="px-4 py-3 bg-[#F8F9FA] border-t border-[#E9ECEF] text-[11px] text-[#747780]">
         <Info size={11} className="inline mr-1" />
-        Run AI Analysis to generate risk indicators for this project.
+        Standard operational parameters. No elevated risk indicators identified.
       </div>
     );
   }
@@ -191,7 +191,7 @@ export function SanctionedDrillDown() {
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
     house: activeHouse,
-    tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+    tenure: '',
     state: '',
     constituency: '',
     mpName: '',
@@ -204,6 +204,7 @@ export function SanctionedDrillDown() {
   const [supabaseProjects, setSupabaseProjects] = useState<EnrichedProject[]>([]);
   const [supabaseTotalCount, setSupabaseTotalCount] = useState(0);
   const [isLoadingSupabase, setIsLoadingSupabase] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Sync house when global activeHouse changes
   const prevHouseRef = React.useRef(activeHouse);
@@ -213,7 +214,7 @@ export function SanctionedDrillDown() {
       setFilters(f => ({
         ...f,
         house: activeHouse,
-        tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+        tenure: '',
         state: '', constituency: '', mpName: '', riskLevel: '', status: '', category: '', search: '',
       }));
       setPage(1);
@@ -230,6 +231,7 @@ export function SanctionedDrillDown() {
     if (!isUsingSupabase) return;
     let cancelled = false;
     setIsLoadingSupabase(true);
+    setApiError(null);
 
     getProjects({
       house: activeHouse,
@@ -251,12 +253,14 @@ export function SanctionedDrillDown() {
         if (!cancelled) {
           setSupabaseProjects(res.projects);
           setSupabaseTotalCount(res.totalCount);
+          setApiError(null);
           setIsLoadingSupabase(false);
         }
       })
       .catch(err => {
         if (!cancelled) {
-          console.error('[SanctionedDrillDown] Error querying Supabase:', err);
+          console.error('[SanctionedDrillDown] Error querying backend:', err);
+          setApiError(err.message || 'Unable to load MPLADS records.');
           setIsLoadingSupabase(false);
         }
       });
@@ -303,7 +307,7 @@ export function SanctionedDrillDown() {
   // Summary stats based on active filtered results or Supabase KPIs
   const stats = useMemo(() => {
     if (isUsingSupabase) {
-      const total = supabaseTotalCount || (activeHouse === 'Lok Sabha' ? 65000 : 79219);
+      const total = supabaseTotalCount;
       const totalAmount = kpis?.totalSanctionAmount || 0;
       const avg = total > 0 ? totalAmount / total : 0;
       const highRisk = kpis?.highRisk || 0;
@@ -316,7 +320,7 @@ export function SanctionedDrillDown() {
     const avg = withAmount.length > 0 ? totalAmount / withAmount.length : 0;
     const highRisk = filtered.filter(p => p.risk.level === 'HIGH').length;
     return { total, totalAmount, avg, highRisk };
-  }, [isUsingSupabase, supabaseTotalCount, kpis, activeHouse, filtered]);
+  }, [isUsingSupabase, supabaseTotalCount, kpis, filtered]);
 
   const displayProjects = isUsingSupabase ? supabaseProjects : filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalDisplayCount = isUsingSupabase ? supabaseTotalCount : filtered.length;
@@ -408,14 +412,14 @@ export function SanctionedDrillDown() {
           projects={sanctionedProjects}
           filteredProjects={displayProjects}
           filteredCount={totalDisplayCount}
-          totalCount={isUsingSupabase ? (activeHouse === 'Lok Sabha' ? 65000 : 79219) : sanctionedProjects.length}
+          totalCount={isUsingSupabase ? supabaseTotalCount : sanctionedProjects.length}
           filters={filters}
           onFilterChange={f => { setFilters(f); setPage(1); }}
           onReset={() => {
             setFilters({
               search: '',
               house: filters.house,
-              tenure: filters.house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+              tenure: '',
               state: '',
               constituency: '',
               mpName: '',
@@ -470,17 +474,23 @@ export function SanctionedDrillDown() {
               </tr>
             </thead>
             <tbody>
-              {isLoadingSupabase ? (
+              {apiError ? (
+                <tr>
+                  <td colSpan={11} className="text-center text-[#DC3545] font-semibold text-sm py-12">
+                    Unable to load MPLADS records. Please try again.
+                  </td>
+                </tr>
+              ) : isLoadingSupabase ? (
                 <tr>
                   <td colSpan={11} className="text-center text-[#747780] text-sm py-12">
                     <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#6d28d9] mb-2" />
-                    <p className="text-xs text-[#747780]">Loading sanctioned projects from Supabase PostgreSQL...</p>
+                    <p className="text-xs text-[#747780]">Loading MPLADS records…</p>
                   </td>
                 </tr>
               ) : displayProjects.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="text-center text-[#747780] text-sm py-8">
-                    No projects match the current filters.
+                    No MPLADS records match the selected filters.
                   </td>
                 </tr>
               ) : (

@@ -1,4 +1,3 @@
-import { supabase } from './client';
 import type { EnrichedProject, RiskLevel, WorkStatus, PaymentStatus, VerificationStatus } from '../types';
 import { loadVerificationOverrides, saveVerificationOverride } from '../utils/verificationStorage';
 
@@ -83,132 +82,86 @@ export function rowToEnrichedProject(row: any): EnrichedProject {
 }
 
 export async function getProjects(params: ProjectQueryParams): Promise<PaginatedProjectsResult> {
-  const {
-    house,
-    page = 1,
-    pageSize = 20,
-    search,
-    state,
-    district,
-    constituency,
-    mpName,
-    riskLevel,
-    status,
-    category,
-    tenure,
-    isSanctioned,
-    isCompleted,
-    hasDisbursement,
-    sortField = 'risk',
-    sortDir = 'desc',
-  } = params;
+  const query = new URLSearchParams();
+  query.set('house', params.house || 'Lok Sabha');
+  if (params.page) query.set('page', String(params.page));
+  if (params.pageSize) query.set('pageSize', String(params.pageSize));
+  if (params.search && params.search.trim()) query.set('search', params.search.trim());
+  if (params.state) query.set('state', params.state);
+  if (params.district) query.set('district', params.district);
+  if (params.constituency) query.set('constituency', params.constituency);
+  if (params.mpName) query.set('mpName', params.mpName);
+  if (params.riskLevel) query.set('riskLevel', params.riskLevel);
+  if (params.status) query.set('status', params.status);
+  if (params.category) query.set('category', params.category);
+  if (params.tenure && params.tenure !== 'All Tenures' && params.tenure.trim() !== '') {
+    query.set('tenure', params.tenure);
+  }
+  if (params.isSanctioned !== undefined) query.set('isSanctioned', String(params.isSanctioned));
+  if (params.isCompleted !== undefined) query.set('isCompleted', String(params.isCompleted));
+  if (params.hasDisbursement !== undefined) query.set('hasDisbursement', String(params.hasDisbursement));
+  if (params.sortField) query.set('sortBy', params.sortField);
+  if (params.sortDir) query.set('sortOrder', params.sortDir);
 
-  const tableName = house === 'Rajya Sabha' ? 'rajya_sabha_projects' : 'lok_sabha_projects';
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  let query = supabase
-    .from(tableName)
-    .select('*', { count: 'exact' });
-
-  if (state) query = query.eq('state', state);
-  if (district) query = query.eq('district', district);
-  if (constituency) query = query.eq('constituency', constituency);
-  if (mpName) query = query.ilike('mp_name', `%${mpName}%`);
-  if (riskLevel) query = query.eq('risk_level', riskLevel);
-  if (status) query = query.eq('work_status', status);
-  if (category) query = query.eq('work_category', category);
-  if (tenure) query = query.eq('financial_year', tenure);
-  if (isSanctioned !== undefined) query = query.eq('is_sanctioned', isSanctioned);
-  if (isCompleted !== undefined) query = query.eq('is_completed', isCompleted);
-  if (hasDisbursement) query = query.gt('total_paid', 0);
-
-  if (search && search.trim()) {
-    const s = search.trim();
-    query = query.or(`work_id.ilike.%${s}%,work_description.ilike.%${s}%,mp_name.ilike.%${s}%,constituency.ilike.%${s}%`);
+  const res = await fetch(`/api/projects?${query.toString()}`);
+  if (!res.ok) {
+    throw new Error(`API error ${res.status}: ${res.statusText}`);
   }
 
-  const ascending = sortDir === 'asc';
-  switch (sortField) {
-    case 'risk':
-      query = query.order('risk_score', { ascending });
-      break;
-    case 'amount':
-      query = query.order('sanction_amount', { ascending });
-      break;
-    case 'district':
-      query = query.order('district', { ascending });
-      break;
-    case 'status':
-      query = query.order('work_status', { ascending });
-      break;
-    case 'fy':
-      query = query.order('financial_year', { ascending });
-      break;
-    default:
-      query = query.order('sanction_amount', { ascending: false });
+  const json = await res.json();
+  if (!json.success || !json.data) {
+    throw new Error(json.message || 'Failed to fetch projects');
   }
 
-  query = query.range(from, to);
-
-  const { data, count, error } = await query;
-  if (error) {
-    console.error('[Supabase] Error fetching projects:', error);
-    throw error;
-  }
-
-  const totalCount = count ?? 0;
-  const projects = (data || []).map(rowToEnrichedProject);
-
+  const { projects: rawProjects, totalCount, page, pageSize, totalPages } = json.data;
   const overrides = loadVerificationOverrides();
-  const projectsWithOverrides = projects.map(p => {
+  const projects: EnrichedProject[] = (rawProjects || []).map((p: any) => {
     const override = overrides[p.workId];
-    if (!override) return p;
     return {
       ...p,
-      verificationStatus: override.status,
-      verificationHistory: override.history,
+      recommendedDate: p.recommendedDate ? new Date(p.recommendedDate) : null,
+      sanctionDate: p.sanctionDate ? new Date(p.sanctionDate) : null,
+      completionDate: p.completionDate ? new Date(p.completionDate) : null,
+      expenditureDate: p.expenditureDate ? new Date(p.expenditureDate) : null,
+      verificationStatus: override?.status || p.verificationStatus || 'New Alert',
+      verificationHistory: override?.history || p.verificationHistory || [],
     };
   });
 
   return {
-    projects: projectsWithOverrides,
-    totalCount,
-    page,
-    pageSize,
-    totalPages: Math.ceil(totalCount / pageSize),
+    projects,
+    totalCount: Number(totalCount || 0),
+    page: Number(page || 1),
+    pageSize: Number(pageSize || 20),
+    totalPages: Number(totalPages || 1),
   };
 }
 
 export async function getProjectById(
   workId: string,
-  house: 'Lok Sabha' | 'Rajya Sabha'
+  house: 'Lok Sabha' | 'Rajya Sabha' = 'Lok Sabha'
 ): Promise<EnrichedProject | null> {
-  const tableName = house === 'Rajya Sabha' ? 'rajya_sabha_projects' : 'lok_sabha_projects';
-
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('*')
-    .eq('work_id', workId)
-    .single();
-
-  if (error || !data) {
+  try {
+    const res = await fetch(`/api/projects/${encodeURIComponent(workId)}?house=${encodeURIComponent(house)}`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    if (!json.success || !json.data) return null;
+    const p = json.data;
+    const overrides = loadVerificationOverrides();
+    const override = overrides[p.workId];
+    return {
+      ...p,
+      recommendedDate: p.recommendedDate ? new Date(p.recommendedDate) : null,
+      sanctionDate: p.sanctionDate ? new Date(p.sanctionDate) : null,
+      completionDate: p.completionDate ? new Date(p.completionDate) : null,
+      expenditureDate: p.expenditureDate ? new Date(p.expenditureDate) : null,
+      verificationStatus: override?.status || p.verificationStatus || 'New Alert',
+      verificationHistory: override?.history || p.verificationHistory || [],
+    };
+  } catch (err) {
+    console.error('[projectService] getProjectById error:', err);
     return null;
   }
-
-  const project = rowToEnrichedProject(data);
-  const overrides = loadVerificationOverrides();
-  const override = overrides[project.workId];
-
-  if (override) {
-    return {
-      ...project,
-      verificationStatus: override.status,
-      verificationHistory: override.history,
-    };
-  }
-
-  return project;
 }
 
 export async function updateProjectVerification(

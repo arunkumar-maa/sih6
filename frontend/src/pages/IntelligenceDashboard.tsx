@@ -96,7 +96,7 @@ export function IntelligenceDashboard() {
       <div className="mb-2">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
           <Activity size={12} />
-          MPLADS Intelligence Platform · Tamil Nadu
+          MPLADS Intelligence Platform · National
         </p>
         <h1
           className="text-3xl font-bold text-[#000a1f] leading-tight"
@@ -107,7 +107,7 @@ export function IntelligenceDashboard() {
         </h1>
         <p className="text-sm text-[#747780] mt-1">
           AI-assisted risk intelligence for proactive MPLADS project monitoring ·{' '}
-          <span className="font-semibold text-[#44474f]">{stats?.total ?? 0} works</span>
+          <span className="font-semibold text-[#44474f]">{(stats?.total ?? 0).toLocaleString('en-IN')} works</span>
         </p>
       </div>
 
@@ -119,7 +119,7 @@ export function IntelligenceDashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#005eb2' }}>Total Works</p>
               <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                {stats?.total ?? 0}
+                {(stats?.total ?? 0).toLocaleString('en-IN')}
               </p>
               <p className="text-[11px] text-[#747780] mt-1.5">Sanctioned + Recommended</p>
             </div>
@@ -208,7 +208,7 @@ export function IntelligenceDashboard() {
                 <div className="h-7 w-24 bg-[#e0e9f2] rounded-sm animate-pulse" />
               ) : (
                 <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                  {stats.completed}
+                  {stats.completed.toLocaleString('en-IN')}
                 </p>
               )}
               <p className="text-[11px] text-[#747780] mt-1.5">
@@ -230,9 +230,9 @@ export function IntelligenceDashboard() {
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#DC3545' }}>High Risk Works</p>
               <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                {stats?.highRisk ?? 0}
+                {(stats?.highRisk ?? 0).toLocaleString('en-IN')}
               </p>
-              <p className="text-[11px] text-[#747780] mt-1.5">+ {stats?.medRisk ?? 0} medium risk</p>
+              <p className="text-[11px] text-[#747780] mt-1.5">+ {(stats?.medRisk ?? 0).toLocaleString('en-IN')} medium risk</p>
             </div>
             <div className="p-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: '#DC354514' }}>
               <AlertTriangle size={20} style={{ color: '#DC3545' }} />
@@ -441,12 +441,6 @@ export function IntelligenceDashboard() {
                 <div className="text-[11px] text-[#747780] leading-relaxed">
                   Rule-based statistical risk intelligence. Future: Isolation Forest + XGBoost + SHAP.
                 </div>
-                <button
-                  onClick={() => setCurrentPage('methodology')}
-                  className="text-[11px] font-semibold text-[#005eb2] hover:text-[#003161] mt-1.5 flex items-center gap-1"
-                >
-                  View Methodology <ArrowRight size={10} />
-                </button>
               </div>
             </div>
           </div>

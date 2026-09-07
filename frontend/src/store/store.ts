@@ -173,13 +173,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
     riskLevel: '',
     status: '',
     category: '',
-    tenure: '18th Lok Sabha',
+    tenure: '',
   },
 
   setActiveHouse: async (house) => {
     if (get().activeHouse === house) return;
-
-    const defaultTenure = house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha';
 
     set({
       activeHouse: house,
@@ -195,7 +193,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         riskLevel: '',
         status: '',
         category: '',
-        tenure: defaultTenure,
+        tenure: '',
       },
     });
 
@@ -203,7 +201,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const [kpiData, optionsData, paginatedData] = await Promise.all([
         getDashboardKPIs(house),
         getDistinctFilterOptions(house),
-        getProjects({ house, page: 1, pageSize: 500, sortField: 'risk', sortDir: 'desc' }),
+        getProjects({ house, page: 1, pageSize: 200, sortField: 'risk', sortDir: 'desc' }),
       ]);
 
       set({
@@ -239,8 +237,6 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   resetFilters: () => {
-    const house = get().activeHouse;
-    const defaultTenure = house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha';
     set({
       filters: {
         search: '',
@@ -251,7 +247,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         riskLevel: '',
         status: '',
         category: '',
-        tenure: defaultTenure,
+        tenure: '',
       },
     });
     get().fetchProjectsPage(1);
@@ -396,7 +392,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
               records: 65000,
               columns: ['work_id', 'work_category', 'state', 'district', 'mp_name', 'constituency', 'work_description', 'sanction_amount', 'total_paid', 'work_status', 'risk_score', 'risk_level'],
               sampleValues: {
-                State: 'Tamil Nadu',
+                State: 'National / All States',
                 Status: 'Work Completed',
               },
               missingValueCounts: {},

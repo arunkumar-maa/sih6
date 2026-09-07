@@ -24,7 +24,6 @@ const NAV_ITEMS = [
   { id: 'gis', label: 'GIS Intelligence', Icon: Map },
   { id: 'verification', label: 'Verification Desk', Icon: ClipboardCheck },
   { id: 'analytics', label: 'Analytics', Icon: BarChart2 },
-  { id: 'methodology', label: 'Methodology', Icon: BookOpen },
   { id: 'explorer', label: 'Dataset Explorer', Icon: Database },
 ];
 
@@ -36,7 +35,6 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const {
     currentPage, setCurrentPage,
-    isAnalyzing, analysisComplete, runAnalysis,
     projects,
   } = useAppStore();
 
@@ -84,7 +82,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-[#198754] blink-dot" />
             <span className="text-[10px] font-semibold text-[#44474f] uppercase tracking-widest">
-              Tamil Nadu · Live
+              India · National
             </span>
           </div>
         </div>
@@ -111,34 +109,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               )}
             </button>
           ))}
-        </div>
-
-        {/* Bottom actions */}
-        <div className="px-4 pb-4 border-t border-[#E9ECEF] pt-4 space-y-3">
-          {analysisComplete && (
-            <div className="flex items-center gap-2 px-2 py-1.5 rounded-sm bg-[#d1fae5] border border-[#6ee7b7]">
-              <div className="w-1.5 h-1.5 rounded-full bg-[#198754]" />
-              <span className="text-[10px] font-semibold text-[#065f46]">Analysis Active</span>
-            </div>
-          )}
-          <button
-            onClick={() => runAnalysis()}
-            disabled={isAnalyzing}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-sm text-sm font-semibold bg-[#00204a] hover:bg-[#000a1f] text-white transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isAnalyzing ? (
-              <>
-                <RefreshCw size={13} className="animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Cpu size={13} />
-                Run AI Analysis
-              </>
-            )}
-          </button>
-
         </div>
       </nav>
     </>

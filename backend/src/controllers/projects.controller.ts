@@ -8,14 +8,20 @@ export async function getProjects(req: Request, res: Response) {
       state: req.query.state as string,
       district: req.query.district as string,
       constituency: req.query.constituency as string,
-      workCategory: req.query.category as string,
+      mpName: (req.query.mpName || req.query.mp) as string,
+      workCategory: (req.query.category || req.query.workCategory) as string,
       status: req.query.status as string,
       financialYear: req.query.financialYear as string,
+      tenure: req.query.tenure as string,
+      riskLevel: (req.query.riskLevel || req.query.risk) as string,
+      isSanctioned: req.query.isSanctioned !== undefined ? req.query.isSanctioned === 'true' : undefined,
+      isCompleted: req.query.isCompleted !== undefined ? req.query.isCompleted === 'true' : undefined,
+      hasDisbursement: req.query.hasDisbursement !== undefined ? req.query.hasDisbursement === 'true' : undefined,
       search: req.query.search as string,
       page: Number(req.query.page) || 1,
       pageSize: Number(req.query.pageSize) || 20,
-      sortBy: (req.query.sortBy as string) || 'sanction_amount',
-      sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'desc',
+      sortBy: ((req.query.sortBy || req.query.sortField) as string) || 'sanction_amount',
+      sortOrder: ((req.query.sortOrder || req.query.sortDir) as 'asc' | 'desc') || 'desc',
     };
 
     const result = await fetchProjects(filters);

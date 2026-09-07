@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import {
   AlertTriangle, Clock, DollarSign, Users, TrendingUp,
-  ChevronRight, Info, Shield, RefreshCw, Cpu, CheckCircle2, AlertCircle
+  ChevronRight, Info, Shield, RefreshCw, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
 import { RiskBadge } from '../components/RiskBadge';
@@ -44,8 +44,6 @@ export function RiskAnomaliesCenter() {
     anomalyLoading,
     anomalyError,
     lastAnalysisSummary,
-    isAnalyzing,
-    runAnalysis,
     loadAnomalyData,
   } = useAppStore();
 
@@ -136,27 +134,6 @@ export function RiskAnomaliesCenter() {
           <p className="text-xs text-[#747780] mt-0.5">
             Automatically detected risk patterns for {activeHouse} · For human verification only
           </p>
-        </div>
-
-        {/* Action button */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button
-            onClick={() => runAnalysis()}
-            disabled={isAnalyzing || anomalyLoading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-sm text-xs font-semibold bg-[#00204a] hover:bg-[#000a1f] text-white transition-colors duration-150 disabled:opacity-60 disabled:cursor-not-allowed shadow-sm"
-          >
-            {isAnalyzing ? (
-              <>
-                <RefreshCw size={13} className="animate-spin" />
-                Analyzing {activeHouse}...
-              </>
-            ) : (
-              <>
-                <Cpu size={13} />
-                Run AI Analysis
-              </>
-            )}
-          </button>
         </div>
       </div>
 
@@ -273,7 +250,7 @@ export function RiskAnomaliesCenter() {
         ) : currentList.length === 0 ? (
           <div className="py-16 text-center">
             <div className="text-[#44474f] text-sm font-semibold">No anomalies detected in this category.</div>
-            <div className="text-[#747780] text-xs mt-1">Click "Run AI Analysis" to refresh detection.</div>
+            <div className="text-[#747780] text-xs mt-1">No anomalies found matching current filters.</div>
           </div>
         ) : (
           <div className="space-y-3">

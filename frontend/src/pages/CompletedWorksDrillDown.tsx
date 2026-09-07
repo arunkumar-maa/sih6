@@ -86,7 +86,7 @@ function WhyAttentionPanel({ project }: { project: EnrichedProject }) {
     return (
       <div className="px-4 py-3 bg-[#F8F9FA] border-t border-[#E9ECEF] text-[11px] text-[#747780]">
         <Info size={11} className="inline mr-1" />
-        Run AI Analysis to generate risk indicators for this project.
+        Standard operational parameters. No elevated risk indicators identified.
       </div>
     );
   }
@@ -153,7 +153,7 @@ export function CompletedWorksDrillDown() {
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
     house: activeHouse,
-    tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+    tenure: '',
     state: '',
     constituency: '',
     mpName: '',
@@ -166,6 +166,7 @@ export function CompletedWorksDrillDown() {
   const [supabaseProjects, setSupabaseProjects] = useState<EnrichedProject[]>([]);
   const [supabaseTotalCount, setSupabaseTotalCount] = useState(0);
   const [isLoadingSupabase, setIsLoadingSupabase] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Sync house when global activeHouse changes
   const prevHouseRef = React.useRef(activeHouse);
@@ -175,7 +176,7 @@ export function CompletedWorksDrillDown() {
       setFilters(f => ({
         ...f,
         house: activeHouse,
-        tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+        tenure: '',
         state: '', constituency: '', mpName: '', riskLevel: '', status: '', category: '', search: '',
       }));
       setPage(1);
@@ -192,6 +193,7 @@ export function CompletedWorksDrillDown() {
     if (!isUsingSupabase) return;
     let cancelled = false;
     setIsLoadingSupabase(true);
+    setApiError(null);
 
     getProjects({
       house: activeHouse,
@@ -213,12 +215,14 @@ export function CompletedWorksDrillDown() {
         if (!cancelled) {
           setSupabaseProjects(res.projects);
           setSupabaseTotalCount(res.totalCount);
+          setApiError(null);
           setIsLoadingSupabase(false);
         }
       })
       .catch(err => {
         if (!cancelled) {
           console.error('[CompletedWorksDrillDown] Error querying Supabase:', err);
+          setApiError(err.message || 'Unable to load MPLADS records.');
           setIsLoadingSupabase(false);
         }
       });
@@ -263,7 +267,7 @@ export function CompletedWorksDrillDown() {
 
   const stats = useMemo(() => {
     if (isUsingSupabase) {
-      const total = supabaseTotalCount || (kpis?.completed || 0);
+      const total = supabaseTotalCount;
       const totalExpenditure = kpis?.totalDisbursed || 0;
       const statesCount = 36;
       const highRisk = kpis?.highRisk || 0;
@@ -324,7 +328,7 @@ export function CompletedWorksDrillDown() {
             Works Completed — Deep Dive
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
-            {stats.total} completed projects ·{' '}
+            {stats.total.toLocaleString('en-IN')} completed projects ·{' '}
             <span className="text-[#DC3545] font-semibold">{stats.highRisk} have risk indicators</span>
             {' '}· Historical pattern monitoring
           </p>
@@ -385,7 +389,7 @@ export function CompletedWorksDrillDown() {
             setFilters({
               search: '',
               house: filters.house,
-              tenure: filters.house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+              tenure: '',
               state: '',
               constituency: '',
               mpName: '',
@@ -423,17 +427,25 @@ export function CompletedWorksDrillDown() {
               </tr>
             </thead>
             <tbody>
-              {isLoadingSupabase ? (
+              {apiError ? (
+                <tr>
+                  <td colSpan={10} className="text-center text-[#DC3545] text-sm py-8">
+                    <AlertTriangle size={24} className="mx-auto mb-2 text-[#DC3545]" />
+                    <p className="font-semibold">Unable to load MPLADS records. Please try again.</p>
+                    <p className="text-xs text-[#747780] mt-1">{apiError}</p>
+                  </td>
+                </tr>
+              ) : isLoadingSupabase ? (
                 <tr>
                   <td colSpan={10} className="text-center text-[#747780] text-sm py-12">
                     <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#0891b2] mb-2" />
-                    <p className="text-xs text-[#747780]">Loading completed projects from Supabase PostgreSQL...</p>
+                    <p className="text-xs text-[#747780]">Loading MPLADS records…</p>
                   </td>
                 </tr>
               ) : displayProjects.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="text-center text-[#747780] text-sm py-8">
-                    No completed projects match the current filters.
+                    No MPLADS records match the selected filters.
                   </td>
                 </tr>
               ) : (

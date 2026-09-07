@@ -32,7 +32,7 @@ export function ProjectMonitoring() {
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
     house: activeHouse,
-    tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+    tenure: '',
     state: '',
     constituency: '',
     mpName: '',
@@ -49,6 +49,7 @@ export function ProjectMonitoring() {
   const [supabaseProjects, setSupabaseProjects] = useState<EnrichedProject[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoadingList, setIsLoadingList] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [selectedProjectDetail, setSelectedProjectDetail] = useState<EnrichedProject | null>(null);
 
   // Apply pre-filter from GIS Map / drill-down navigation
@@ -60,7 +61,7 @@ export function ProjectMonitoring() {
       setFilters(f => ({
         ...f,
         house: monitoringFilter.house || activeHouse,
-        tenure: (monitoringFilter.house || activeHouse) === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+        tenure: '',
         state: monitoringFilter.state || '',
         constituency: monitoringFilter.constituency || '',
       }));
@@ -77,19 +78,20 @@ export function ProjectMonitoring() {
       setFilters(f => ({
         ...f,
         house: activeHouse,
-        tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+        tenure: '',
         state: '', constituency: '', mpName: '', riskLevel: '', status: '', category: '', search: '',
       }));
       setPage(1);
     }
   }, [activeHouse]);
 
-  // Query projects from Supabase when in database mode
+  // Query projects from backend API when in database mode
   useEffect(() => {
     if (!isUsingSupabase) return;
 
     let cancelled = false;
     setIsLoadingList(true);
+    setApiError(null);
 
     getProjects({
       house: activeHouse,
@@ -110,12 +112,14 @@ export function ProjectMonitoring() {
         if (!cancelled) {
           setSupabaseProjects(res.projects);
           setTotalCount(res.totalCount);
+          setApiError(null);
           setIsLoadingList(false);
         }
       })
       .catch(err => {
         if (!cancelled) {
-          console.error('[ProjectMonitoring] Supabase query error:', err);
+          console.error('[ProjectMonitoring] API query error:', err);
+          setApiError(err.message || 'Unable to load MPLADS records.');
           setIsLoadingList(false);
         }
       });
@@ -212,7 +216,11 @@ export function ProjectMonitoring() {
             Project Monitoring
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
-            {activeTotalCount.toLocaleString('en-IN')} works · Click a row to open Project Intelligence Profile
+            {isLoadingList
+              ? 'Loading MPLADS records…'
+              : apiError
+              ? 'Unable to load MPLADS records. Please try again.'
+              : `${activeTotalCount.toLocaleString('en-IN')} works · Click a row to open Project Intelligence Profile`}
           </p>
         </div>
       </div>
@@ -230,7 +238,7 @@ export function ProjectMonitoring() {
             setFilters({
               search: '',
               house: filters.house,
-              tenure: filters.house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+              tenure: '',
               state: '',
               constituency: '',
               mpName: '',
@@ -251,7 +259,7 @@ export function ProjectMonitoring() {
           <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex items-center justify-center">
             <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md border border-slate-200">
               <div className="w-4 h-4 rounded-full border-2 border-[#005eb2] border-t-transparent animate-spin" />
-              <span className="text-xs font-semibold text-[#000a1f]">Loading works from database…</span>
+              <span className="text-xs font-semibold text-[#000a1f]">Loading MPLADS records…</span>
             </div>
           </div>
         )}
@@ -261,14 +269,15 @@ export function ProjectMonitoring() {
               <tr>
                 <th className="w-8">#</th>
                 <th>Work ID</th>
-                <th>Description</th>
-                <th>District · Constituency</th>
+                <th>Project / Description</th>
+                <th>Location</th>
+                <th>MP</th>
                 <th
                   className="cursor-pointer hover:text-[#005eb2] transition-colors"
                   onClick={() => toggleSort('amount')}
                 >
                   <div className="flex items-center gap-1">
-                    Sanction Amount <ArrowUpDown size={10} />
+                    Sanctioned <ArrowUpDown size={10} />
                   </div>
                 </th>
                 <th>Disbursed</th>
@@ -292,13 +301,20 @@ export function ProjectMonitoring() {
                     Risk <ArrowUpDown size={10} />
                   </div>
                 </th>
+                <th>Attention</th>
               </tr>
             </thead>
             <tbody>
-              {activeProjectsList.length === 0 && !isLoadingList ? (
+              {apiError ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-slate-500 text-sm">
-                    No matching MPLADS records found for current filters.
+                  <td colSpan={11} className="text-center py-12 text-[#DC3545] font-semibold text-sm">
+                    Unable to load MPLADS records. Please try again.
+                  </td>
+                </tr>
+              ) : activeProjectsList.length === 0 && !isLoadingList ? (
+                <tr>
+                  <td colSpan={11} className="text-center py-12 text-slate-500 text-sm">
+                    No MPLADS records match the selected filters.
                   </td>
                 </tr>
               ) : (
@@ -324,8 +340,13 @@ export function ProjectMonitoring() {
                     </td>
                     <td>
                       <div className="text-xs">
-                        <div className="text-[#141d23] font-medium">{p.district}</div>
-                        <div className="text-[#747780]">{p.constituency}</div>
+                        <div className="text-[#141d23] font-medium">{p.district || p.state}</div>
+                        <div className="text-[#747780]">{p.constituency || p.state}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="text-xs font-medium text-[#141d23] max-w-[140px] truncate" title={p.mp}>
+                        {p.mp || '—'}
                       </div>
                     </td>
                     <td className="text-sm font-semibold text-[#141d23]">
@@ -347,6 +368,21 @@ export function ProjectMonitoring() {
                           {p.risk.score}
                         </span>
                       </div>
+                    </td>
+                    <td>
+                      {p.risk.level === 'HIGH' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#fee2e2] text-[#991b1b] border border-[#fca5a5]">
+                          Action Required
+                        </span>
+                      ) : p.risk.level === 'MEDIUM' ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#fef3c7] text-[#92400e] border border-[#fcd34d]">
+                          Watch List
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#d1fae5] text-[#065f46] border border-[#6ee7b7]">
+                          Standard
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))

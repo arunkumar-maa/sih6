@@ -9,7 +9,6 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   gis:          { title: 'GIS Intelligence', subtitle: 'Spatial Analytics' },
   verification: { title: 'Verification Desk', subtitle: 'Officer Review Workflow' },
   analytics:    { title: 'Performance Observatory', subtitle: 'Analytics & Insights' },
-  methodology:  { title: 'Methodology', subtitle: 'Under the Hood' },
   explorer:     { title: 'Dataset Explorer', subtitle: 'Raw Data Exploration' },
   sanctioned:   { title: 'Sanctioned Works Intelligence', subtitle: 'Command Center › Sanctioned Amount' },
   disbursed:    { title: 'Disbursement Intelligence', subtitle: 'Command Center › Amount Disbursed' },

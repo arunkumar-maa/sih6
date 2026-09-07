@@ -7,7 +7,6 @@ import { RiskAnomaliesCenter } from './pages/RiskAnomaliesCenter';
 import { GISIntelligenceMap } from './pages/GISIntelligenceMap';
 import { OfficerVerification } from './pages/OfficerVerification';
 import { Analytics } from './pages/Analytics';
-import { Methodology } from './pages/Methodology';
 import { DatasetExplorer } from './pages/DatasetExplorer';
 import { SanctionedDrillDown } from './pages/SanctionedDrillDown';
 import { DisbursementDrillDown } from './pages/DisbursementDrillDown';
@@ -98,7 +97,6 @@ export function MainContent() {
       {currentPage === 'gis'          && <GISIntelligenceMap />}
       {currentPage === 'verification' && <OfficerVerification />}
       {currentPage === 'analytics'    && <Analytics />}
-      {currentPage === 'methodology'  && <Methodology />}
       {currentPage === 'explorer'     && <DatasetExplorer />}
       {currentPage === 'sanctioned'   && <SanctionedDrillDown />}
       {currentPage === 'disbursed'    && <DisbursementDrillDown />}

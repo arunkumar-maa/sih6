@@ -82,9 +82,15 @@ export interface ProjectFilters {
   state?: string;
   district?: string;
   constituency?: string;
+  mpName?: string;
   workCategory?: string;
   status?: string;
   financialYear?: string;
+  tenure?: string;
+  riskLevel?: string;
+  isSanctioned?: boolean;
+  isCompleted?: boolean;
+  hasDisbursement?: boolean;
   search?: string;
   page?: number;
   pageSize?: number;

@@ -86,7 +86,7 @@ function WhyAttentionPanel({ project }: { project: EnrichedProject }) {
     return (
       <div className="px-4 py-3 bg-[#F8F9FA] border-t border-[#E9ECEF] text-[11px] text-[#747780]">
         <Info size={11} className="inline mr-1" />
-        Run AI Analysis to generate risk indicators for this project.
+        Standard operational parameters. No elevated risk indicators identified.
       </div>
     );
   }
@@ -165,7 +165,7 @@ export function DisbursementDrillDown() {
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
     house: activeHouse,
-    tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+    tenure: '',
     state: '',
     constituency: '',
     mpName: '',
@@ -178,6 +178,7 @@ export function DisbursementDrillDown() {
   const [supabaseProjects, setSupabaseProjects] = useState<EnrichedProject[]>([]);
   const [supabaseTotalCount, setSupabaseTotalCount] = useState(0);
   const [isLoadingSupabase, setIsLoadingSupabase] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Sync house when global activeHouse changes
   const prevHouseRef = React.useRef(activeHouse);
@@ -187,7 +188,7 @@ export function DisbursementDrillDown() {
       setFilters(f => ({
         ...f,
         house: activeHouse,
-        tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+        tenure: '',
         state: '', constituency: '', mpName: '', riskLevel: '', status: '', category: '', search: '',
       }));
       setPage(1);
@@ -204,6 +205,7 @@ export function DisbursementDrillDown() {
     if (!isUsingSupabase) return;
     let cancelled = false;
     setIsLoadingSupabase(true);
+    setApiError(null);
 
     getProjects({
       house: activeHouse,
@@ -225,12 +227,14 @@ export function DisbursementDrillDown() {
         if (!cancelled) {
           setSupabaseProjects(res.projects);
           setSupabaseTotalCount(res.totalCount);
+          setApiError(null);
           setIsLoadingSupabase(false);
         }
       })
       .catch(err => {
         if (!cancelled) {
-          console.error('[DisbursementDrillDown] Error querying Supabase:', err);
+          console.error('[DisbursementDrillDown] Error querying backend:', err);
+          setApiError(err.message || 'Unable to load MPLADS records.');
           setIsLoadingSupabase(false);
         }
       });
@@ -276,7 +280,7 @@ export function DisbursementDrillDown() {
 
   const stats = useMemo(() => {
     if (isUsingSupabase) {
-      const total = supabaseTotalCount || (activeHouse === 'Lok Sabha' ? 42000 : 38000);
+      const total = supabaseTotalCount;
       const totalDisbursed = kpis?.totalDisbursed || 0;
       const avg = total > 0 ? totalDisbursed / total : 0;
       const highRisk = kpis?.highRisk || 0;
@@ -289,7 +293,7 @@ export function DisbursementDrillDown() {
     const avg = withPaid.length > 0 ? totalDisbursed / withPaid.length : 0;
     const highRisk = filtered.filter(p => p.risk.level === 'HIGH').length;
     return { total, totalDisbursed, avg, highRisk };
-  }, [isUsingSupabase, supabaseTotalCount, kpis, activeHouse, filtered]);
+  }, [isUsingSupabase, supabaseTotalCount, kpis, filtered]);
 
   const displayProjects = isUsingSupabase ? supabaseProjects : filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const totalDisplayCount = isUsingSupabase ? supabaseTotalCount : filtered.length;
@@ -334,7 +338,7 @@ export function DisbursementDrillDown() {
             Amount Disbursed — Deep Dive
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
-            {stats.total} projects with disbursement ·{' '}
+            {stats.total.toLocaleString('en-IN')} projects with disbursement ·{' '}
             <span className="text-[#DC3545] font-semibold">{stats.highRisk} high risk</span>
             {' '}· Sorted by risk priority
           </p>
@@ -346,7 +350,7 @@ export function DisbursementDrillDown() {
         <SummaryCard
           label="Total Amount Disbursed"
           value={formatCurrency(stats.totalDisbursed)}
-          sub={`Across ${stats.total} projects`}
+          sub={`Across ${stats.total.toLocaleString('en-IN')} projects`}
           color="#0d9488"
           Icon={TrendingUp}
         />
@@ -386,7 +390,7 @@ export function DisbursementDrillDown() {
             setFilters({
               search: '',
               house: filters.house,
-              tenure: filters.house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+              tenure: '',
               state: '',
               constituency: '',
               mpName: '',
@@ -425,17 +429,25 @@ export function DisbursementDrillDown() {
               </tr>
             </thead>
             <tbody>
-              {isLoadingSupabase ? (
+              {apiError ? (
+                <tr>
+                  <td colSpan={11} className="text-center text-[#DC3545] text-sm py-8">
+                    <AlertTriangle size={24} className="mx-auto mb-2 text-[#DC3545]" />
+                    <p className="font-semibold">Unable to load MPLADS records. Please try again.</p>
+                    <p className="text-xs text-[#747780] mt-1">{apiError}</p>
+                  </td>
+                </tr>
+              ) : isLoadingSupabase ? (
                 <tr>
                   <td colSpan={11} className="text-center text-[#747780] text-sm py-12">
                     <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-[#0d9488] mb-2" />
-                    <p className="text-xs text-[#747780]">Loading disbursed projects from Supabase PostgreSQL...</p>
+                    <p className="text-xs text-[#747780]">Loading MPLADS records…</p>
                   </td>
                 </tr>
               ) : displayProjects.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="text-center text-[#747780] text-sm py-8">
-                    No projects match the current filters.
+                    No MPLADS records match the selected filters.
                   </td>
                 </tr>
               ) : (
