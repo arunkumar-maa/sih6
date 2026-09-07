@@ -20,9 +20,14 @@ export interface AnalysisSummary {
   house: 'Lok Sabha' | 'Rajya Sabha';
 }
 
-function getRiskLevel(score: number): RiskLevel {
-  if (score >= 70) return 'HIGH';
-  if (score >= 40) return 'MEDIUM';
+export const RISK_THRESHOLDS = {
+  HIGH: 55,
+  MEDIUM: 25,
+} as const;
+
+export function getRiskLevel(score: number): RiskLevel {
+  if (score >= RISK_THRESHOLDS.HIGH) return 'HIGH';
+  if (score >= RISK_THRESHOLDS.MEDIUM) return 'MEDIUM';
   return 'LOW';
 }
 

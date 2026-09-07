@@ -1,4 +1,5 @@
 import { supabase, getTableName } from './supabase.service.js';
+import { getRiskLevel } from '../risk/riskEngine.js';
 
 export interface DashboardKPIs {
   total: number;
@@ -91,10 +92,12 @@ export async function fetchDashboardKPIs(
     totalSanctionAmount += Number(r.sanction_amount || 0);
     totalDisbursed += Number(r.total_paid || 0);
     if (r.work_status === 'Work Completed') completed++;
-    if (r.risk_level === 'HIGH') highRisk++;
-    else if (r.risk_level === 'MEDIUM') medRisk++;
+    const s = Number(r.risk_score || 0);
+    const lvl = r.risk_level || getRiskLevel(s);
+    if (lvl === 'HIGH') highRisk++;
+    else if (lvl === 'MEDIUM') medRisk++;
     else lowRisk++;
-    riskScoreSum += Number(r.risk_score || 0);
+    riskScoreSum += s;
   }
 
   return {
@@ -126,8 +129,10 @@ export async function fetchCategoryAnalytics(house: 'Lok Sabha' | 'Rajya Sabha')
     const entry = map.get(cat) || { total: 0, amount: 0, highRisk: 0, scoreSum: 0 };
     entry.total++;
     entry.amount += Number(row.sanction_amount || 0);
-    if (row.risk_level === 'HIGH') entry.highRisk++;
-    entry.scoreSum += Number(row.risk_score || 0);
+    const s = Number(row.risk_score || 0);
+    const lvl = row.risk_level || getRiskLevel(s);
+    if (lvl === 'HIGH') entry.highRisk++;
+    entry.scoreSum += s;
     map.set(cat, entry);
   }
 

@@ -1,4 +1,5 @@
 import type { EnrichedProject, RiskLevel, WorkStatus, PaymentStatus, VerificationStatus } from '../types';
+import { getRiskLevel } from '../utils/risk';
 import { loadVerificationOverrides, saveVerificationOverride } from '../utils/verificationStorage';
 
 export interface ProjectQueryParams {
@@ -69,7 +70,7 @@ export function rowToEnrichedProject(row: any): EnrichedProject {
 
     risk: {
       score: Number(row.risk_score || 0),
-      level: (row.risk_level as RiskLevel) || 'LOW',
+      level: (row.risk_level as RiskLevel) || getRiskLevel(Number(row.risk_score || 0)),
       factors: Array.isArray(row.risk_factors) ? row.risk_factors : [],
       explanation: row.risk_explanation || '',
       factorsAvailable: Array.isArray(row.risk_factors) ? row.risk_factors.filter((f: any) => f.available).length : 0,

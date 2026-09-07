@@ -2,6 +2,7 @@
 // Maps to Supabase PostgreSQL schemas and domain models
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+export { getRiskLevel, RISK_THRESHOLDS } from '../utils/risk';
 
 export type WorkStatus =
   | 'Sanction'

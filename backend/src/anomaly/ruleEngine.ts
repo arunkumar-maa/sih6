@@ -1,4 +1,5 @@
 import type { EnrichedProject, RiskLevel } from '../types/index.js';
+import { getRiskLevel } from '../risk/riskEngine.js';
 
 export interface AnomalyEvaluation {
   isAnomaly: boolean;
@@ -16,19 +17,21 @@ export function evaluateStaleStatus(daysSinceSanction: number | null, workStatus
 
   const days = daysSinceSanction ?? 0;
   if (days > 365) {
+    const score = 65;
     return {
       isAnomaly: true,
       type: 'stale_status',
-      severity: 'HIGH',
-      score: 65,
+      severity: getRiskLevel(score),
+      score,
       reason: `Status still "${workStatus}" after ${days} days since sanction (>1 year). Potential stall.`,
     };
   } else if (days > 180) {
+    const score = 40;
     return {
       isAnomaly: true,
       type: 'stale_status',
-      severity: 'MEDIUM',
-      score: 40,
+      severity: getRiskLevel(score),
+      score,
       reason: `Status still "${workStatus}" after ${days} days since sanction (>6 months).`,
     };
   }
@@ -43,19 +46,21 @@ export function evaluateCostAnomaly(sanctionAmount: number | null, categoryMedia
 
   const ratio = sanctionAmount / categoryMedian;
   if (ratio >= 5.0) {
+    const score = 75;
     return {
       isAnomaly: true,
       type: 'cost_anomaly',
-      severity: 'HIGH',
-      score: 75,
+      severity: getRiskLevel(score),
+      score,
       reason: `Sanction amount is ${ratio.toFixed(1)}x category median. Major cost outlier.`,
     };
   } else if (ratio >= 2.5) {
+    const score = 45;
     return {
       isAnomaly: true,
       type: 'cost_anomaly',
-      severity: 'MEDIUM',
-      score: 45,
+      severity: getRiskLevel(score),
+      score,
       reason: `Sanction amount is ${ratio.toFixed(1)}x category median. Elevated cost.`,
     };
   }
@@ -74,19 +79,21 @@ export function evaluateDisbursementAnomaly(
 
   const ratio = (totalPaid / sanctionAmount) * 100;
   if (ratio > 110) {
+    const score = 80;
     return {
       isAnomaly: true,
       type: 'disbursement_anomaly',
-      severity: 'HIGH',
-      score: 80,
+      severity: getRiskLevel(score),
+      score,
       reason: `Disbursed funds (${ratio.toFixed(1)}%) exceed sanctioned budget. Potential overpayment.`,
     };
   } else if (ratio > 95 && workStatus !== 'Work Completed') {
+    const score = 45;
     return {
       isAnomaly: true,
       type: 'disbursement_anomaly',
-      severity: 'MEDIUM',
-      score: 45,
+      severity: getRiskLevel(score),
+      score,
       reason: `Near-complete disbursement (${ratio.toFixed(1)}%) while status is "${workStatus}".`,
     };
   }

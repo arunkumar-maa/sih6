@@ -1,5 +1,6 @@
 import { supabase } from './client';
 import type { EnrichedProject, RiskLevel, WorkStatus } from '../types';
+import { getRiskLevel } from '../utils/risk';
 import { IsolationForest, extractFeatureVector } from '../utils/isolationForest';
 import { formatCurrency } from '../utils';
 
@@ -24,11 +25,14 @@ export function anomalyRowToEnrichedProject(row: any): EnrichedProject {
   const whyAttention: string[] = Array.isArray(row.why_attention) ? row.why_attention : [];
   const featureContributions = Array.isArray(row.feature_contributions) ? row.feature_contributions : [];
 
+  const projectScore = Number(row.risk_score || 0);
+  const projectLevel = getRiskLevel(projectScore);
+
   const factor = {
     id: row.factor_id,
     label: row.factor_label,
     description: row.factor_description,
-    severity: (row.risk_level as RiskLevel) || 'LOW',
+    severity: (row.risk_level as RiskLevel) || projectLevel,
     score: Number(row.factor_score || 0),
     available: true,
     value: row.factor_value,
@@ -73,8 +77,8 @@ export function anomalyRowToEnrichedProject(row: any): EnrichedProject {
     vendorName: null,
 
     risk: {
-      score: Number(row.risk_score || 0),
-      level: (row.risk_level as RiskLevel) || 'LOW',
+      score: projectScore,
+      level: projectLevel,
       factors: [factor],
       explanation: whyAttention.length > 0 ? whyAttention.join('. ') : row.factor_description,
       factorsAvailable: 1,
@@ -183,7 +187,7 @@ export async function getAnomalyProjects(
       .select('*')
       .eq('house', house)
       .eq('category', category)
-      .order('risk_score', { ascending: false })
+      .order('factor_score', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if ((!data || data.length === 0) && !error) {
@@ -195,7 +199,7 @@ export async function getAnomalyProjects(
         .select('*')
         .eq('house', house)
         .eq('category', category)
-        .order('risk_score', { ascending: false })
+        .order('factor_score', { ascending: false })
         .range(offset, offset + limit - 1);
 
       data = retry.data;
@@ -222,7 +226,7 @@ export async function runHouseAnomalyAnalysis(house: 'Lok Sabha' | 'Rajya Sabha'
 
   const { data: staleRows } = await supabase
     .from(tableName)
-    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio')
+    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio, risk_score, risk_level')
     .in('work_status', ['Sanction', 'Vendor Identification', 'Physical Inspection'])
     .gt('days_since_sanction', 180)
     .order('days_since_sanction', { ascending: false })
@@ -230,14 +234,14 @@ export async function runHouseAnomalyAnalysis(house: 'Lok Sabha' | 'Rajya Sabha'
 
   const { data: costRows } = await supabase
     .from(tableName)
-    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio')
+    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio, risk_score, risk_level')
     .gt('sanction_amount', 5000000)
     .order('sanction_amount', { ascending: false })
     .limit(100);
 
   const { data: disbRows } = await supabase
     .from(tableName)
-    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio')
+    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio, risk_score, risk_level')
     .gt('disbursement_ratio', 105)
     .order('disbursement_ratio', { ascending: false })
     .limit(100);
@@ -272,18 +276,24 @@ export async function runHouseAnomalyAnalysis(house: 'Lok Sabha' | 'Rajya Sabha'
   const iforestResults = featureVectors.map(fv => iforest.predict(fv));
   const iforestMap = new Map(iforestResults.map(r => [r.workId, r]));
 
-
   const newRecords: any[] = [];
+  const processedKeys = new Set<string>();
 
   for (const row of (staleRows || [])) {
+    const id = `${house}_stale_${row.work_id}`;
+    if (processedKeys.has(id)) continue;
+    processedKeys.add(id);
+
     const ifResult = iforestMap.get(row.work_id);
     const days = Number(row.days_since_sanction) || 0;
     const ruleScore = days > 365 ? 65 : 40;
     const mlScore = ifResult?.anomalyScore || 50;
-    const finalScore = Math.min(95, Math.round(0.6 * ruleScore + 0.4 * mlScore));
-    const finalLevel: RiskLevel = finalScore >= 70 ? 'HIGH' : 'MEDIUM';
+    const factorScore = Math.min(95, Math.round(0.6 * ruleScore + 0.4 * mlScore));
+    const realScore = Number(row.risk_score || 0);
+    const realLevel = getRiskLevel(realScore);
 
     newRecords.push({
+      id,
       work_id: row.work_id,
       house,
       category: 'stale',
@@ -297,33 +307,41 @@ export async function runHouseAnomalyAnalysis(house: 'Lok Sabha' | 'Rajya Sabha'
       work_status: row.work_status,
       days_since_sanction: days,
       disbursement_ratio: row.disbursement_ratio,
-      risk_score: finalScore,
-      risk_level: finalLevel,
+      risk_score: realScore,
+      risk_level: realLevel,
       factor_id: 'stale_status',
-      factor_label: 'Stale Status',
-      factor_description: `Status still "${row.work_status}" after ${days} days since sanction (>6 months).`,
-      factor_score: finalScore,
+      factor_label: 'Stale Status Indicator',
+      factor_description: `Status still "${row.work_status}" after ${days} days since sanction (>6 months). Verification Recommended.`,
+      factor_score: factorScore,
       factor_value: `${days} days in ${row.work_status}`,
       why_attention: [
         `Work sanctioned ${days} days ago without completion`,
-        `Current milestone is still at early stage: ${row.work_status}`,
+        `Current milestone: ${row.work_status}`,
+        'Timeline delay detected — Verification Recommended',
         ...(ifResult?.contributions.map(c => `${c.name}: ${c.detail}`) || []),
       ],
       feature_contributions: ifResult?.contributions || [],
+      analyzed_at: new Date().toISOString(),
     });
   }
 
   for (const row of (costRows || [])) {
+    const id = `${house}_cost_${row.work_id}`;
+    if (processedKeys.has(id)) continue;
+    processedKeys.add(id);
+
     const ifResult = iforestMap.get(row.work_id);
     const amt = Number(row.sanction_amount) || 0;
     const median = medians.get(row.work_category) || 250000;
     const ratio = median > 0 ? amt / median : 1;
     const ruleScore = ratio >= 5.0 ? 75 : 45;
     const mlScore = ifResult?.anomalyScore || 55;
-    const finalScore = Math.min(98, Math.round(0.65 * ruleScore + 0.35 * mlScore));
-    const finalLevel: RiskLevel = finalScore >= 70 ? 'HIGH' : 'MEDIUM';
+    const factorScore = Math.min(98, Math.round(0.65 * ruleScore + 0.35 * mlScore));
+    const realScore = Number(row.risk_score || 0);
+    const realLevel = getRiskLevel(realScore);
 
     newRecords.push({
+      id,
       work_id: row.work_id,
       house,
       category: 'cost',
@@ -337,30 +355,38 @@ export async function runHouseAnomalyAnalysis(house: 'Lok Sabha' | 'Rajya Sabha'
       work_status: row.work_status,
       days_since_sanction: row.days_since_sanction,
       disbursement_ratio: row.disbursement_ratio,
-      risk_score: finalScore,
-      risk_level: finalLevel,
+      risk_score: realScore,
+      risk_level: realLevel,
       factor_id: 'high_amount_anomaly',
-      factor_label: 'Cost Anomaly',
-      factor_description: `Sanction amount (${formatCurrency(amt)}) is ${ratio.toFixed(1)}x category median (${formatCurrency(median)}).`,
-      factor_score: finalScore,
+      factor_label: 'Cost Anomaly Indicator',
+      factor_description: `Sanction amount (${formatCurrency(amt)}) is ${ratio.toFixed(1)}x category median (${formatCurrency(median)}). Verification Recommended.`,
+      factor_score: factorScore,
       factor_value: `${ratio.toFixed(1)}x median (${formatCurrency(amt)})`,
       why_attention: [
         `Sanctioned cost ${formatCurrency(amt)} is ${ratio.toFixed(1)}x median for ${row.work_category}`,
+        'High budget variance — cost justification review recommended',
         ...(ifResult?.contributions.map(c => `${c.name}: ${c.detail}`) || []),
       ],
       feature_contributions: ifResult?.contributions || [],
+      analyzed_at: new Date().toISOString(),
     });
   }
 
   for (const row of (disbRows || [])) {
+    const id = `${house}_disbursement_${row.work_id}`;
+    if (processedKeys.has(id)) continue;
+    processedKeys.add(id);
+
     const ifResult = iforestMap.get(row.work_id);
     const ratio = Number(row.disbursement_ratio) || 0;
     const ruleScore = ratio > 110 ? 80 : 45;
     const mlScore = ifResult?.anomalyScore || 60;
-    const finalScore = Math.min(95, Math.round(0.6 * ruleScore + 0.4 * mlScore));
-    const finalLevel: RiskLevel = finalScore >= 70 ? 'HIGH' : 'MEDIUM';
+    const factorScore = Math.min(95, Math.round(0.6 * ruleScore + 0.4 * mlScore));
+    const realScore = Number(row.risk_score || 0);
+    const realLevel = getRiskLevel(realScore);
 
     newRecords.push({
+      id,
       work_id: row.work_id,
       house,
       category: 'disbursement',
@@ -374,18 +400,20 @@ export async function runHouseAnomalyAnalysis(house: 'Lok Sabha' | 'Rajya Sabha'
       work_status: row.work_status,
       days_since_sanction: row.days_since_sanction,
       disbursement_ratio: ratio,
-      risk_score: finalScore,
-      risk_level: finalLevel,
+      risk_score: realScore,
+      risk_level: realLevel,
       factor_id: 'disbursement_anomaly',
-      factor_label: 'Disbursement vs Sanction Mismatch',
-      factor_description: `Amount disbursed (${ratio.toFixed(1)}%) exceeds sanctioned budget.`,
-      factor_score: finalScore,
+      factor_label: 'Disbursement Variance Indicator',
+      factor_description: `Amount disbursed (${ratio.toFixed(1)}%) exceeds sanctioned budget. Verification Recommended.`,
+      factor_score: factorScore,
       factor_value: `${ratio.toFixed(1)}% disbursed`,
       why_attention: [
         `Disbursed funds exceed sanctioned ceiling by ${(ratio - 100).toFixed(1)}%`,
+        'Accounting cross-verification with implementing agency recommended',
         ...(ifResult?.contributions.map(c => `${c.name}: ${c.detail}`) || []),
       ],
       feature_contributions: ifResult?.contributions || [],
+      analyzed_at: new Date().toISOString(),
     });
   }
 

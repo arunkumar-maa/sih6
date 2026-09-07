@@ -1,5 +1,5 @@
 import { supabase, getTableName } from './supabase.service.js';
-import { IsolationForest, extractFeatureVector } from '../ml/isolationForest.js';
+import { getRiskLevel } from '../risk/riskEngine.js';
 import { formatCrore } from '../utils/formatters.js';
 import type { EnrichedProject, RiskLevel, WorkStatus } from '../types/index.js';
 
@@ -17,11 +17,14 @@ export function anomalyRowToEnrichedProject(row: any): EnrichedProject {
   const whyAttention: string[] = Array.isArray(row.why_attention) ? row.why_attention : [];
   const featureContributions = Array.isArray(row.feature_contributions) ? row.feature_contributions : [];
 
+  const projectScore = Number(row.risk_score || 0);
+  const projectLevel = getRiskLevel(projectScore);
+
   const factor = {
     id: row.factor_id,
     label: row.factor_label,
     description: row.factor_description,
-    severity: (row.risk_level as RiskLevel) || 'LOW',
+    severity: (row.risk_level as RiskLevel) || projectLevel,
     score: Number(row.factor_score || 0),
     available: true,
     value: row.factor_value,
@@ -65,8 +68,8 @@ export function anomalyRowToEnrichedProject(row: any): EnrichedProject {
     vendorName: null,
 
     risk: {
-      score: Number(row.risk_score || 0),
-      level: (row.risk_level as RiskLevel) || 'LOW',
+      score: projectScore,
+      level: projectLevel,
       factors: [factor],
       explanation: whyAttention.length > 0 ? whyAttention.join('. ') : row.factor_description,
       factorsAvailable: 1,
@@ -132,7 +135,7 @@ export async function fetchAnomalyProjects(
       .select('*')
       .eq('house', house)
       .eq('category', category)
-      .order('risk_score', { ascending: false })
+      .order('factor_score', { ascending: false })
       .range(offset, offset + limit - 1);
 
     if ((!data || data.length === 0) && !error) {
@@ -144,7 +147,7 @@ export async function fetchAnomalyProjects(
         .select('*')
         .eq('house', house)
         .eq('category', category)
-        .order('risk_score', { ascending: false })
+        .order('factor_score', { ascending: false })
         .range(offset, offset + limit - 1);
 
       data = retry.data;
@@ -162,41 +165,135 @@ export async function fetchAnomalyProjects(
   }
 }
 
+export async function getCategoryMedians(house: 'Lok Sabha' | 'Rajya Sabha'): Promise<Map<string, number>> {
+  const tableName = getTableName(house);
+  const { data } = await supabase
+    .from(tableName)
+    .select('work_category, sanction_amount')
+    .gt('sanction_amount', 0)
+    .limit(3000);
+
+  const byCat = new Map<string, number[]>();
+  for (const r of (data || [])) {
+    if (r.work_category && r.sanction_amount) {
+      const arr = byCat.get(r.work_category) || [];
+      arr.push(Number(r.sanction_amount));
+      byCat.set(r.work_category, arr);
+    }
+  }
+
+  const medians = new Map<string, number>();
+  byCat.forEach((amounts, cat) => {
+    const sorted = [...amounts].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    medians.set(cat, sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid]);
+  });
+  return medians;
+}
+
 export async function runAnomalyScan(house: 'Lok Sabha' | 'Rajya Sabha') {
   const tableName = getTableName(house);
   console.log(`[AnomalyService] Running scan on ${tableName} for ${house}...`);
 
-  // Stale status candidate extraction
+  const medians = await getCategoryMedians(house);
+
+  // 1. Pending/Stalled sanctions (>365 days in Sanction status)
+  const { data: pendingRows } = await supabase
+    .from(tableName)
+    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio, risk_score, risk_level')
+    .eq('work_status', 'Sanction')
+    .gt('days_since_sanction', 365)
+    .order('days_since_sanction', { ascending: false })
+    .limit(100);
+
+  // 2. Stale status (>180 days in early stages)
   const { data: staleRows } = await supabase
     .from(tableName)
-    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio')
-    .in('work_status', ['Sanction', 'Vendor Identification', 'Physical Inspection'])
+    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio, risk_score, risk_level')
+    .in('work_status', ['Vendor Identification', 'Physical Inspection'])
     .gt('days_since_sanction', 180)
     .order('days_since_sanction', { ascending: false })
     .limit(100);
 
-  // Cost outliers
-  const { data: costRows } = await supabase
+  // 3. Cost outliers: compare against category median ratio >= 2.5
+  const { data: topAmountRows } = await supabase
     .from(tableName)
-    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio')
-    .gt('sanction_amount', 5000000)
+    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio, risk_score, risk_level')
+    .gt('sanction_amount', 0)
     .order('sanction_amount', { ascending: false })
-    .limit(100);
+    .limit(300);
 
-  // Disbursement outliers
+  const costCandidates = (topAmountRows || []).filter(r => {
+    const amt = Number(r.sanction_amount || 0);
+    const median = medians.get(r.work_category) || 250000;
+    return median > 0 && (amt / median) >= 2.5;
+  }).slice(0, 100);
+
+  // 4. Disbursement outliers (>105% disbursement ratio)
   const { data: disbRows } = await supabase
     .from(tableName)
-    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio')
+    .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio, risk_score, risk_level')
     .gt('disbursement_ratio', 105)
     .order('disbursement_ratio', { ascending: false })
     .limit(100);
 
   const newRecords: any[] = [];
+  const processedKeys = new Set<string>();
+
+  for (const r of (pendingRows || [])) {
+    const id = `${house}_pending_${r.work_id}`;
+    if (processedKeys.has(id)) continue;
+    processedKeys.add(id);
+
+    const days = Number(r.days_since_sanction) || 0;
+    const factorScore = Math.min(95, Math.round(50 + (days / 730) * 45));
+    const realScore = Number(r.risk_score || 0);
+    const realLevel = getRiskLevel(realScore);
+
+    newRecords.push({
+      id,
+      work_id: r.work_id,
+      house,
+      category: 'pending',
+      work_description: r.work_description,
+      work_category: r.work_category,
+      state: r.state,
+      district: r.district,
+      constituency: r.constituency,
+      sanction_amount: r.sanction_amount,
+      total_paid: r.total_paid,
+      work_status: r.work_status,
+      days_since_sanction: days,
+      disbursement_ratio: r.disbursement_ratio,
+      risk_score: realScore,
+      risk_level: realLevel,
+      factor_id: 'pending_recommendation',
+      factor_label: 'Unsanctioned / Stalled Sanction',
+      factor_description: `Administrative sanction granted ${days} days ago, but work has not commenced execution. Verification Recommended.`,
+      factor_score: factorScore,
+      factor_value: `${days} days stagnant`,
+      why_attention: [
+        `Work sanctioned ${days} days ago without commencement of execution`,
+        `Current administrative status: "${r.work_status}"`,
+        'Verification Recommended to assess project feasibility',
+      ],
+      feature_contributions: [{ feature: 'Stagnant Duration', value: days, contribution: 0.85 }],
+      analyzed_at: new Date().toISOString(),
+    });
+  }
 
   for (const r of (staleRows || [])) {
+    const id = `${house}_stale_${r.work_id}`;
+    if (processedKeys.has(id)) continue;
+    processedKeys.add(id);
+
     const days = Number(r.days_since_sanction) || 0;
-    const score = Math.min(95, Math.round(50 + (days / 730) * 45));
+    const factorScore = Math.min(95, Math.round(50 + (days / 730) * 45));
+    const realScore = Number(r.risk_score || 0);
+    const realLevel = getRiskLevel(realScore);
+
     newRecords.push({
+      id,
       work_id: r.work_id,
       house,
       category: 'stale',
@@ -210,22 +307,37 @@ export async function runAnomalyScan(house: 'Lok Sabha' | 'Rajya Sabha') {
       work_status: r.work_status,
       days_since_sanction: days,
       disbursement_ratio: r.disbursement_ratio,
-      risk_score: score,
-      risk_level: score >= 70 ? 'HIGH' : 'MEDIUM',
+      risk_score: realScore,
+      risk_level: realLevel,
       factor_id: 'stale_status',
-      factor_label: 'Stale Status',
-      factor_description: `Status still "${r.work_status}" after ${days} days since sanction (>6 months).`,
-      factor_score: score,
+      factor_label: 'Stale Status Indicator',
+      factor_description: `Status still "${r.work_status}" after ${days} days since sanction (>6 months). Requires Attention.`,
+      factor_score: factorScore,
       factor_value: `${days} days in ${r.work_status}`,
-      why_attention: [`Work sanctioned ${days} days ago without completion`, `Current milestone: ${r.work_status}`],
+      why_attention: [
+        `Work sanctioned ${days} days ago without reaching completion`,
+        `Current milestone: ${r.work_status}`,
+        'Timeline delay detected — Verification Recommended',
+      ],
       feature_contributions: [{ feature: 'Days Since Sanction', value: days, contribution: 0.85 }],
+      analyzed_at: new Date().toISOString(),
     });
   }
 
-  for (const r of (costRows || [])) {
+  for (const r of costCandidates) {
+    const id = `${house}_cost_${r.work_id}`;
+    if (processedKeys.has(id)) continue;
+    processedKeys.add(id);
+
     const amt = Number(r.sanction_amount) || 0;
-    const score = Math.min(98, Math.round(60 + (amt / 50000000) * 38));
+    const median = medians.get(r.work_category) || 250000;
+    const ratio = median > 0 ? amt / median : 1;
+    const factorScore = Math.min(98, Math.round(45 + Math.min(50, (ratio - 1) * 15)));
+    const realScore = Number(r.risk_score || 0);
+    const realLevel = getRiskLevel(realScore);
+
     newRecords.push({
+      id,
       work_id: r.work_id,
       house,
       category: 'cost',
@@ -239,22 +351,35 @@ export async function runAnomalyScan(house: 'Lok Sabha' | 'Rajya Sabha') {
       work_status: r.work_status,
       days_since_sanction: r.days_since_sanction,
       disbursement_ratio: r.disbursement_ratio,
-      risk_score: score,
-      risk_level: score >= 70 ? 'HIGH' : 'MEDIUM',
+      risk_score: realScore,
+      risk_level: realLevel,
       factor_id: 'high_amount_anomaly',
-      factor_label: 'Cost Anomaly',
-      factor_description: `Sanction amount (${formatCrore(amt)}) is significantly above category median.`,
-      factor_score: score,
-      factor_value: formatCrore(amt),
-      why_attention: [`Sanctioned budget of ${formatCrore(amt)} is in top percentile for ${r.work_category}`],
-      feature_contributions: [{ feature: 'Sanction Amount', value: amt, contribution: 0.92 }],
+      factor_label: 'Cost Anomaly Indicator',
+      factor_description: `Sanction amount (${formatCrore(amt)}) is ${ratio.toFixed(1)}x category median (${formatCrore(median)}). Verification Recommended.`,
+      factor_score: factorScore,
+      factor_value: `${ratio.toFixed(1)}x median (${formatCrore(amt)})`,
+      why_attention: [
+        `Sanctioned budget of ${formatCrore(amt)} is ${ratio.toFixed(1)}x higher than category median`,
+        `Work category: ${r.work_category}`,
+        'High budget variance — cost justification review recommended',
+      ],
+      feature_contributions: [{ feature: 'Budget Variance Ratio', value: ratio, contribution: 0.92 }],
+      analyzed_at: new Date().toISOString(),
     });
   }
 
   for (const r of (disbRows || [])) {
+    const id = `${house}_disbursement_${r.work_id}`;
+    if (processedKeys.has(id)) continue;
+    processedKeys.add(id);
+
     const ratio = Number(r.disbursement_ratio) || 0;
-    const score = Math.min(95, Math.round(65 + (ratio - 100) * 1.5));
+    const factorScore = Math.min(95, Math.round(65 + (ratio - 100) * 1.5));
+    const realScore = Number(r.risk_score || 0);
+    const realLevel = getRiskLevel(realScore);
+
     newRecords.push({
+      id,
       work_id: r.work_id,
       house,
       category: 'disbursement',
@@ -268,28 +393,36 @@ export async function runAnomalyScan(house: 'Lok Sabha' | 'Rajya Sabha') {
       work_status: r.work_status,
       days_since_sanction: r.days_since_sanction,
       disbursement_ratio: ratio,
-      risk_score: score,
-      risk_level: score >= 70 ? 'HIGH' : 'MEDIUM',
+      risk_score: realScore,
+      risk_level: realLevel,
       factor_id: 'disbursement_anomaly',
-      factor_label: 'Disbursement vs Sanction Mismatch',
-      factor_description: `Amount disbursed exceeds sanction amount by ${(ratio - 100).toFixed(1)}%.`,
-      factor_score: score,
+      factor_label: 'Disbursement Variance Indicator',
+      factor_description: `Disbursed amount exceeds sanction ceiling by ${(ratio - 100).toFixed(1)}%. Verification Recommended.`,
+      factor_score: factorScore,
       factor_value: `${ratio.toFixed(1)}% disbursed`,
-      why_attention: [`Disbursed funds exceed sanctioned ceiling by ${(ratio - 100).toFixed(1)}%`],
+      why_attention: [
+        `Disbursed funds exceed sanctioned allocation by ${(ratio - 100).toFixed(1)}%`,
+        'Accounting cross-verification with implementing agency recommended',
+      ],
       feature_contributions: [{ feature: 'Disbursement Ratio', value: ratio, contribution: 0.95 }],
+      analyzed_at: new Date().toISOString(),
     });
   }
 
   if (newRecords.length > 0) {
     await supabase.from('project_anomaly_results').delete().eq('house', house);
-    const { error: insError } = await supabase.from('project_anomaly_results').insert(newRecords);
-    if (insError) {
-      console.warn('[AnomalyService] Could not persist scan results to table:', insError.message);
+    const batchSize = 50;
+    for (let i = 0; i < newRecords.length; i += batchSize) {
+      const batch = newRecords.slice(i, i + batchSize);
+      const { error: insError } = await supabase.from('project_anomaly_results').insert(batch);
+      if (insError) {
+        console.warn('[AnomalyService] Could not persist scan results to table:', insError.message);
+      }
     }
   }
 
   return {
-    projectsAnalyzed: (staleRows?.length || 0) + (costRows?.length || 0) + (disbRows?.length || 0),
+    projectsAnalyzed: (pendingRows?.length || 0) + (staleRows?.length || 0) + costCandidates.length + (disbRows?.length || 0),
     indicatorsDetected: newRecords.length,
     timestamp: new Date().toISOString(),
     house,

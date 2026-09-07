@@ -41,9 +41,14 @@ function daysSince(date: Date | null): number | null {
   return differenceInDays(new Date(), date);
 }
 
-function getRiskLevel(score: number): RiskLevel {
-  if (score >= 61) return 'HIGH';
-  if (score >= 31) return 'MEDIUM';
+export const RISK_THRESHOLDS = {
+  HIGH: 55,
+  MEDIUM: 25,
+} as const;
+
+export function getRiskLevel(score: number): RiskLevel {
+  if (score >= RISK_THRESHOLDS.HIGH) return 'HIGH';
+  if (score >= RISK_THRESHOLDS.MEDIUM) return 'MEDIUM';
   return 'LOW';
 }
 

@@ -1,4 +1,5 @@
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+export { getRiskLevel, RISK_THRESHOLDS } from '../risk/riskEngine.js';
 
 export type WorkStatus =
   | 'Sanction'

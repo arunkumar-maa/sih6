@@ -1,4 +1,5 @@
 import { supabase, getTableName } from './supabase.service.js';
+import { getRiskLevel } from '../risk/riskEngine.js';
 import type { EnrichedProject, ProjectFilters, RiskLevel, WorkStatus, PaymentStatus, VerificationStatus } from '../types/index.js';
 
 export function rowToEnrichedProject(row: any): EnrichedProject {
@@ -41,7 +42,7 @@ export function rowToEnrichedProject(row: any): EnrichedProject {
 
     risk: {
       score: Number(row.risk_score || 0),
-      level: (row.risk_level as RiskLevel) || 'LOW',
+      level: (row.risk_level as RiskLevel) || getRiskLevel(Number(row.risk_score || 0)),
       factors: Array.isArray(row.risk_factors) ? row.risk_factors : [],
       explanation: row.risk_explanation || '',
       factorsAvailable: Array.isArray(row.risk_factors) ? row.risk_factors.filter((f: any) => f.available).length : 0,
