@@ -1,13 +1,14 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   AlertTriangle, Clock, DollarSign, Users, TrendingUp,
-  ChevronRight, Info, Shield, RefreshCw, CheckCircle2, AlertCircle
+  ChevronRight, ChevronLeft, Info, Shield, RefreshCw, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
 import { RiskBadge } from '../components/RiskBadge';
 import { formatCurrency, truncate } from '../utils';
 import type { EnrichedProject } from '../data/types';
 import type { AnomalyTab } from '../data/supabase/anomalyQueries';
+import { getAnomalyProjects } from '../services/anomalyService';
 
 const TAB_CONFIG: { id: AnomalyTab; label: string; Icon: React.ElementType; color: string }[] = [
   { id: 'pending',      label: 'Unsanctioned Works',  Icon: Clock,          color: '#92400e' },
@@ -33,89 +34,72 @@ const FACTOR_ID_MAP: Record<AnomalyTab, string> = {
   vendor: 'vendor_concentration',
 };
 
+const PAGE_SIZE = 25;
+
 export function RiskAnomaliesCenter() {
   const {
-    projects,
     activeHouse,
     selectProject,
     setCurrentPage,
     anomalyCounts,
-    anomalyProjects,
-    anomalyLoading,
-    anomalyError,
     lastAnalysisSummary,
     loadAnomalyData,
   } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<AnomalyTab>('stale');
+  const [page, setPage] = useState(1);
+  const [paginatedProjects, setPaginatedProjects] = useState<EnrichedProject[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
 
-  // Load anomaly data on initial mount and whenever activeHouse changes
+  // Load summary counts on initial mount and whenever activeHouse changes
   useEffect(() => {
     loadAnomalyData(activeHouse);
   }, [activeHouse, loadAnomalyData]);
 
-  // Local fallback calculations from projects in store
-  const localAnomalies = useMemo(() => {
-    const pending = projects
-      .filter(p => { const f = p.risk.factors.find(f => f.id === 'pending_recommendation'); return f?.available && f.score > 30; })
-      .sort((a, b) => b.risk.score - a.risk.score);
+  // Reset page when tab or house changes
+  useEffect(() => {
+    setPage(1);
+  }, [activeHouse, activeTab]);
 
-    const stale = projects
-      .filter(p => { const f = p.risk.factors.find(f => f.id === 'stale_status'); return f?.available && f.score > 20; })
-      .sort((a, b) => {
-        const fa = a.risk.factors.find(f => f.id === 'stale_status')!;
-        const fb = b.risk.factors.find(f => f.id === 'stale_status')!;
-        return fb.score - fa.score;
-      });
-
-    const cost = projects
-      .filter(p => { const f = p.risk.factors.find(f => f.id === 'high_amount_anomaly'); return f?.available && f.score > 30; })
-      .sort((a, b) => {
-        const fa = a.risk.factors.find(f => f.id === 'high_amount_anomaly')!;
-        const fb = b.risk.factors.find(f => f.id === 'high_amount_anomaly')!;
-        return fb.score - fa.score;
-      });
-
-    const disbursement = projects
-      .filter(p => { const f = p.risk.factors.find(f => f.id === 'disbursement_anomaly'); return f?.available && f.score > 20; })
-      .sort((a, b) => {
-        const fa = a.risk.factors.find(f => f.id === 'disbursement_anomaly')!;
-        const fb = b.risk.factors.find(f => f.id === 'disbursement_anomaly')!;
-        return fb.score - fa.score;
-      });
-
-    const vendor = projects
-      .filter(p => { const f = p.risk.factors.find(f => f.id === 'vendor_concentration'); return f?.available && f.score > 10; })
-      .sort((a, b) => {
-        const fa = a.risk.factors.find(f => f.id === 'vendor_concentration')!;
-        const fb = b.risk.factors.find(f => f.id === 'vendor_concentration')!;
-        return fb.score - fa.score;
-      });
-
-    return { pending, stale, cost, disbursement, vendor };
-  }, [projects]);
-
-  // Selected category project list (prefers Supabase anomaly query results)
-  const currentList: EnrichedProject[] = useMemo(() => {
-    if (activeTab === 'vendor') return [];
-    if (anomalyProjects && anomalyProjects[activeTab] && anomalyProjects[activeTab].length > 0) {
-      return anomalyProjects[activeTab].slice(0, 25);
+  // Fetch paginated projects for activeTab & page
+  const fetchPageProjects = useCallback(async () => {
+    if (activeTab === 'vendor') {
+      setPaginatedProjects([]);
+      setListLoading(false);
+      setListError(null);
+      return;
     }
-    return localAnomalies[activeTab].slice(0, 25);
-  }, [activeTab, anomalyProjects, localAnomalies]);
 
-  // Card counts: prioritize dataset-wide server counts from Supabase
+    setListLoading(true);
+    setListError(null);
+    try {
+      const offset = (page - 1) * PAGE_SIZE;
+      const data = await getAnomalyProjects(activeHouse, activeTab, PAGE_SIZE, offset);
+      setPaginatedProjects(data);
+    } catch (err: any) {
+      console.error(`[RiskAnomaliesCenter] Failed to fetch ${activeTab} page ${page}:`, err);
+      setListError(err.message || 'Unable to load anomaly records.');
+    } finally {
+      setListLoading(false);
+    }
+  }, [activeHouse, activeTab, page]);
+
+  useEffect(() => {
+    fetchPageProjects();
+  }, [fetchPageProjects]);
+
+  // Card counts: dataset-wide server counts from Supabase RPC
   const getTabCount = (tab: AnomalyTab): number => {
     if (tab === 'vendor') return 0;
     if (anomalyCounts && anomalyCounts[tab] !== undefined) {
       return anomalyCounts[tab];
     }
-    if (anomalyProjects && anomalyProjects[tab] && anomalyProjects[tab].length > 0) {
-      return anomalyProjects[tab].length;
-    }
-    return localAnomalies[tab].length;
+    return 0;
   };
 
+  const totalTabCount = getTabCount(activeTab);
+  const totalPages = Math.max(1, Math.ceil(totalTabCount / PAGE_SIZE));
   const activeTabConfig = TAB_CONFIG.find(t => t.id === activeTab)!;
 
   return (
@@ -152,22 +136,6 @@ export function RiskAnomaliesCenter() {
         </div>
       )}
 
-      {/* Error State Banner if Supabase query failed */}
-      {anomalyError && (
-        <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#fef2f2] border border-[#fecaca] rounded-sm text-xs text-[#991b1b]">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={14} className="text-[#dc2626] flex-shrink-0" />
-            <span>Anomaly analysis data could not be loaded. Please retry.</span>
-          </div>
-          <button
-            onClick={() => loadAnomalyData(activeHouse)}
-            className="text-[11px] font-bold text-[#dc2626] hover:underline"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
       {/* Category Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {TAB_CONFIG.map(({ id, label, Icon, color }) => {
@@ -177,7 +145,7 @@ export function RiskAnomaliesCenter() {
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`p-4 border text-left transition-all duration-150 rounded-sm shadow-[0_1px_4px_rgba(0,10,31,0.04)] ${
+              className={`p-4 border text-left transition-all duration-150 rounded-sm shadow-[0_1px_4px_rgba(0,10,31,0.04)] cursor-pointer ${
                 isActive
                   ? 'border-opacity-60 shadow-[0_4px_16px_rgba(0,10,31,0.1)]'
                   : 'bg-white border-[#E9ECEF] hover:border-[#c4c6d0] hover:shadow-[0_2px_8px_rgba(0,10,31,0.06)]'
@@ -196,7 +164,7 @@ export function RiskAnomaliesCenter() {
                 </span>
               </div>
               <div className="text-2xl font-bold" style={{ color: isActive ? color : '#000a1f', fontFamily: 'Montserrat, sans-serif' }}>
-                {anomalyLoading && !anomalyCounts ? '...' : count.toLocaleString('en-IN')}
+                {!anomalyCounts ? '...' : count.toLocaleString('en-IN')}
               </div>
               <div className="text-[10px] text-[#747780] mt-0.5">anomalies</div>
             </button>
@@ -220,7 +188,9 @@ export function RiskAnomaliesCenter() {
               <p className="text-[11px] text-[#747780]">
                 {activeTab === 'vendor'
                   ? 'Vendor data unavailable for this dataset'
-                  : `${currentList.length} priority anomaly cases displayed · ${getTabCount(activeTab).toLocaleString('en-IN')} total detected`}
+                  : totalTabCount === 0
+                  ? '0 anomalies detected'
+                  : `Showing ${Math.min((page - 1) * PAGE_SIZE + 1, totalTabCount)}–${Math.min(page * PAGE_SIZE, totalTabCount)} of ${totalTabCount.toLocaleString('en-IN')} priority anomaly cases · ${totalTabCount.toLocaleString('en-IN')} total detected`}
               </p>
             </div>
           </div>
@@ -234,27 +204,50 @@ export function RiskAnomaliesCenter() {
         </div>
 
         {/* Loading State */}
-        {anomalyLoading && currentList.length === 0 ? (
+        {listLoading && paginatedProjects.length === 0 ? (
           <div className="py-16 text-center">
             <RefreshCw size={24} className="mx-auto text-[#005eb2] animate-spin mb-2" />
             <div className="text-[#44474f] text-sm font-semibold">Analyzing MPLADS project data...</div>
             <div className="text-[#747780] text-xs mt-1">Evaluating multi-dimensional risk signals from Supabase</div>
           </div>
         ) : activeTab === 'vendor' ? (
-          // Explicit section 5E mandate: Vendor data unavailable
           <div className="py-16 text-center">
             <Users size={32} className="mx-auto text-[#747780] mb-2 opacity-50" />
             <div className="text-[#44474f] text-sm font-semibold">Vendor data unavailable for this dataset</div>
             <div className="text-[#747780] text-xs mt-1">Contractor and vendor fields are unrecorded in official {activeHouse} project data.</div>
           </div>
-        ) : currentList.length === 0 ? (
+        ) : listError ? (
+          <div className="py-16 text-center">
+            <AlertCircle size={32} className="mx-auto text-[#DC3545] mb-2" />
+            <div className="text-[#44474f] text-sm font-semibold">Unable to load anomaly records</div>
+            <div className="text-[#747780] text-xs mt-1 mb-3">{listError}</div>
+            <button
+              onClick={fetchPageProjects}
+              className="px-3.5 py-1.5 bg-[#005eb2] text-white text-xs font-semibold rounded hover:bg-[#004a8f] cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        ) : paginatedProjects.length === 0 && totalTabCount > 0 ? (
+          <div className="py-16 text-center">
+            <AlertCircle size={32} className="mx-auto text-[#DC3545] mb-2" />
+            <div className="text-[#44474f] text-sm font-semibold">Unable to load anomaly records</div>
+            <div className="text-[#747780] text-xs mt-1 mb-3">Detected {totalTabCount.toLocaleString('en-IN')} cases, but records could not be retrieved.</div>
+            <button
+              onClick={fetchPageProjects}
+              className="px-3.5 py-1.5 bg-[#005eb2] text-white text-xs font-semibold rounded hover:bg-[#004a8f] cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        ) : paginatedProjects.length === 0 ? (
           <div className="py-16 text-center">
             <div className="text-[#44474f] text-sm font-semibold">No anomalies detected in this category.</div>
             <div className="text-[#747780] text-xs mt-1">No anomalies found matching current filters.</div>
           </div>
         ) : (
           <div className="space-y-3">
-            {currentList.map((project) => {
+            {paginatedProjects.map((project) => {
               const factor = project.risk.factors.find(f => f.id === FACTOR_ID_MAP[activeTab]) || project.risk.factors[0];
               const tab = TAB_CONFIG.find(t => t.id === activeTab)!;
               const whyAttention: string[] = (project as any).whyAttention || [];
@@ -371,6 +364,36 @@ export function RiskAnomaliesCenter() {
                 </div>
               );
             })}
+
+            {/* Pagination Controls */}
+            {totalTabCount > PAGE_SIZE && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 mt-5 border-t border-[#E9ECEF]">
+                <div className="text-xs text-[#747780]">
+                  Showing <strong className="text-[#000a1f]">{(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, totalTabCount)}</strong> of <strong className="text-[#000a1f]">{totalTabCount.toLocaleString('en-IN')}</strong> records
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page <= 1 || listLoading}
+                    className="px-3 py-1.5 text-xs font-semibold rounded border border-[#E9ECEF] bg-white text-[#44474f] hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <ChevronLeft size={14} />
+                    Previous
+                  </button>
+                  <span className="text-xs font-mono px-2.5 py-1 bg-slate-100 rounded text-slate-700 font-semibold">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages || listLoading}
+                    className="px-3 py-1.5 text-xs font-semibold rounded border border-[#E9ECEF] bg-white text-[#44474f] hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    Next
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -380,9 +403,9 @@ export function RiskAnomaliesCenter() {
         <Info size={14} className="text-[#005eb2] mt-0.5 flex-shrink-0" />
         <div className="text-[11px] text-[#44474f] leading-relaxed">
           <strong className="text-[#141d23] font-bold">About Anomaly Detection:</strong>{' '}
-          These patterns are identified using multi-dimensional Isolation Forest machine learning and rule-based statistical analysis of the MPLADS dataset.
+          These patterns are identified using multi-dimensional statistical indicators and official business rules on the {activeHouse} dataset.
           They are <em className="font-semibold">indicators requiring human verification</em>, not evidence of wrongdoing.
-          Officers should investigate flagged projects using official records and site visits before taking any administrative action.
+          Officers should cross-verify flagged projects using physical site inspection and official sanction records before taking administrative action.
         </div>
       </div>
     </div>

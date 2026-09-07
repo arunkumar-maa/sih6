@@ -144,3 +144,75 @@ export async function fetchCategoryAnalytics(house: 'Lok Sabha' | 'Rajya Sabha')
     avgScore: stats.total > 0 ? Math.round(stats.scoreSum / stats.total) : 0,
   }));
 }
+
+export interface AnalyticsObservatoryData {
+  kpis: {
+    total: number;
+    totalSanctionAmount: number;
+    totalDisbursed: number;
+    highRisk: number;
+    medRisk: number;
+    lowRisk: number;
+    completed: number;
+    pendingSanction: number;
+  };
+  districtRisk: Array<{
+    district: string;
+    total: number;
+    high: number;
+    med: number;
+    low: number;
+    concentration: number;
+  }>;
+  categoryRisk: Array<{
+    category: string;
+    total: number;
+    high: number;
+    med: number;
+    low: number;
+  }>;
+  statusBreakdown: Array<{
+    name: string;
+    value: number;
+    percentage: number;
+  }>;
+  fyTrend: Array<{
+    fy: string;
+    sanctioned: number;
+    disbursed: number;
+    total_projects: number;
+  }>;
+}
+
+export async function fetchObservatoryAnalytics(
+  house: 'Lok Sabha' | 'Rajya Sabha',
+  filters: {
+    state?: string;
+    constituency?: string;
+    mpName?: string;
+    riskLevel?: string;
+    status?: string;
+    category?: string;
+    tenure?: string;
+    search?: string;
+  } = {}
+): Promise<AnalyticsObservatoryData> {
+  const { data, error } = await supabase.rpc('get_analytics_observatory', {
+    p_house: house,
+    p_state: filters.state || null,
+    p_constituency: filters.constituency || null,
+    p_mp: filters.mpName || null,
+    p_risk: filters.riskLevel || null,
+    p_status: filters.status || null,
+    p_category: filters.category || null,
+    p_tenure: filters.tenure || null,
+    p_search: filters.search || null,
+  });
+
+  if (error) {
+    console.error('[AnalyticsService] Error calling get_analytics_observatory:', error);
+    throw error;
+  }
+
+  return data as AnalyticsObservatoryData;
+}

@@ -21,21 +21,89 @@ export interface AnalysisSummary {
   house: 'Lok Sabha' | 'Rajya Sabha';
 }
 
-export function anomalyRowToEnrichedProject(row: any): EnrichedProject {
+export function anomalyRowToEnrichedProject(row: any, category?: AnomalyTab): EnrichedProject {
   const whyAttention: string[] = Array.isArray(row.why_attention) ? row.why_attention : [];
   const featureContributions = Array.isArray(row.feature_contributions) ? row.feature_contributions : [];
 
   const projectScore = Number(row.risk_score || 0);
-  const projectLevel = getRiskLevel(projectScore);
+  const projectLevel = (row.risk_level as RiskLevel) || getRiskLevel(projectScore);
+
+  const cat = category || (row.category as AnomalyTab) || 'stale';
+  const days = Number(row.days_since_sanction) || 0;
+  const sanctionAmt = Number(row.sanction_amount) || 0;
+  const paidAmt = Number(row.total_paid) || 0;
+  const ratio = Math.round(Number(row.disbursement_ratio || (sanctionAmt > 0 ? (paidAmt / sanctionAmt) * 100 : 0)));
+
+  let factorId = row.factor_id;
+  let factorLabel = row.factor_label;
+  let factorDesc = row.factor_description;
+  let factorScore = Number(row.factor_score || 0);
+  let factorVal = row.factor_value;
+
+  if (!factorId) {
+    if (cat === 'pending') {
+      factorId = 'pending_recommendation';
+      factorLabel = 'Unsanctioned / Stalled Sanction';
+      factorDesc = `Administrative sanction granted ${days} days ago without commencement of execution. Verification Recommended.`;
+      factorScore = Math.min(95, Math.round(50 + (days / 730) * 45));
+      factorVal = `${days} days stagnant`;
+      if (whyAttention.length === 0) {
+        whyAttention.push(
+          `Administrative sanction granted ${days} days ago without commencement`,
+          `Current administrative status: "${row.work_status}"`,
+          'Verification Recommended to assess project feasibility'
+        );
+      }
+    } else if (cat === 'cost') {
+      factorId = 'high_amount_anomaly';
+      factorLabel = 'Cost Anomaly';
+      factorDesc = `Sanction amount of ${formatCurrency(sanctionAmt)} exceeds standard expenditure ceiling. Cross-audit Recommended.`;
+      factorScore = Math.min(95, Math.round(50 + (sanctionAmt / 10000000) * 20));
+      factorVal = formatCurrency(sanctionAmt);
+      if (whyAttention.length === 0) {
+        whyAttention.push(
+          `High sanction allocation of ${formatCurrency(sanctionAmt)} exceeding normal thresholds`,
+          `Category: ${row.work_category || 'General'}`,
+          'Physical milestone verification recommended'
+        );
+      }
+    } else if (cat === 'disbursement') {
+      factorId = 'disbursement_anomaly';
+      factorLabel = 'Disbursement Pacing Discrepancy';
+      factorDesc = `Disbursed ${formatCurrency(paidAmt)} (${ratio}% of sanction) while status remains "${row.work_status}". Verification Recommended.`;
+      factorScore = Math.min(95, Math.round(50 + Math.max(0, ratio - 80) * 2));
+      factorVal = `${ratio}% disbursed`;
+      if (whyAttention.length === 0) {
+        whyAttention.push(
+          `${ratio}% of funds disbursed while implementation status is "${row.work_status}"`,
+          `Total paid: ${formatCurrency(paidAmt)} out of ${formatCurrency(sanctionAmt)}`,
+          'Cross-verification with physical site inspection recommended'
+        );
+      }
+    } else {
+      // stale
+      factorId = 'stale_status';
+      factorLabel = 'Stale Administrative Status';
+      factorDesc = `Project in preliminary "${row.work_status}" phase for ${days} days without completion. Verification Recommended.`;
+      factorScore = Math.min(90, Math.round(40 + (days / 365) * 40));
+      factorVal = `${days} days in ${row.work_status}`;
+      if (whyAttention.length === 0) {
+        whyAttention.push(
+          `Project has remained in "${row.work_status}" phase for ${days} days`,
+          'Execution progress verification recommended with IDA'
+        );
+      }
+    }
+  }
 
   const factor = {
-    id: row.factor_id,
-    label: row.factor_label,
-    description: row.factor_description,
+    id: factorId,
+    label: factorLabel,
+    description: factorDesc,
     severity: (row.risk_level as RiskLevel) || projectLevel,
-    score: Number(row.factor_score || 0),
+    score: factorScore,
     available: true,
-    value: row.factor_value,
+    value: factorVal,
   };
 
   return {
@@ -62,13 +130,13 @@ export function anomalyRowToEnrichedProject(row: any): EnrichedProject {
     expenditureAmount: row.total_paid !== null ? Number(row.total_paid) : null,
     totalPaid: row.total_paid !== null ? Number(row.total_paid) : null,
     allocatedLimit: null,
-    disbursementRatio: row.disbursement_ratio !== null ? Number(row.disbursement_ratio) : null,
+    disbursementRatio: ratio,
 
     workStatus: (row.work_status as WorkStatus) || 'Unknown',
     paymentStatus: 'Payment In-Progress',
     isCompleted: row.work_status === 'Work Completed',
     isSanctioned: true,
-    isRecommendedOnly: row.category === 'pending',
+    isRecommendedOnly: cat === 'pending',
 
     daysSinceSanction: row.days_since_sanction !== null ? Number(row.days_since_sanction) : null,
     daysSinceRecommendation: null,
@@ -80,7 +148,7 @@ export function anomalyRowToEnrichedProject(row: any): EnrichedProject {
       score: projectScore,
       level: projectLevel,
       factors: [factor],
-      explanation: whyAttention.length > 0 ? whyAttention.join('. ') : row.factor_description,
+      explanation: whyAttention.length > 0 ? whyAttention.join('. ') : factorDesc,
       factorsAvailable: 1,
       factorsTotal: 6,
     },
@@ -181,8 +249,42 @@ export async function getAnomalyProjects(
     return [];
   }
 
+  // 1. First try Supabase RPC get_dataset_anomaly_projects
   try {
-    let { data, error } = await supabase
+    const { data, error } = await supabase.rpc('get_dataset_anomaly_projects', {
+      p_house: house,
+      p_category: category,
+      p_limit: limit,
+      p_offset: offset,
+    });
+
+    if (!error && data && data.length > 0) {
+      return data.map((r: any) => anomalyRowToEnrichedProject(r, category));
+    }
+    if (error) {
+      console.warn(`[AnomalyService] RPC get_dataset_anomaly_projects failed:`, error);
+    }
+  } catch (rpcErr) {
+    console.warn(`[AnomalyService] RPC exception, trying backend API:`, rpcErr);
+  }
+
+  // 2. Try backend API endpoint
+  try {
+    const apiBase = import.meta.env.VITE_API_URL || '';
+    const resp = await fetch(`${apiBase}/api/anomalies/projects?house=${encodeURIComponent(house)}&category=${encodeURIComponent(category)}&limit=${limit}&offset=${offset}`);
+    if (resp.ok) {
+      const json = await resp.json();
+      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        return json.data;
+      }
+    }
+  } catch (apiErr) {
+    console.warn(`[AnomalyService] Backend API fetch failed, trying table cache:`, apiErr);
+  }
+
+  // 3. Fallback to project_anomaly_results table
+  try {
+    const { data, error } = await supabase
       .from('project_anomaly_results')
       .select('*')
       .eq('house', house)
@@ -190,28 +292,12 @@ export async function getAnomalyProjects(
       .order('factor_score', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if ((!data || data.length === 0) && !error) {
-      console.log(`[AnomalyService] No cached anomalies for ${house} / ${category}. Running initial analysis...`);
-      await runHouseAnomalyAnalysis(house);
-
-      const retry = await supabase
-        .from('project_anomaly_results')
-        .select('*')
-        .eq('house', house)
-        .eq('category', category)
-        .order('factor_score', { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      data = retry.data;
-      error = retry.error;
-    }
-
     if (error) {
-      console.error(`[AnomalyService] Error fetching ${category} projects:`, error);
+      console.error(`[AnomalyService] Error fetching ${category} projects from table:`, error);
       return [];
     }
 
-    return (data || []).map(anomalyRowToEnrichedProject);
+    return (data || []).map((r: any) => anomalyRowToEnrichedProject(r, category));
   } catch (err) {
     console.error(`[AnomalyService] Exception fetching ${category} projects:`, err);
     return [];

@@ -102,9 +102,8 @@ export async function getProjects(params: ProjectQueryParams): Promise<Paginated
   if (params.isCompleted !== undefined) query.set('isCompleted', String(params.isCompleted));
   if (params.hasDisbursement !== undefined) query.set('hasDisbursement', String(params.hasDisbursement));
   if (params.sortField) query.set('sortBy', params.sortField);
-  if (params.sortDir) query.set('sortOrder', params.sortDir);
-
-  const res = await fetch(`/api/projects?${query.toString()}`);
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  const res = await fetch(`${apiBase}/api/projects?${query.toString()}`);
   if (!res.ok) {
     throw new Error(`API error ${res.status}: ${res.statusText}`);
   }
@@ -143,7 +142,8 @@ export async function getProjectById(
   house: 'Lok Sabha' | 'Rajya Sabha' = 'Lok Sabha'
 ): Promise<EnrichedProject | null> {
   try {
-    const res = await fetch(`/api/projects/${encodeURIComponent(workId)}?house=${encodeURIComponent(house)}`);
+    const apiBase = import.meta.env.VITE_API_URL || '';
+    const res = await fetch(`${apiBase}/api/projects/${encodeURIComponent(workId)}?house=${encodeURIComponent(house)}`);
     if (!res.ok) return null;
     const json = await res.json();
     if (!json.success || !json.data) return null;

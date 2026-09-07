@@ -229,3 +229,102 @@ export async function getMPAnalytics(
     highRisk: stats.high,
   }));
 }
+
+export interface AnalyticsObservatoryData {
+  kpis: {
+    total: number;
+    totalSanctionAmount: number;
+    totalDisbursed: number;
+    highRisk: number;
+    medRisk: number;
+    lowRisk: number;
+    completed: number;
+    pendingSanction: number;
+  };
+  districtRisk: Array<{
+    district: string;
+    total: number;
+    high: number;
+    med: number;
+    low: number;
+    concentration: number;
+  }>;
+  categoryRisk: Array<{
+    category: string;
+    total: number;
+    high: number;
+    med: number;
+    low: number;
+  }>;
+  statusBreakdown: Array<{
+    name: string;
+    value: number;
+    percentage: number;
+  }>;
+  fyTrend: Array<{
+    fy: string;
+    sanctioned: number;
+    disbursed: number;
+    total_projects: number;
+  }>;
+}
+
+export async function getAnalyticsObservatory(
+  house: 'Lok Sabha' | 'Rajya Sabha',
+  filters: {
+    state?: string;
+    constituency?: string;
+    mpName?: string;
+    riskLevel?: string;
+    status?: string;
+    category?: string;
+    tenure?: string;
+    search?: string;
+  } = {}
+): Promise<AnalyticsObservatoryData> {
+  try {
+    const { data, error } = await supabase.rpc('get_analytics_observatory', {
+      p_house: house,
+      p_state: filters.state || null,
+      p_constituency: filters.constituency || null,
+      p_mp: filters.mpName || null,
+      p_risk: filters.riskLevel || null,
+      p_status: filters.status || null,
+      p_category: filters.category || null,
+      p_tenure: filters.tenure || null,
+      p_search: filters.search || null,
+    });
+
+    if (!error && data) {
+      return data as AnalyticsObservatoryData;
+    }
+    if (error) {
+      console.warn('[AnalyticsService] RPC get_analytics_observatory failed, attempting backend fallback:', error);
+    }
+  } catch (err) {
+    console.warn('[AnalyticsService] RPC exception, attempting backend fallback:', err);
+  }
+
+  // Fallback to backend API
+  const queryParams = new URLSearchParams();
+  queryParams.set('house', house);
+  if (filters.state) queryParams.set('state', filters.state);
+  if (filters.constituency) queryParams.set('constituency', filters.constituency);
+  if (filters.mpName) queryParams.set('mp', filters.mpName);
+  if (filters.riskLevel) queryParams.set('risk', filters.riskLevel);
+  if (filters.status) queryParams.set('status', filters.status);
+  if (filters.category) queryParams.set('category', filters.category);
+  if (filters.tenure) queryParams.set('tenure', filters.tenure);
+  if (filters.search) queryParams.set('search', filters.search);
+
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  const resp = await fetch(`${apiBase}/api/analytics/observatory?${queryParams.toString()}`);
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch analytics observatory: ${resp.statusText}`);
+  }
+  const json = await resp.json();
+  if (!json.success || !json.data) {
+    throw new Error(json.message || 'Failed to fetch analytics observatory');
+  }
+  return json.data as AnalyticsObservatoryData;
+}

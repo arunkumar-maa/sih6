@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MPLADS Sentinel Backend API</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background-color: #0b1120;
+      color: #f8fafc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 2rem;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #38bdf8;
+      font-size: 1.5rem;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10b981;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+    }
+    p {
+      color: #94a3b8;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+      margin: 1.2rem 0;
+    }
+    li {
+      margin-bottom: 0.6rem;
+    }
+    a {
+      color: #38bdf8;
+      text-decoration: none;
+      font-family: monospace;
+      font-size: 0.85rem;
+      background: #0f172a;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>MPLADS Sentinel API</h1>
+    <div class="badge">SYSTEM OPERATIONAL</div>
+    <p>Official Government-Grade MPLADS Intelligence Platform Backend Server.</p>
+    <p>Active Service Endpoints:</p>
+    <ul>
+      <li><a href="/health">GET /health</a></li>
+      <li><a href="/api/projects?house=Lok%20Sabha&pageSize=5">GET /api/projects</a></li>
+      <li><a href="/api/anomalies/counts?house=Lok%20Sabha">GET /api/anomalies/counts</a></li>
+      <li><a href="/api/analytics/observatory?house=Lok%20Sabha">GET /api/analytics/observatory</a></li>
+      <li><a href="/api/gis/constituency?house=Lok%20Sabha">GET /api/gis/constituency</a></li>
+    </ul>
+  </div>
+</body>
+</html>

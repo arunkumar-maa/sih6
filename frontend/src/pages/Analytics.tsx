@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppStore } from '../data/store';
 import { formatCurrency } from '../utils';
 import {
@@ -7,13 +7,24 @@ import {
 } from 'recharts';
 import {
   BarChart3, PieChart as PieIcon, TrendingUp, Layers,
-  DollarSign, FolderOpen, AlertTriangle, CheckCircle2
+  DollarSign, FolderOpen, AlertTriangle, CheckCircle2,
+  RefreshCw, AlertCircle, ShieldCheck
 } from 'lucide-react';
 import { OfficialFilterBar, OfficialFilterState } from '../components/OfficialFilterBar';
-import { getDistrictAnalytics, getDashboardKPIs, DashboardKPIs } from '../data/supabase/analyticsQueries';
+import { getAnalyticsObservatory, AnalyticsObservatoryData } from '../services/analyticsService';
+
+const STATUS_COLOR_MAP: Record<string, string> = {
+  'Physical Inspection': '#0084ff',
+  'Work Completed': '#10b981',
+  'Sanction': '#f59e0b',
+  'Vendor Identification': '#8b5cf6',
+  'Unknown': '#64748b',
+};
+
+const PALETTE = ['#0084ff', '#10b981', '#f59e0b', '#8b5cf6', '#ea580c', '#64748b'];
 
 export function Analytics() {
-  const { projects, activeHouse, isUsingSupabase } = useAppStore();
+  const { projects, activeHouse } = useAppStore();
 
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
@@ -27,174 +38,141 @@ export function Analytics() {
     category: '',
   });
 
-  const [supabaseStats, setSupabaseStats] = useState<DashboardKPIs | null>(null);
-  const [supabaseDistricts, setSupabaseDistricts] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (!isUsingSupabase) return;
-    getDashboardKPIs(activeHouse, filters).then(setSupabaseStats).catch(console.error);
-    getDistrictAnalytics(activeHouse, filters.state).then(setSupabaseDistricts).catch(console.error);
-  }, [isUsingSupabase, activeHouse, filters]);
+  const [observatoryData, setObservatoryData] = useState<AnalyticsObservatoryData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync house when global activeHouse changes
   const prevHouseRef = React.useRef(activeHouse);
-  React.useEffect(() => {
+  useEffect(() => {
     if (prevHouseRef.current !== activeHouse) {
       prevHouseRef.current = activeHouse;
       setFilters(f => ({
         ...f,
         house: activeHouse,
         tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
-        state: '', constituency: '', mpName: '', riskLevel: '', status: '', category: '', search: '',
+        state: '',
+        constituency: '',
+        mpName: '',
+        riskLevel: '',
+        status: '',
+        category: '',
+        search: '',
       }));
     }
   }, [activeHouse]);
 
-  const filteredProjects = useMemo(() => {
-    let list = [...projects];
-    if (filters.search) {
-      const q = filters.search.toLowerCase();
-      list = list.filter(p =>
-        p.workDescription?.toLowerCase().includes(q) ||
-        p.workId?.toLowerCase().includes(q) ||
-        p.constituency?.toLowerCase().includes(q) ||
-        p.district?.toLowerCase().includes(q) ||
-        p.mp?.toLowerCase().includes(q) ||
-        p.workCategory?.toLowerCase().includes(q)
-      );
+  // Fetch unified observatory analytics from backend / Supabase RPC
+  const fetchAnalytics = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getAnalyticsObservatory(activeHouse, filters);
+      setObservatoryData(data);
+    } catch (err: any) {
+      console.error('[Analytics] Error fetching observatory analytics:', err);
+      setError(err.message || 'Unable to load analytics data.');
+    } finally {
+      setLoading(false);
     }
-    if (filters.state) list = list.filter(p => p.state === filters.state);
-    if (filters.constituency) list = list.filter(p => p.constituency === filters.constituency);
-    if (filters.mpName) list = list.filter(p => p.mp === filters.mpName);
-    if (filters.riskLevel) list = list.filter(p => p.risk.level === filters.riskLevel);
-    if (filters.status) list = list.filter(p => p.workStatus === filters.status);
-    if (filters.category) list = list.filter(p => p.workCategory === filters.category);
-    if (filters.tenure === '18th Lok Sabha') {
-      list = list.filter(p => p.financialYear >= '2024-2025' || p.financialYear === 'Unknown');
-    } else if (filters.tenure === '17th Lok Sabha') {
-      list = list.filter(p => p.financialYear >= '2019-2020' && p.financialYear <= '2023-2024');
-    }
-    return list;
-  }, [projects, filters]);
+  }, [activeHouse, filters]);
 
-  // Summary stats for filtered dataset
-  const filteredStats = useMemo(() => {
-    if (isUsingSupabase && supabaseStats) {
-      return {
-        total: supabaseStats.total,
-        totalSanctioned: supabaseStats.totalSanctionAmount,
-        totalDisbursed: supabaseStats.totalDisbursed,
-        highRisk: supabaseStats.highRisk,
-      };
-    }
-    const total = filteredProjects.length;
-    const totalSanctioned = filteredProjects.reduce((s, p) => s + (p.sanctionAmount ?? 0), 0);
-    const totalDisbursed = filteredProjects.reduce((s, p) => s + (p.totalPaid ?? p.amountDisbursed ?? 0), 0);
-    const highRisk = filteredProjects.filter(p => p.risk.level === 'HIGH').length;
-    return {
-      total,
-      totalSanctioned,
-      totalDisbursed,
-      highRisk,
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
+  const kpis = useMemo(() => {
+    return observatoryData?.kpis || {
+      total: 0,
+      totalSanctionAmount: 0,
+      totalDisbursed: 0,
+      highRisk: 0,
+      medRisk: 0,
+      lowRisk: 0,
+      completed: 0,
+      pendingSanction: 0,
     };
-  }, [isUsingSupabase, supabaseStats, filteredProjects]);
+  }, [observatoryData]);
 
-  // 1. Risk by District (Top 10)
-  const riskByDistrict = useMemo(() => {
-    if (isUsingSupabase && supabaseDistricts.length > 0) {
-      return supabaseDistricts.slice(0, 10).map(d => ({
-        district: d.district,
-        high: d.highRisk,
-        med: d.mediumRisk,
-        low: d.lowRisk,
-        total: d.totalProjects,
-      }));
-    }
-    const map = new Map<string, { district: string; high: number; med: number; low: number; total: number }>();
-    filteredProjects.forEach(p => {
-      const d = p.district || p.constituency || 'UNKNOWN';
-      if (!map.has(d)) map.set(d, { district: d, high: 0, med: 0, low: 0, total: 0 });
-      const item = map.get(d)!;
-      item.total++;
-      if (p.risk.level === 'HIGH') item.high++;
-      else if (p.risk.level === 'MEDIUM') item.med++;
-      else item.low++;
-    });
-    return Array.from(map.values()).sort((a, b) => b.high - a.high || b.total - a.total).slice(0, 10);
-  }, [isUsingSupabase, supabaseDistricts, filteredProjects]);
+  const districtData = useMemo(() => {
+    return observatoryData?.districtRisk || [];
+  }, [observatoryData]);
 
-  // 2. Risk by Category (Top 8)
-  const riskByCategory = useMemo(() => {
-    const map = new Map<string, { category: string; high: number; med: number; low: number; total: number }>();
-    filteredProjects.forEach(p => {
-      const c = p.workCategory ? (p.workCategory.length > 22 ? p.workCategory.slice(0, 20) + '...' : p.workCategory) : 'Unknown';
-      if (!map.has(c)) map.set(c, { category: c, high: 0, med: 0, low: 0, total: 0 });
-      const item = map.get(c)!;
-      item.total++;
-      if (p.risk.level === 'HIGH') item.high++;
-      else if (p.risk.level === 'MEDIUM') item.med++;
-      else item.low++;
-    });
-    return Array.from(map.values()).sort((a, b) => b.high - a.high || b.total - a.total).slice(0, 8);
-  }, [filteredProjects]);
+  const hasHighRiskInDistricts = useMemo(() => {
+    return districtData.some(d => d.high > 0);
+  }, [districtData]);
 
-  // 3. Status Breakdown Pie
+  const categoryData = useMemo(() => {
+    return observatoryData?.categoryRisk || [];
+  }, [observatoryData]);
+
   const statusData = useMemo(() => {
-    const counts: Record<string, number> = {};
-    filteredProjects.forEach(p => {
-      counts[p.workStatus || 'Unknown'] = (counts[p.workStatus || 'Unknown'] || 0) + 1;
-    });
-    const COLORS = ['#0084ff', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
-    return Object.entries(counts).map(([name, value], i) => ({
-      name,
-      value,
-      color: COLORS[i % COLORS.length],
+    const raw = observatoryData?.statusBreakdown || [];
+    return raw.map((entry, index) => ({
+      ...entry,
+      color: STATUS_COLOR_MAP[entry.name] || PALETTE[index % PALETTE.length],
     }));
-  }, [filteredProjects]);
+  }, [observatoryData]);
 
-  // 4. Financial Year Trend
   const fyTrend = useMemo(() => {
-    const map = new Map<string, { fy: string; sanctioned: number; disbursed: number }>();
-    filteredProjects.forEach(p => {
-      const fy = p.financialYear || 'Unknown';
-      if (fy === 'Unknown') return;
-      if (!map.has(fy)) map.set(fy, { fy, sanctioned: 0, disbursed: 0 });
-      const item = map.get(fy)!;
-      item.sanctioned += (p.sanctionAmount || 0) / 10000000; // in Cr
-      item.disbursed += (p.totalPaid || p.amountDisbursed || 0) / 10000000; // in Cr
-    });
-    return Array.from(map.values()).sort((a, b) => a.fy.localeCompare(b.fy));
-  }, [filteredProjects]);
+    return observatoryData?.fyTrend || [];
+  }, [observatoryData]);
+
+  const houseTotalCount = activeHouse === 'Lok Sabha' ? 65000 : 79219;
 
   return (
     <div className="space-y-5 animate-fade-in">
       {/* ── Page Header ────────────────────────────────────────────── */}
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
-          <BarChart3 size={11} />
-          Performance Observatory — Analytics
-        </p>
-        <h1 className="text-2xl font-bold text-[#000a1f]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-          MPLADS Analytics &amp; Empirical Insights
-        </h1>
-        <p className="text-xs text-[#747780] mt-0.5">
-          Aggregated statistical analysis derived dynamically from active datasets
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
+            <BarChart3 size={11} />
+            Performance Observatory — Analytics · {activeHouse}
+          </p>
+          <h1 className="text-2xl font-bold text-[#000a1f]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
+            MPLADS Analytics &amp; Empirical Insights
+          </h1>
+          <p className="text-xs text-[#747780] mt-0.5">
+            Aggregated statistical analysis derived dynamically from active {activeHouse} dataset
+          </p>
+        </div>
+        {loading && (
+          <div className="flex items-center gap-2 text-xs text-[#005eb2] font-semibold">
+            <RefreshCw size={14} className="animate-spin" />
+            <span>Loading analytics…</span>
+          </div>
+        )}
       </div>
+
+      {/* ── Error Banner ───────────────────────────────────────────── */}
+      {error && (
+        <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#fef2f2] border border-[#fecaca] rounded-sm text-xs text-[#991b1b]">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={14} className="text-[#dc2626] flex-shrink-0" />
+            <span>Unable to load analytics data: {error}</span>
+          </div>
+          <button
+            onClick={fetchAnalytics}
+            className="text-[11px] font-bold text-[#dc2626] hover:underline cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* ── Official Filter Bar Panel ─────────────────────────────────── */}
       <div className="bg-white border border-[#E9ECEF] rounded-xl p-4 shadow-sm">
         <OfficialFilterBar
           projects={projects}
-          filteredProjects={filteredProjects}
-          filteredCount={filteredProjects.length}
-          totalCount={projects.length}
+          filteredProjects={[]}
+          filteredCount={kpis.total}
+          totalCount={houseTotalCount}
           filters={filters}
           onFilterChange={setFilters}
           onReset={() => setFilters({
             search: '',
-            house: filters.house,
-            tenure: filters.house === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+            house: activeHouse,
+            tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
             state: '',
             constituency: '',
             mpName: '',
@@ -220,7 +198,7 @@ export function Analytics() {
                 Filtered Works
               </p>
               <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                {filteredStats.total.toLocaleString('en-IN')}
+                {loading && !observatoryData ? '...' : kpis.total.toLocaleString('en-IN')}
               </p>
               <p className="text-[11px] text-[#747780] mt-1.5">Matching criteria</p>
             </div>
@@ -238,7 +216,7 @@ export function Analytics() {
                 Sanctioned Amount
               </p>
               <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                {formatCurrency(filteredStats.totalSanctioned)}
+                {loading && !observatoryData ? '...' : formatCurrency(kpis.totalSanctionAmount)}
               </p>
               <p className="text-[11px] text-[#747780] mt-1.5">Filtered sum</p>
             </div>
@@ -256,7 +234,7 @@ export function Analytics() {
                 Expenditure / Disbursed
               </p>
               <p className="text-2xl font-bold text-[#000a1f] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                {formatCurrency(filteredStats.totalDisbursed)}
+                {loading && !observatoryData ? '...' : formatCurrency(kpis.totalDisbursed)}
               </p>
               <p className="text-[11px] text-[#747780] mt-1.5">Released funds</p>
             </div>
@@ -274,7 +252,7 @@ export function Analytics() {
                 High-Risk Anomalies
               </p>
               <p className="text-2xl font-bold text-[#DC3545] leading-none" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-                {filteredStats.highRisk.toLocaleString('en-IN')}
+                {loading && !observatoryData ? '...' : kpis.highRisk.toLocaleString('en-IN')}
               </p>
               <p className="text-[11px] text-[#747780] mt-1.5">Priority scrutiny</p>
             </div>
@@ -285,109 +263,243 @@ export function Analytics() {
         </div>
       </div>
 
+      {/* ── Visual Analytics Section ─────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Chart 1: High Risk Works Concentration by District */}
-        <div className="panel p-5 flex flex-col h-[360px]">
+        <div className="panel p-5 flex flex-col h-[380px]">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs font-bold text-[#000a1f] flex items-center gap-1.5">
               <BarChart3 size={14} className="text-[#DC3545]" />
               High-Risk Project Concentration by District (Top 10)
             </div>
+            {hasHighRiskInDistricts && (
+              <span className="text-[10px] text-[#747780]">Sorted by High Risk Count</span>
+            )}
           </div>
-          <div className="flex-1 w-full mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={riskByDistrict} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-                <XAxis dataKey="district" stroke="#c4c6d0" fontSize={10} interval={0} angle={-25} textAnchor="end" tick={{ fill: '#44474f' }} />
-                <YAxis stroke="#c4c6d0" fontSize={10} tick={{ fill: '#44474f' }} />
-                <Tooltip
-                  contentStyle={{ background: '#ffffff', border: '1px solid #E9ECEF', borderRadius: '4px', color: '#141d23', fontSize: '11px', boxShadow: '0 4px 16px rgba(0,10,31,0.1)' }}
-                />
-                <Bar dataKey="high" name="High Risk" fill="#DC3545" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="med" name="Medium Risk" fill="#FFC107" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="flex-1 w-full mt-2 flex flex-col justify-center">
+            {loading && !observatoryData ? (
+              <div className="flex flex-col items-center justify-center h-full text-[#747780] text-xs">
+                <RefreshCw size={20} className="animate-spin text-[#005eb2] mb-2" />
+                <span>Aggregating district data…</span>
+              </div>
+            ) : !hasHighRiskInDistricts ? (
+              <div className="flex-1 w-full flex flex-col items-center justify-center p-6 text-center bg-[#f8fafc] border border-dashed border-[#cbd5e1] rounded-lg my-1">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full mb-2.5">
+                  <ShieldCheck size={26} />
+                </div>
+                <p className="text-sm font-bold text-[#000a1f]">
+                  No high-risk projects in the current filtered dataset.
+                </p>
+                <p className="text-xs text-[#747780] mt-1.5 max-w-md">
+                  All {kpis.total.toLocaleString('en-IN')} projects across {filters.state || 'the active selection'} operate within standard risk parameters (0 High-Risk anomalies detected{kpis.medRisk > 0 ? `; ${kpis.medRisk} Medium-Risk project${kpis.medRisk > 1 ? 's' : ''} under routine monitoring` : ''}).
+                </p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={districtData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
+                  <XAxis
+                    dataKey="district"
+                    stroke="#c4c6d0"
+                    fontSize={10}
+                    interval={0}
+                    angle={-25}
+                    textAnchor="end"
+                    tick={{ fill: '#44474f' }}
+                  />
+                  <YAxis stroke="#c4c6d0" fontSize={10} tick={{ fill: '#44474f' }} />
+                  <Tooltip
+                    contentStyle={{
+                      background: '#ffffff',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '4px',
+                      color: '#141d23',
+                      fontSize: '11px',
+                      boxShadow: '0 4px 16px rgba(0,10,31,0.1)',
+                    }}
+                    formatter={(val: number, name: string, item: any) => [
+                      `${val} projects (${item.payload.concentration}% high-risk)`,
+                      name,
+                    ]}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px', color: '#44474f' }} />
+                  <Bar dataKey="high" name="High Risk" fill="#DC3545" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="med" name="Medium Risk" fill="#FFC107" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
         {/* Chart 2: Financial Year Spend Trend */}
-        <div className="panel p-5 flex flex-col h-[360px]">
+        <div className="panel p-5 flex flex-col h-[380px]">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs font-bold text-[#000a1f] flex items-center gap-1.5">
               <TrendingUp size={14} className="text-[#198754]" />
               Sanction vs Disbursement Trend by FY (₹ Crores)
             </div>
+            <span className="text-[10px] text-[#747780]">
+              {fyTrend.length} Financial Year{fyTrend.length === 1 ? '' : 's'}
+            </span>
           </div>
-          <div className="flex-1 w-full mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={fyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
-                <XAxis dataKey="fy" stroke="#c4c6d0" fontSize={11} tick={{ fill: '#44474f' }} />
-                <YAxis stroke="#c4c6d0" fontSize={11} tick={{ fill: '#44474f' }} />
-                <Tooltip
-                  formatter={(value: number) => [`₹${value.toFixed(2)} Cr`, '']}
-                  contentStyle={{ background: '#ffffff', border: '1px solid #E9ECEF', borderRadius: '4px', color: '#141d23', fontSize: '11px', boxShadow: '0 4px 16px rgba(0,10,31,0.1)' }}
-                />
-                <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px', color: '#44474f' }} />
-                <Line type="monotone" dataKey="sanctioned" name="Sanctioned (Cr)" stroke="#6d28d9" strokeWidth={2} dot={{ r: 4, fill: '#6d28d9' }} />
-                <Line type="monotone" dataKey="disbursed" name="Disbursed (Cr)" stroke="#198754" strokeWidth={2} dot={{ r: 4, fill: '#198754' }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="flex-1 w-full mt-2 flex flex-col justify-center">
+            {loading && !observatoryData ? (
+              <div className="flex flex-col items-center justify-center h-full text-[#747780] text-xs">
+                <RefreshCw size={20} className="animate-spin text-[#005eb2] mb-2" />
+                <span>Aggregating financial trends…</span>
+              </div>
+            ) : fyTrend.length === 0 ? (
+              <div className="flex-1 w-full flex flex-col items-center justify-center p-6 text-center text-[#747780] text-xs">
+                No financial year data available for the active selection.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={fyTrend} margin={{ top: 10, right: 15, left: -15, bottom: 10 }}>
+                  <XAxis dataKey="fy" stroke="#c4c6d0" fontSize={11} tick={{ fill: '#44474f' }} />
+                  <YAxis stroke="#c4c6d0" fontSize={11} tick={{ fill: '#44474f' }} />
+                  <Tooltip
+                    formatter={(value: number, name: string) => [`₹${Number(value || 0).toFixed(2)} Cr`, name]}
+                    contentStyle={{
+                      background: '#ffffff',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '4px',
+                      color: '#141d23',
+                      fontSize: '11px',
+                      boxShadow: '0 4px 16px rgba(0,10,31,0.1)',
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px', color: '#44474f' }} />
+                  <Line
+                    type="monotone"
+                    dataKey="sanctioned"
+                    name="Sanctioned (Cr)"
+                    stroke="#6d28d9"
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: '#6d28d9' }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="disbursed"
+                    name="Disbursed (Cr)"
+                    stroke="#198754"
+                    strokeWidth={2}
+                    dot={{ r: 4, fill: '#198754' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
         {/* Chart 3: Risk by Category */}
-        <div className="panel p-5 flex flex-col h-[360px]">
+        <div className="panel p-5 flex flex-col h-[380px]">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs font-bold text-[#000a1f] flex items-center gap-1.5">
               <Layers size={14} className="text-[#005eb2]" />
-              Risk Distribution by Work Category
+              Risk Distribution by Work Category (Top 8)
             </div>
+            <span className="text-[10px] text-[#747780]">Stacked by Risk Level</span>
           </div>
-          <div className="flex-1 w-full mt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={riskByCategory} layout="vertical" margin={{ top: 5, right: 10, left: 40, bottom: 5 }}>
-                <XAxis type="number" stroke="#c4c6d0" fontSize={10} tick={{ fill: '#44474f' }} />
-                <YAxis dataKey="category" type="category" stroke="#c4c6d0" fontSize={9} width={130} tick={{ fill: '#44474f' }} />
-                <Tooltip
-                  contentStyle={{ background: '#ffffff', border: '1px solid #E9ECEF', borderRadius: '4px', color: '#141d23', fontSize: '11px', boxShadow: '0 4px 16px rgba(0,10,31,0.1)' }}
-                />
-                <Bar dataKey="high" name="High Risk" stackId="a" fill="#DC3545" />
-                <Bar dataKey="med" name="Medium Risk" stackId="a" fill="#FFC107" />
-                <Bar dataKey="low" name="Low Risk" stackId="a" fill="#198754" />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="flex-1 w-full mt-2 flex flex-col justify-center">
+            {loading && !observatoryData ? (
+              <div className="flex flex-col items-center justify-center h-full text-[#747780] text-xs">
+                <RefreshCw size={20} className="animate-spin text-[#005eb2] mb-2" />
+                <span>Aggregating category distribution…</span>
+              </div>
+            ) : categoryData.length === 0 ? (
+              <div className="flex-1 w-full flex flex-col items-center justify-center p-6 text-center text-[#747780] text-xs">
+                No category data available for the active selection.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categoryData} layout="vertical" margin={{ top: 5, right: 10, left: 25, bottom: 5 }}>
+                  <XAxis type="number" stroke="#c4c6d0" fontSize={10} tick={{ fill: '#44474f' }} />
+                  <YAxis
+                    dataKey="category"
+                    type="category"
+                    stroke="#c4c6d0"
+                    fontSize={9}
+                    width={140}
+                    tick={{ fill: '#44474f' }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: '#ffffff',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '4px',
+                      color: '#141d23',
+                      fontSize: '11px',
+                      boxShadow: '0 4px 16px rgba(0,10,31,0.1)',
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '5px', color: '#44474f' }} />
+                  <Bar dataKey="high" name="High Risk" stackId="a" fill="#DC3545" />
+                  <Bar dataKey="med" name="Medium Risk" stackId="a" fill="#FFC107" />
+                  <Bar dataKey="low" name="Low Risk" stackId="a" fill="#198754" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
         {/* Chart 4: Work Status Breakdown */}
-        <div className="panel p-5 flex flex-col h-[360px]">
+        <div className="panel p-5 flex flex-col h-[380px]">
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs font-bold text-[#000a1f] flex items-center gap-1.5">
               <PieIcon size={14} className="text-[#6d28d9]" />
               Overall Work Implementation Status
             </div>
+            <span className="text-[10px] text-[#747780]">Active Filter Distribution</span>
           </div>
           <div className="flex-1 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{ background: '#ffffff', border: '1px solid #E9ECEF', borderRadius: '4px', color: '#141d23', fontSize: '11px', boxShadow: '0 4px 16px rgba(0,10,31,0.1)' }}
-                />
-                <Legend wrapperStyle={{ fontSize: '11px', color: '#44474f' }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {loading && !observatoryData ? (
+              <div className="flex flex-col items-center justify-center h-full text-[#747780] text-xs">
+                <RefreshCw size={20} className="animate-spin text-[#005eb2] mb-2" />
+                <span>Aggregating implementation status…</span>
+              </div>
+            ) : statusData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-6 text-center text-[#747780] text-xs">
+                No implementation status data available for the active selection.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={60}
+                    outerRadius={95}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      background: '#ffffff',
+                      border: '1px solid #E9ECEF',
+                      borderRadius: '4px',
+                      color: '#141d23',
+                      fontSize: '11px',
+                      boxShadow: '0 4px 16px rgba(0,10,31,0.1)',
+                    }}
+                    formatter={(value: number, name: string, item: any) => [
+                      `${value.toLocaleString('en-IN')} works (${item.payload.percentage}%)`,
+                      name,
+                    ]}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: '11px', color: '#44474f', paddingTop: '10px' }}
+                    formatter={(value: string, entry: any) => {
+                      const item = statusData.find(s => s.name === value);
+                      return `${value} (${item?.percentage || 0}%)`;
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>

@@ -17,12 +17,26 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(validateHouse);
 
-// Health check
-app.get('/health', (req, res) => {
+// Health checks and status
+app.get(['/health', '/api/health'], (req, res) => {
   res.json({
     status: 'ok',
     service: 'MPLADS Sentinel API',
     timestamp: new Date().toISOString(),
+  });
+});
+
+app.get(['/', '/api'], (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'MPLADS Sentinel API',
+    endpoints: [
+      '/health',
+      '/api/projects',
+      '/api/anomalies',
+      '/api/analytics',
+      '/api/gis',
+    ],
   });
 });
 
@@ -35,7 +49,7 @@ app.use('/api/gis', gisRouter);
 // Global error handler
 app.use(errorHandler);
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   app.listen(PORT, () => {
     console.log(`[MPLADS Sentinel Backend] Server running on http://localhost:${PORT}`);
   });

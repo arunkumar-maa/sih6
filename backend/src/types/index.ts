@@ -76,6 +76,8 @@ export interface EnrichedProject {
 
   vendorName: string | null;
   risk?: RiskResult;
+  whyAttention?: string[];
+  featureContributions?: Array<{ name: string; points: number }>;
 }
 
 export interface ProjectFilters {
