@@ -19,6 +19,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   'state-dashboard':    { title: 'State Nodal Desk', subtitle: 'State-Level Allocation & District Tracking' },
   'district-dashboard': { title: 'District Officer Desk', subtitle: 'Field Execution, Stalled Works & Local Approvals' },
   'agency-dashboard':   { title: 'Implementing Agency Desk', subtitle: 'Assigned Works Execution & Milestone Submissions' },
+  'mp-dashboard':       { title: 'Parliamentary Constituency Desk', subtitle: 'Hon’ble MP Developmental Portfolio & Tracking' },
   'auditor-dashboard':  { title: 'Verification Desk', subtitle: 'Risk & Anomaly Verification Workspace' },
   'audit-trail':        { title: 'Audit Trail & Verification Ledger', subtitle: 'Tamper-Evident Governance Log' },
 };
@@ -33,26 +34,29 @@ export function TopBar({ onMenuClick, currentPath }: TopBarProps) {
   const { profile, logout } = useAuthStore();
 
   const getPageInfo = () => {
-    if (currentPath === '/admin/dashboard') return PAGE_TITLES['admin-dashboard'];
-    if (currentPath === '/state/dashboard') return PAGE_TITLES['state-dashboard'];
-    if (currentPath === '/district/dashboard') return PAGE_TITLES['district-dashboard'];
-    if (currentPath === '/agency/dashboard') return PAGE_TITLES['agency-dashboard'];
-    if (currentPath === '/mp/dashboard') return PAGE_TITLES['mp-dashboard'];
-    if (currentPath === '/auditor/dashboard') return PAGE_TITLES['auditor-dashboard'];
-    if (currentPath === '/audit-trail') return PAGE_TITLES['audit-trail'];
-    if (currentPath === '/comparative') {
+    let info: { title: string; subtitle: string } | undefined;
+    if (currentPath === '/admin/dashboard') info = PAGE_TITLES['admin-dashboard'];
+    else if (currentPath === '/state/dashboard') info = PAGE_TITLES['state-dashboard'];
+    else if (currentPath === '/district/dashboard') info = PAGE_TITLES['district-dashboard'];
+    else if (currentPath === '/agency/dashboard') info = PAGE_TITLES['agency-dashboard'];
+    else if (currentPath === '/mp/dashboard') info = PAGE_TITLES['mp-dashboard'];
+    else if (currentPath === '/auditor/dashboard') info = PAGE_TITLES['auditor-dashboard'];
+    else if (currentPath === '/audit-trail') info = PAGE_TITLES['audit-trail'];
+    else if (currentPath === '/comparative') {
       if (profile?.role === 'STATE_NODAL_OFFICER') {
         return {
           title: `${profile.state || 'State'} — District Comparison`,
           subtitle: 'Intra-State District Analysis & Benchmarking'
         };
       }
-      return PAGE_TITLES['comparative'];
+      info = PAGE_TITLES['comparative'];
+    } else {
+      info = PAGE_TITLES[currentPage];
     }
-    return PAGE_TITLES[currentPage] || { title: 'MPLADS Sentinel', subtitle: 'AI Risk & Anomaly Intelligence' };
+    return info || { title: 'MPLADS Sentinel', subtitle: 'AI Risk & Anomaly Intelligence' };
   };
 
-  const pageInfo = getPageInfo();
+  const pageInfo = getPageInfo() || { title: 'MPLADS Sentinel', subtitle: 'AI Risk & Anomaly Intelligence' };
 
   const handleLogout = async () => {
     await logout();
