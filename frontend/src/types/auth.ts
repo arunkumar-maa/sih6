@@ -31,6 +31,7 @@ export interface UserProfile {
   mp_id?: string | null;
   agency_name?: string | null;
   agency_id?: string | null;
+  photo_url?: string | null;
   email?: string | null;
   is_active: boolean;
   created_at: string;

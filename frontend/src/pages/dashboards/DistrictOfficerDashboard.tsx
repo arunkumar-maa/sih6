@@ -15,6 +15,7 @@ import {
   updateProjectVerification
 } from '../../services/projectService';
 import type { VerificationStatus } from '../../types';
+import { MpAvatar } from '../../components/MpAvatar';
 
 export function DistrictOfficerDashboard() {
   const { profile, user } = useAuthStore();
@@ -805,7 +806,7 @@ export function DistrictOfficerDashboard() {
                     {filteredMps.map((m) => (
                       <tr key={m.mp_name} className="hover:bg-[#F8F9FA] transition-colors">
                         <td className="py-2.5 px-3 font-bold text-[#00204a]">
-                          {m.mp_name}
+                          <MpAvatar name={m.mp_name} size="sm" showName nameClassName="text-[#00204a]" />
                         </td>
                         <td className="py-2.5 px-3 text-center font-mono font-bold">
                           {m.total}
@@ -907,8 +908,16 @@ export function DistrictOfficerDashboard() {
                 <tbody className="divide-y divide-[#E9ECEF]">
                   <tr>
                     <td className="py-2.5 px-4 font-semibold text-[#495057]">Hon'ble MP</td>
-                    <td className="py-2.5 px-4 text-center font-medium">{compDataA.mp_name}</td>
-                    <td className="py-2.5 px-4 text-center font-medium">{compDataB.mp_name}</td>
+                    <td className="py-2.5 px-4 text-center font-medium">
+                      <div className="flex justify-center">
+                        <MpAvatar name={compDataA.mp_name} size="sm" showName />
+                      </div>
+                    </td>
+                    <td className="py-2.5 px-4 text-center font-medium">
+                      <div className="flex justify-center">
+                        <MpAvatar name={compDataB.mp_name} size="sm" showName />
+                      </div>
+                    </td>
                   </tr>
                   <tr>
                     <td className="py-2.5 px-4 font-semibold text-[#495057]">Total Works Count</td>

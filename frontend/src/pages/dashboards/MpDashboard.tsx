@@ -9,6 +9,7 @@ import {
 import { formatCurrency } from '../../utils';
 import { getProjects } from '../../services/projectService';
 import type { EnrichedProject } from '../../types';
+import { MpAvatar } from '../../components/MpAvatar';
 
 export function MpDashboard() {
   const { profile } = useAuthStore();
@@ -97,17 +98,26 @@ export function MpDashboard() {
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 tracking-wider uppercase">
-              <Landmark className="w-4 h-4" />
-              <span>{house} &bull; {state}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <MpAvatar
+              name={mpName}
+              id={profile?.id}
+              photoUrl={profile?.photo_url}
+              size="xl"
+              className="ring-2 ring-emerald-400/40 shadow-xl"
+            />
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 tracking-wider uppercase">
+                <Landmark className="w-4 h-4" />
+                <span>{house} &bull; {state}</span>
+              </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+                <span>Hon&apos;ble MP: {mpName}</span>
+              </h1>
+              <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
+                Constituency: <strong className="text-white font-semibold">{constituency}</strong> &bull; Comprehensive real-time tracking of recommended developmental works, fund disbursement velocity, and risk oversight under MPLADS guidelines.
+              </p>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
-              <span>Hon&apos;ble MP: {mpName}</span>
-            </h1>
-            <p className="text-slate-300 text-sm max-w-2xl leading-relaxed">
-              Constituency: <strong className="text-white font-semibold">{constituency}</strong> &bull; Comprehensive real-time tracking of recommended developmental works, fund disbursement velocity, and risk oversight under MPLADS guidelines.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

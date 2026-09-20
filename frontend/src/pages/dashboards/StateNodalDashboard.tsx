@@ -12,6 +12,7 @@ import {
 import { formatCurrency } from '../../utils';
 import { getStateNodalOverview, type StateNodalOverview } from '../../services/projectService';
 import { ComparativeIntelligence } from '../../components/ComparativeIntelligence';
+import { MpAvatar } from '../../components/MpAvatar';
 
 export function StateNodalDashboard() {
   const { profile, user } = useAuthStore();
@@ -628,7 +629,7 @@ export function StateNodalDashboard() {
                             {c.constituency}
                           </td>
                           <td className="py-2.5 px-3 text-slate-700">
-                            {c.mp_name}
+                            <MpAvatar name={c.mp_name} size="xs" showName />
                           </td>
                           <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-900">
                             {c.total.toLocaleString('en-IN')}
@@ -684,7 +685,7 @@ export function StateNodalDashboard() {
                       filteredMps.map((m, i) => (
                         <tr key={i} className="hover:bg-blue-50/50 transition-colors">
                           <td className="py-2.5 px-3 font-semibold text-slate-900">
-                            {m.mp_name}
+                            <MpAvatar name={m.mp_name} size="sm" showName />
                           </td>
                           <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-900">
                             {m.total.toLocaleString('en-IN')}
