@@ -5,10 +5,12 @@ import {
   Zap, Activity, ArrowRight, ExternalLink
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
+import { useAuthStore } from '../store/authStore';
 import { KPICard } from '../components/KPICard';
 import { RiskBadge, RiskScoreRing } from '../components/RiskBadge';
 import { formatCurrency, truncate } from '../utils';
 import { getProjects } from '../data/supabase/projectQueries';
+import { getAnalyticsObservatory } from '../services/analyticsService';
 import type { EnrichedProject } from '../data/types';
 
 export function IntelligenceDashboard() {
@@ -24,14 +26,54 @@ export function IntelligenceDashboard() {
     activeHouse,
   } = useAppStore();
 
+  const { profile } = useAuthStore();
+  const isMospiAdmin = profile?.role === 'MOSPI_ADMIN';
+  const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
+  const isStateNodal = profile?.role === 'STATE_NODAL_OFFICER';
+  const cleanDistrict = profile?.district ? profile.district.split('(')[0].trim() : '';
+
+  const scopeLabel = isDistrictOfficer
+    ? `District: ${cleanDistrict}, ${profile?.state}`
+    : isStateNodal
+    ? `State: ${profile?.state}`
+    : 'National';
+
+  const navigateTo = (path: string, pageKey: string, projectId?: string) => {
+    if (projectId) {
+      selectProject(projectId);
+    }
+    setCurrentPage(pageKey);
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   const [supabaseTopRisk, setSupabaseTopRisk] = useState<EnrichedProject[]>([]);
+  const [observatoryStatus, setObservatoryStatus] = useState<Array<{ name: string; value: number }>>([]);
 
   useEffect(() => {
     if (!isUsingSupabase) return;
-    getProjects({ house: activeHouse, pageSize: 6, sortField: 'risk', sortDir: 'desc' })
+    const filterState = profile?.state || undefined;
+    const filterDistrict = (isDistrictOfficer && profile?.district) ? profile.district : undefined;
+
+    getProjects({
+      house: activeHouse,
+      pageSize: 6,
+      sortField: 'risk',
+      sortDir: 'desc',
+      state: filterState,
+      district: filterDistrict,
+    })
       .then(res => setSupabaseTopRisk(res.projects))
       .catch(err => console.error('[Dashboard] Error fetching top risk projects:', err));
-  }, [isUsingSupabase, activeHouse]);
+
+    getAnalyticsObservatory(activeHouse, { state: filterState, district: filterDistrict })
+      .then(obs => {
+        if (obs && obs.statusBreakdown && obs.statusBreakdown.length > 0) {
+          setObservatoryStatus(obs.statusBreakdown);
+        }
+      })
+      .catch(err => console.error('[Dashboard] Error fetching status breakdown:', err));
+  }, [isUsingSupabase, activeHouse, profile?.state, profile?.district, isDistrictOfficer]);
 
   const stats = useMemo(() => {
     if (isUsingSupabase && kpis) {
@@ -67,10 +109,13 @@ export function IntelligenceDashboard() {
   }, [isUsingSupabase, supabaseTopRisk, projects]);
 
   const statusSummary = useMemo(() => {
+    if (isUsingSupabase && observatoryStatus.length > 0) {
+      return observatoryStatus.map(s => [s.name, s.value] as [string, number]).slice(0, 6);
+    }
     const statusCounts: Record<string, number> = {};
     projects.forEach(p => { statusCounts[p.workStatus] = (statusCounts[p.workStatus] ?? 0) + 1; });
     return Object.entries(statusCounts).sort(([, a], [, b]) => b - a).slice(0, 6);
-  }, [projects]);
+  }, [isUsingSupabase, observatoryStatus, projects]);
 
   if (isLoading && !stats) {
     return (
@@ -96,7 +141,7 @@ export function IntelligenceDashboard() {
       <div className="mb-2">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
           <Activity size={12} />
-          MPLADS Intelligence Platform · National
+          MPLADS Intelligence Platform · {scopeLabel}
         </p>
         <h1
           className="text-3xl font-bold text-[#000a1f] leading-tight"
@@ -131,7 +176,7 @@ export function IntelligenceDashboard() {
 
         {/* CLICKABLE: Sanctioned Amount */}
         <button
-          onClick={() => setCurrentPage('sanctioned')}
+          onClick={() => navigateTo('/sanctioned', 'sanctioned')}
           className="kpi-card text-left group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#6d28d9]/30"
           title="Click to view Sanctioned Works Intelligence"
         >
@@ -162,7 +207,7 @@ export function IntelligenceDashboard() {
 
         {/* CLICKABLE: Amount Disbursed */}
         <button
-          onClick={() => setCurrentPage('disbursed')}
+          onClick={() => navigateTo('/disbursed', 'disbursed')}
           className="kpi-card text-left group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0d9488]/30"
           title="Click to view Disbursement Intelligence"
         >
@@ -193,7 +238,7 @@ export function IntelligenceDashboard() {
 
         {/* CLICKABLE: Works Completed */}
         <button
-          onClick={() => setCurrentPage('completed')}
+          onClick={() => navigateTo('/completed', 'completed')}
           className="kpi-card text-left group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0891b2]/30"
           title="Click to view Completed Works Intelligence"
         >
@@ -267,7 +312,7 @@ export function IntelligenceDashboard() {
                 </span>
               )}
               <button
-                onClick={() => setCurrentPage('anomalies')}
+                onClick={() => navigateTo('/anomalies', 'anomalies')}
                 className="flex items-center gap-1 text-xs font-semibold text-[#005eb2] hover:text-[#003161] transition-colors"
               >
                 View all <ChevronRight size={12} />
@@ -286,7 +331,7 @@ export function IntelligenceDashboard() {
               return (
                 <div
                   key={project.workId}
-                  onClick={() => { selectProject(project.workId); setCurrentPage('monitoring'); }}
+                  onClick={() => navigateTo('/monitoring', 'monitoring', project.workId)}
                   className={`bg-white border border-[#E9ECEF] ${borderClass} p-5 cursor-pointer hover:shadow-[0_4px_16px_rgba(0,10,31,0.08)] hover:border-[#c4c6d0] transition-all duration-150 group shadow-[0_1px_4px_rgba(0,10,31,0.04)]`}
                 >
                   <div className="flex items-start gap-4">
@@ -330,7 +375,7 @@ export function IntelligenceDashboard() {
           </div>
 
           <button
-            onClick={() => setCurrentPage('monitoring')}
+            onClick={() => navigateTo('/monitoring', 'monitoring')}
             className="w-full border border-[#E9ECEF] bg-white text-[#44474f] hover:bg-[#F8F9FA] px-4 py-3 text-sm font-semibold transition-colors flex items-center justify-center gap-2 rounded-sm"
           >
             View Full Project Ledger <ArrowRight size={14} />
@@ -369,8 +414,8 @@ export function IntelligenceDashboard() {
             </div>
           </div>
 
-          {/* Verification Alert */}
-          {(stats?.requiresVerification ?? 0) > 0 && (
+          {/* Verification Alert - Hidden for MOSPI_ADMIN */}
+          {!isMospiAdmin && (stats?.requiresVerification ?? 0) > 0 && (
             <div className="panel p-4 border-l-4 border-l-[#FFC107]">
               <div className="flex items-start gap-3">
                 <ClipboardCheck size={16} className="text-[#92400e] mt-0.5 flex-shrink-0" />
@@ -382,7 +427,7 @@ export function IntelligenceDashboard() {
                     New alerts pending officer review
                   </div>
                   <button
-                    onClick={() => setCurrentPage('verification')}
+                    onClick={() => navigateTo('/verification', 'verification')}
                     className="text-[11px] font-semibold text-[#005eb2] hover:text-[#003161] mt-1.5 flex items-center gap-1"
                   >
                     Open Verification Desk <ArrowRight size={10} />
@@ -420,7 +465,7 @@ export function IntelligenceDashboard() {
                     Works recommended but sanction date is NA
                   </div>
                   <button
-                    onClick={() => setCurrentPage('anomalies')}
+                    onClick={() => navigateTo('/anomalies', 'anomalies')}
                     className="text-[11px] font-semibold text-[#005eb2] hover:text-[#003161] mt-1 flex items-center gap-1"
                   >
                     Review in Anomaly Center <ArrowRight size={10} />

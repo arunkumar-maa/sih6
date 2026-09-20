@@ -137,12 +137,18 @@ export function anomalyRowToEnrichedProject(row: any, category?: AnomalyTab): En
   };
 }
 
-export async function fetchAnomalyCounts(house: 'Lok Sabha' | 'Rajya Sabha'): Promise<AnomalyCounts> {
+export async function fetchAnomalyCounts(
+  house: 'Lok Sabha' | 'Rajya Sabha',
+  state?: string,
+  district?: string
+): Promise<AnomalyCounts> {
   const defaultCounts: AnomalyCounts = { pending: 0, stale: 0, cost: 0, disbursement: 0, vendor: 0 };
 
   try {
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_dataset_anomaly_counts', {
       p_house: house,
+      p_state: state || null,
+      p_district: district || null,
     });
     if (!rpcError && rpcData) {
       return {
@@ -158,10 +164,20 @@ export async function fetchAnomalyCounts(house: 'Lok Sabha' | 'Rajya Sabha'): Pr
   }
 
   try {
-    const { data, error } = await supabase
+    let q = supabase
       .from('project_anomaly_results')
       .select('category')
       .eq('house', house);
+
+    if (state) {
+      q = q.eq('state', state);
+    }
+    if (district) {
+      const cleanD = district.split('(')[0].trim();
+      q = q.or(`district.eq.${district},district.ilike.${cleanD}%`);
+    }
+
+    const { data, error } = await q;
 
     if (!error && data && data.length > 0) {
       const counts = { ...defaultCounts };
@@ -182,48 +198,88 @@ export async function fetchAnomalyProjects(
   house: 'Lok Sabha' | 'Rajya Sabha',
   category: AnomalyTab,
   limit: number = 25,
-  offset: number = 0
+  offset: number = 0,
+  state?: string,
+  district?: string
 ): Promise<EnrichedProject[]> {
-  if (category === 'vendor') {
-    return [];
-  }
-
+  // 1. Try Supabase RPC get_dataset_anomaly_projects
   try {
     const { data, error } = await supabase.rpc('get_dataset_anomaly_projects', {
       p_house: house,
       p_category: category,
       p_limit: limit,
       p_offset: offset,
+      p_state: state || null,
+      p_district: district || null,
     });
 
-    if (!error && data && data.length > 0) {
+    if (!error && data && Array.isArray(data) && data.length > 0) {
       return data.map((r: any) => anomalyRowToEnrichedProject(r, category));
-    }
-    if (error) {
-      console.warn(`[AnomalyService] RPC get_dataset_anomaly_projects error, fallback to table:`, error);
     }
   } catch (rpcErr) {
     console.warn(`[AnomalyService] RPC get_dataset_anomaly_projects exception:`, rpcErr);
   }
 
+  // 2. Try project_anomaly_results cache table
   try {
-    const { data, error } = await supabase
+    let q = supabase
       .from('project_anomaly_results')
       .select('*')
       .eq('house', house)
-      .eq('category', category)
+      .eq('category', category);
+
+    if (state) {
+      q = q.eq('state', state);
+    }
+    if (district) {
+      const cleanD = district.split('(')[0].trim();
+      q = q.or(`district.eq.${district},district.ilike.${cleanD}%`);
+    }
+
+    const { data, error } = await q
       .order('factor_score', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (error) {
-      throw new Error(`Failed to fetch anomalies: ${error.message}`);
+    if (!error && data && data.length > 0) {
+      return data.map((r: any) => anomalyRowToEnrichedProject(r, category));
+    }
+  } catch (err) {
+    console.warn(`[AnomalyService] Table cache fetch error for ${category}:`, err);
+  }
+
+  // 3. Resilient database fallback: query primary project table directly using exact anomaly criteria
+  try {
+    const tbl = getTableName(house);
+    let q = supabase.from(tbl).select('*');
+
+    if (state) {
+      q = q.eq('state', state);
     }
 
-    return (data || []).map((r: any) => anomalyRowToEnrichedProject(r, category));
-  } catch (err) {
-    console.error(`[AnomalyService] Error fetching ${category} projects:`, err);
-    return [];
+    if (category === 'pending') {
+      q = q.or('and(work_status.eq.Sanction,days_since_sanction.gt.365),is_recommended_only.eq.true,is_sanctioned.eq.false');
+    } else if (category === 'stale') {
+      q = q.eq('is_completed', false).gt('days_since_sanction', 180).in('work_status', ['Sanction', 'Vendor Identification', 'Physical Inspection']);
+    } else if (category === 'cost') {
+      q = q.gt('sanction_amount', 2500000);
+    } else if (category === 'disbursement') {
+      q = q.gt('total_paid', 0).neq('work_status', 'Work Completed').gt('disbursement_ratio', 80);
+    } else if (category === 'vendor') {
+      q = q.not('vendor_name', 'is', null);
+    }
+
+    const { data: directRows, error: directErr } = await q
+      .order('risk_score', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (!directErr && directRows && directRows.length > 0) {
+      return directRows.map((r: any) => anomalyRowToEnrichedProject(r, category));
+    }
+  } catch (directExc) {
+    console.error(`[AnomalyService] Direct table fallback failed:`, directExc);
   }
+
+  return [];
 }
 
 export async function getCategoryMedians(house: 'Lok Sabha' | 'Rajya Sabha'): Promise<Map<string, number>> {
@@ -232,7 +288,7 @@ export async function getCategoryMedians(house: 'Lok Sabha' | 'Rajya Sabha'): Pr
     .from(tableName)
     .select('work_category, sanction_amount')
     .gt('sanction_amount', 0)
-    .limit(3000);
+    .limit(10000);
 
   const byCat = new Map<string, number[]>();
   for (const r of (data || [])) {
@@ -265,7 +321,7 @@ export async function runAnomalyScan(house: 'Lok Sabha' | 'Rajya Sabha') {
     .eq('work_status', 'Sanction')
     .gt('days_since_sanction', 365)
     .order('days_since_sanction', { ascending: false })
-    .limit(100);
+    .limit(1000);
 
   // 2. Stale status (>180 days in early stages)
   const { data: staleRows } = await supabase
@@ -274,7 +330,7 @@ export async function runAnomalyScan(house: 'Lok Sabha' | 'Rajya Sabha') {
     .in('work_status', ['Vendor Identification', 'Physical Inspection'])
     .gt('days_since_sanction', 180)
     .order('days_since_sanction', { ascending: false })
-    .limit(100);
+    .limit(1000);
 
   // 3. Cost outliers: compare against category median ratio >= 2.5
   const { data: topAmountRows } = await supabase
@@ -282,13 +338,13 @@ export async function runAnomalyScan(house: 'Lok Sabha' | 'Rajya Sabha') {
     .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio, risk_score, risk_level')
     .gt('sanction_amount', 0)
     .order('sanction_amount', { ascending: false })
-    .limit(300);
+    .limit(2000);
 
   const costCandidates = (topAmountRows || []).filter(r => {
     const amt = Number(r.sanction_amount || 0);
     const median = medians.get(r.work_category) || 250000;
     return median > 0 && (amt / median) >= 2.5;
-  }).slice(0, 100);
+  }).slice(0, 1000);
 
   // 4. Disbursement outliers (>105% disbursement ratio)
   const { data: disbRows } = await supabase
@@ -296,7 +352,7 @@ export async function runAnomalyScan(house: 'Lok Sabha' | 'Rajya Sabha') {
     .select('work_id, work_description, work_category, state, district, constituency, sanction_amount, total_paid, work_status, days_since_sanction, disbursement_ratio, risk_score, risk_level')
     .gt('disbursement_ratio', 105)
     .order('disbursement_ratio', { ascending: false })
-    .limit(100);
+    .limit(1000);
 
   const newRecords: any[] = [];
   const processedKeys = new Set<string>();

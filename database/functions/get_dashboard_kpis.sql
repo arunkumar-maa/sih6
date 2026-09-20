@@ -31,22 +31,22 @@ BEGIN
     END IF;
 
     q := 'SELECT json_build_object(
-        ''total'', COUNT(*),
-        ''totalSanctionAmount'', COALESCE(SUM(sanction_amount), 0),
-        ''totalDisbursed'', COALESCE(SUM(total_paid), 0),
-        ''completed'', COUNT(*) FILTER (WHERE is_completed = TRUE),
-        ''highRisk'', COUNT(*) FILTER (WHERE risk_level = ''HIGH''),
-        ''medRisk'', COUNT(*) FILTER (WHERE risk_level = ''MEDIUM''),
-        ''lowRisk'', COUNT(*) FILTER (WHERE risk_level = ''LOW''),
-        ''pendingSanction'', COUNT(*) FILTER (WHERE is_recommended_only = TRUE),
-        ''requiresVerification'', COUNT(*) FILTER (WHERE risk_level != ''LOW'' AND verification_status = ''New Alert''),
-        ''avgRiskScore'', ROUND(COALESCE(AVG(risk_score), 0))
+        ''total'', COUNT(*)::INT,
+        ''totalSanctionAmount'', COALESCE(SUM(sanction_amount), 0)::NUMERIC,
+        ''totalDisbursed'', COALESCE(SUM(total_paid), 0)::NUMERIC,
+        ''completed'', COUNT(*) FILTER (WHERE is_completed = TRUE)::INT,
+        ''highRisk'', COUNT(*) FILTER (WHERE risk_level = ''HIGH'')::INT,
+        ''medRisk'', COUNT(*) FILTER (WHERE risk_level = ''MEDIUM'')::INT,
+        ''lowRisk'', COUNT(*) FILTER (WHERE risk_level = ''LOW'')::INT,
+        ''pendingSanction'', COUNT(*) FILTER (WHERE is_recommended_only = TRUE)::INT,
+        ''requiresVerification'', COUNT(*) FILTER (WHERE risk_level != ''LOW'' AND verification_status = ''New Alert'')::INT,
+        ''avgRiskScore'', ROUND(COALESCE(AVG(risk_score), 0))::NUMERIC
     ) FROM ' || tbl || ' WHERE 1=1';
 
     IF p_state IS NOT NULL AND p_state != '' THEN
         q := q || ' AND state = ' || quote_literal(p_state);
     END IF;
-    IF p_constituency IS NOT NULL AND p_constituency != '' THEN
+    IF p_house != 'Rajya Sabha' AND p_constituency IS NOT NULL AND p_constituency != '' THEN
         q := q || ' AND constituency = ' || quote_literal(p_constituency);
     END IF;
     IF p_mp IS NOT NULL AND p_mp != '' THEN
@@ -65,13 +65,22 @@ BEGIN
         q := q || ' AND (financial_year >= ''2024-2025'' OR financial_year = ''Unknown'')';
     ELSIF p_tenure = '17th Lok Sabha' THEN
         q := q || ' AND (financial_year >= ''2019-2020'' AND financial_year <= ''2023-2024'')';
+    ELSIF p_tenure IS NOT NULL AND p_tenure != '' AND p_tenure != 'All Tenures' AND p_tenure != 'Current Rajya Sabha' THEN
+        q := q || ' AND financial_year = ' || quote_literal(p_tenure);
     END IF;
     IF p_search IS NOT NULL AND p_search != '' THEN
-        q := q || ' AND (work_description ILIKE ' || quote_literal('%' || p_search || '%') ||
-                  ' OR work_id ILIKE ' || quote_literal('%' || p_search || '%') ||
-                  ' OR constituency ILIKE ' || quote_literal('%' || p_search || '%') ||
-                  ' OR district ILIKE ' || quote_literal('%' || p_search || '%') ||
-                  ' OR mp_name ILIKE ' || quote_literal('%' || p_search || '%') || ')';
+        IF p_house != 'Rajya Sabha' THEN
+            q := q || ' AND (work_description ILIKE ' || quote_literal('%' || p_search || '%') ||
+                      ' OR work_id ILIKE ' || quote_literal('%' || p_search || '%') ||
+                      ' OR constituency ILIKE ' || quote_literal('%' || p_search || '%') ||
+                      ' OR district ILIKE ' || quote_literal('%' || p_search || '%') ||
+                      ' OR mp_name ILIKE ' || quote_literal('%' || p_search || '%') || ')';
+        ELSE
+            q := q || ' AND (work_description ILIKE ' || quote_literal('%' || p_search || '%') ||
+                      ' OR work_id ILIKE ' || quote_literal('%' || p_search || '%') ||
+                      ' OR district ILIKE ' || quote_literal('%' || p_search || '%') ||
+                      ' OR mp_name ILIKE ' || quote_literal('%' || p_search || '%') || ')';
+        END IF;
     END IF;
 
     EXECUTE q INTO result;

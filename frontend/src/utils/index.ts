@@ -16,9 +16,11 @@ export function formatCurrencyFull(amount: number | null | undefined): string {
   return `₹${amount.toLocaleString('en-IN')}`;
 }
 
-export function formatDate(date: Date | null | undefined): string {
+export function formatDate(date: Date | string | null | undefined): string {
   if (!date) return 'Not Available';
-  return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return typeof date === 'string' ? date : 'Not Available';
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 export function formatDateStr(dateStr: string | null | undefined): string {

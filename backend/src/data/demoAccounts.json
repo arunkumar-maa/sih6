@@ -1,0 +1,252 @@
+[
+  {
+    "role": "MOSPI_ADMIN",
+    "email": "admin@mplads-demo.local",
+    "passwordFormat": "MospiAdmin@123",
+    "name": "Dr. Rajesh Kumar (MoSPI Admin)",
+    "scope": "National Command Center",
+    "house": "National (Lok Sabha & Rajya Sabha)"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "sno.up@mplads-demo.local",
+    "passwordFormat": "StateNodalUP@123",
+    "name": "Shri R. P. Verma (State Nodal Officer - Uttar Pradesh)",
+    "scope": "State: Uttar Pradesh",
+    "state": "Uttar Pradesh"
+  },
+  {
+    "role": "DISTRICT_OFFICER",
+    "email": "do.varanasi@mplads-demo.local",
+    "passwordFormat": "DistrictOfficerVaranasi@123",
+    "name": "District Magistrate (Varanasi District)",
+    "scope": "District: VARANASI (Uttar Pradesh)",
+    "state": "Uttar Pradesh",
+    "district": "VARANASI"
+  },
+  {
+    "role": "IMPLEMENTING_AGENCY",
+    "email": "agency.pwd@mplads-demo.local",
+    "passwordFormat": "AgencyPWD@123",
+    "name": "Executive Engineer (DRDA / PWD)",
+    "scope": "Agency: DRDA",
+    "agency": "DRDA"
+  },
+  {
+    "role": "AUDITOR",
+    "email": "auditor@mplads-demo.local",
+    "passwordFormat": "AuditorMoSPI@123",
+    "name": "Senior Audit Officer (Audit & Verification Desk)",
+    "scope": "Authorized Audit Scope"
+  },
+  {
+    "role": "MP",
+    "email": "aashtikarpatilnageshbapurao.ls@mplads-demo.local",
+    "passwordFormat": "AashtikarPatilNageshBapurao@123",
+    "name": "Hon'ble MP AASHTIKAR PATIL NAGESH BAPURAO",
+    "scope": "Lok Sabha · HINGOLI (Maharashtra)",
+    "house": "Lok Sabha",
+    "state": "Maharashtra",
+    "constituency": "HINGOLI",
+    "mpName": "AASHTIKAR PATIL NAGESH BAPURAO"
+  },
+  {
+    "role": "MP",
+    "email": "abdulrashidsheikh.ls@mplads-demo.local",
+    "passwordFormat": "AbdulRashidSheikh@123",
+    "name": "Hon'ble MP ABDUL RASHID SHEIKH",
+    "scope": "Lok Sabha · BARAMULLAH (Jammu And Kashmir)",
+    "house": "Lok Sabha",
+    "state": "Jammu And Kashmir",
+    "constituency": "BARAMULLAH",
+    "mpName": "ABDUL RASHID SHEIKH"
+  },
+  {
+    "role": "MP",
+    "email": "abhaykumarsinha.ls@mplads-demo.local",
+    "passwordFormat": "AbhayKumarSinha@123",
+    "name": "Hon'ble MP ABHAY KUMAR SINHA",
+    "scope": "Lok Sabha · AURANGABAD_BR (Bihar)",
+    "house": "Lok Sabha",
+    "state": "Bihar",
+    "constituency": "AURANGABAD_BR",
+    "mpName": "ABHAY KUMAR SINHA"
+  },
+  {
+    "role": "MP",
+    "email": "abhijitgangopadhyay.ls@mplads-demo.local",
+    "passwordFormat": "AbhijitGangopadhyay@123",
+    "name": "Hon'ble MP ABHIJIT GANGOPADHYAY",
+    "scope": "Lok Sabha · TAMLUK (West Bengal)",
+    "house": "Lok Sabha",
+    "state": "West Bengal",
+    "constituency": "TAMLUK",
+    "mpName": "ABHIJIT GANGOPADHYAY"
+  },
+  {
+    "role": "MP",
+    "email": "abutaherkhan.ls@mplads-demo.local",
+    "passwordFormat": "AbuTaherKhan@123",
+    "name": "Hon'ble MP Abu Taher Khan",
+    "scope": "Lok Sabha · MURSHIDABAD (West Bengal)",
+    "house": "Lok Sabha",
+    "state": "West Bengal",
+    "constituency": "MURSHIDABAD",
+    "mpName": "Abu Taher Khan"
+  },
+  {
+    "role": "MP",
+    "email": "adhikarisoumendu.ls@mplads-demo.local",
+    "passwordFormat": "AdhikariSoumendu@123",
+    "name": "Hon'ble MP ADHIKARI SOUMENDU",
+    "scope": "Lok Sabha · KANTHI (West Bengal)",
+    "house": "Lok Sabha",
+    "state": "West Bengal",
+    "constituency": "KANTHI",
+    "mpName": "ADHIKARI SOUMENDU"
+  },
+  {
+    "role": "MP",
+    "email": "adityayadav.ls@mplads-demo.local",
+    "passwordFormat": "AdityaYadav@123",
+    "name": "Hon'ble MP ADITYA YADAV",
+    "scope": "Lok Sabha · BADAUN (Uttar Pradesh)",
+    "house": "Lok Sabha",
+    "state": "Uttar Pradesh",
+    "constituency": "BADAUN",
+    "mpName": "ADITYA YADAV"
+  },
+  {
+    "role": "MP",
+    "email": "adoorprakash.ls@mplads-demo.local",
+    "passwordFormat": "AdoorPrakash@123",
+    "name": "Hon'ble MP Adv Adoor Prakash",
+    "scope": "Lok Sabha · ATTINGAL (Kerala)",
+    "house": "Lok Sabha",
+    "state": "Kerala",
+    "constituency": "ATTINGAL",
+    "mpName": "Adv Adoor Prakash"
+  },
+  {
+    "role": "MP",
+    "email": "deankuriakose.ls@mplads-demo.local",
+    "passwordFormat": "DeanKuriakose@123",
+    "name": "Hon'ble MP Adv Dean Kuriakose",
+    "scope": "Lok Sabha · IDUKKI (Kerala)",
+    "house": "Lok Sabha",
+    "state": "Kerala",
+    "constituency": "IDUKKI",
+    "mpName": "Adv Dean Kuriakose"
+  },
+  {
+    "role": "MP",
+    "email": "gowaalkagadapadavi.ls@mplads-demo.local",
+    "passwordFormat": "GowaalKagadaPadavi@123",
+    "name": "Hon'ble MP ADV GOWAAL KAGADA PADAVI",
+    "scope": "Lok Sabha · NANDURBAR(ST) (Maharashtra)",
+    "house": "Lok Sabha",
+    "state": "Maharashtra",
+    "constituency": "NANDURBAR(ST)",
+    "mpName": "ADV GOWAAL KAGADA PADAVI"
+  },
+  {
+    "role": "MP",
+    "email": "aashtikarpatilnageshbapurao.rs@mplads-demo.local",
+    "passwordFormat": "AashtikarPatilNageshBapurao@123",
+    "name": "Hon'ble MP AASHTIKAR PATIL NAGESH BAPURAO (2024-2029)",
+    "scope": "Rajya Sabha · Maharashtra",
+    "house": "Rajya Sabha",
+    "state": "Maharashtra",
+    "mpName": "AASHTIKAR PATIL NAGESH BAPURAO (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "abdulrashidsheikh.rs@mplads-demo.local",
+    "passwordFormat": "AbdulRashidSheikh@123",
+    "name": "Hon'ble MP ABDUL RASHID SHEIKH (2024-2029)",
+    "scope": "Rajya Sabha · Jammu And Kashmir",
+    "house": "Rajya Sabha",
+    "state": "Jammu And Kashmir",
+    "mpName": "ABDUL RASHID SHEIKH (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "abhaykumarsinha.rs@mplads-demo.local",
+    "passwordFormat": "AbhayKumarSinha@123",
+    "name": "Hon'ble MP ABHAY KUMAR SINHA (2024-2029)",
+    "scope": "Rajya Sabha · Bihar",
+    "house": "Rajya Sabha",
+    "state": "Bihar",
+    "mpName": "ABHAY KUMAR SINHA (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "abhijitgangopadhyay.rs@mplads-demo.local",
+    "passwordFormat": "AbhijitGangopadhyay@123",
+    "name": "Hon'ble MP ABHIJIT GANGOPADHYAY (2024-2029)",
+    "scope": "Rajya Sabha · West Bengal",
+    "house": "Rajya Sabha",
+    "state": "West Bengal",
+    "mpName": "ABHIJIT GANGOPADHYAY (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "abutaherkhan.rs@mplads-demo.local",
+    "passwordFormat": "AbuTaherKhan@123",
+    "name": "Hon'ble MP Abu Taher Khan (2024-2029)",
+    "scope": "Rajya Sabha · West Bengal",
+    "house": "Rajya Sabha",
+    "state": "West Bengal",
+    "mpName": "Abu Taher Khan (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "adhikarisoumendu.rs@mplads-demo.local",
+    "passwordFormat": "AdhikariSoumendu@123",
+    "name": "Hon'ble MP ADHIKARI SOUMENDU (2024-2029)",
+    "scope": "Rajya Sabha · West Bengal",
+    "house": "Rajya Sabha",
+    "state": "West Bengal",
+    "mpName": "ADHIKARI SOUMENDU (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "adityayadav.rs@mplads-demo.local",
+    "passwordFormat": "AdityaYadav@123",
+    "name": "Hon'ble MP ADITYA YADAV (2024-2029)",
+    "scope": "Rajya Sabha · Uttar Pradesh",
+    "house": "Rajya Sabha",
+    "state": "Uttar Pradesh",
+    "mpName": "ADITYA YADAV (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "adoorprakash.rs@mplads-demo.local",
+    "passwordFormat": "AdoorPrakash@123",
+    "name": "Hon'ble MP Adv Adoor Prakash  (2024-2029)",
+    "scope": "Rajya Sabha · Kerala",
+    "house": "Rajya Sabha",
+    "state": "Kerala",
+    "mpName": "Adv Adoor Prakash  (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "deankuriakose.rs@mplads-demo.local",
+    "passwordFormat": "DeanKuriakose@123",
+    "name": "Hon'ble MP Adv Dean Kuriakose (2024-2029)",
+    "scope": "Rajya Sabha · Kerala",
+    "house": "Rajya Sabha",
+    "state": "Kerala",
+    "mpName": "Adv Dean Kuriakose (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "gowaalkagadapadavi.rs@mplads-demo.local",
+    "passwordFormat": "GowaalKagadaPadavi@123",
+    "name": "Hon'ble MP ADV GOWAAL KAGADA PADAVI (2024-2029)",
+    "scope": "Rajya Sabha · Maharashtra",
+    "house": "Rajya Sabha",
+    "state": "Maharashtra",
+    "mpName": "ADV GOWAAL KAGADA PADAVI (2024-2029)"
+  }
+]

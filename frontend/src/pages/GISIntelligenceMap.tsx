@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import L from 'leaflet';
 import { useAppStore } from '../data/store';
+import { useAuthStore } from '../store/authStore';
 import { OfficialFilterBar, OfficialFilterState } from '../components/OfficialFilterBar';
 import { RiskBadge } from '../components/RiskBadge';
 import { formatCurrency } from '../utils';
@@ -18,6 +19,7 @@ import {
 } from 'lucide-react';
 import type { EnrichedProject } from '../data/types';
 import { getConstituencyGISAggregation, getStateGISAggregation } from '../data/supabase/gisQueries';
+import { getProjects } from '../data/supabase/projectQueries';
 
 // In-memory GeoJSON caches for instant tab switching
 let cachedPcGeoJson: any = null;
@@ -98,12 +100,18 @@ export function GISIntelligenceMap() {
   const [geoJsonData, setGeoJsonData] = useState<any>(null);
   const [selectedRegion, setSelectedRegion] = useState<RegionMetrics | null>(null);
 
+  const { profile } = useAuthStore();
+  const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
+  const isStateNodal = profile?.role === 'STATE_NODAL_OFFICER';
+  const lockedState = (isStateNodal || isDistrictOfficer) ? (profile?.state || '') : '';
+  const lockedDistrictClean = isDistrictOfficer && profile?.district ? profile.district.split('(')[0].trim() : '';
+
   // Filter state for OfficialFilterBar
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
     house: activeHouse,
     tenure: '',
-    state: '',
+    state: lockedState,
     constituency: '',
     mpName: '',
     riskLevel: '',
@@ -127,7 +135,7 @@ export function GISIntelligenceMap() {
       search: '',
       house,
       tenure: '',
-      state: '',
+      state: lockedState,
       constituency: '',
       mpName: '',
       riskLevel: '',
@@ -230,7 +238,10 @@ export function GISIntelligenceMap() {
     setIsGisLoading(true);
 
     const promise = activeHouse === 'Lok Sabha'
-      ? getConstituencyGISAggregation(filters)
+      ? getConstituencyGISAggregation({
+          ...filters,
+          district: isDistrictOfficer ? (profile?.district || undefined) : undefined,
+        })
       : getStateGISAggregation(filters);
 
     promise
@@ -258,7 +269,33 @@ export function GISIntelligenceMap() {
     return () => {
       cancelled = true;
     };
-  }, [isUsingSupabase, activeHouse, filters]);
+  }, [isUsingSupabase, activeHouse, filters, isDistrictOfficer, profile?.district]);
+
+  // Dynamically load real priority attention projects for selected region
+  useEffect(() => {
+    if (!isUsingSupabase || !selectedRegion || selectedRegion.totalWorks === 0) return;
+    if (selectedRegion.projects && selectedRegion.projects.length > 0) return;
+
+    let cancelled = false;
+    getProjects({
+      house: activeHouse,
+      state: selectedRegion.state && selectedRegion.state !== 'Unknown' ? selectedRegion.state : undefined,
+      constituency: activeHouse === 'Lok Sabha' ? selectedRegion.constituency : undefined,
+      pageSize: 10,
+      sortField: 'risk',
+      sortDir: 'desc',
+    })
+      .then(res => {
+        if (!cancelled && res.projects && res.projects.length > 0) {
+          setSelectedRegion(prev => prev ? { ...prev, projects: res.projects } : null);
+        }
+      })
+      .catch(err => console.warn('[GISIntelligenceMap] Failed to fetch region projects:', err));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isUsingSupabase, selectedRegion?.id, activeHouse]);
 
   // Aggregate project metrics locally (fallback mode)
   const fallbackRegionMetricsMap = useMemo(() => {
@@ -621,14 +658,56 @@ export function GISIntelligenceMap() {
       }).addTo(mapInstanceRef.current);
 
       geoLayerRef.current = layer;
+
+      // Auto-fit map to district constituencies if logged in as DISTRICT_OFFICER
+      if (isDistrictOfficer && mapInstanceRef.current && regionMetricsMap.size > 0) {
+        const bounds = L.latLngBounds([]);
+        layer.eachLayer((fl: any) => {
+          const props = fl.feature?.properties;
+          if (!props) return;
+          const key = activeHouse === 'Lok Sabha'
+            ? `${normalizeStateName(props.st_name)}|||${normalizeConstituencyName(props.pc_name)}`
+            : normalizeStateName(props.st_nm || props.NAME_1 || props.st_name || props.state || props.name);
+          const metric = regionMetricsMap.get(key);
+          if (metric && metric.totalWorks > 0 && fl.getBounds) {
+            bounds.extend(fl.getBounds());
+          }
+        });
+        if (bounds.isValid()) {
+          mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 9 });
+        }
+      }
     } catch (err) {
       console.error('Error rendering GeoJSON on Leaflet:', err);
     }
-  }, [geoJsonData, regionMetricsMap, activeHouse, getFeatureStyle, selectedRegion]);
+  }, [geoJsonData, regionMetricsMap, activeHouse, getFeatureStyle, selectedRegion, isDistrictOfficer]);
 
-  // Reset zoom to National view
+  // Reset zoom to view
   const handleResetZoom = () => {
     if (mapInstanceRef.current) {
+      if (isDistrictOfficer && geoLayerRef.current && regionMetricsMap.size > 0) {
+        const bounds = L.latLngBounds([]);
+        geoLayerRef.current.eachLayer((fl: any) => {
+          const props = fl.feature?.properties;
+          if (!props) return;
+          const key = activeHouse === 'Lok Sabha'
+            ? `${normalizeStateName(props.st_name)}|||${normalizeConstituencyName(props.pc_name)}`
+            : normalizeStateName(props.st_nm || props.NAME_1 || props.st_name || props.state || props.name);
+          const metric = regionMetricsMap.get(key);
+          if (metric && metric.totalWorks > 0 && fl.getBounds) {
+            bounds.extend(fl.getBounds());
+          }
+        });
+        if (bounds.isValid()) {
+          mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 9 });
+          if (selectedFeatureLayerRef.current && geoLayerRef.current) {
+            geoLayerRef.current.resetStyle(selectedFeatureLayerRef.current as any);
+            selectedFeatureLayerRef.current = null;
+          }
+          setSelectedRegion(null);
+          return;
+        }
+      }
       mapInstanceRef.current.setView([22.8, 80.5], 5);
       if (selectedFeatureLayerRef.current && geoLayerRef.current) {
         geoLayerRef.current.resetStyle(selectedFeatureLayerRef.current as any);
@@ -663,13 +742,25 @@ export function GISIntelligenceMap() {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
             <Compass size={12} />
-            National Spatial Risk Observatory · Geographic Intelligence
+            {isDistrictOfficer
+              ? `District Spatial Risk Observatory · ${lockedDistrictClean || profile?.district}, ${profile?.state}`
+              : isStateNodal
+              ? `State Spatial Risk Observatory · ${profile?.state}`
+              : 'National Spatial Risk Observatory · Geographic Intelligence'}
           </p>
           <h1 className="text-2xl font-bold text-[#000a1f]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            National MPLADS Geographic Intelligence
+            {isDistrictOfficer
+              ? `District Geographic Intelligence — ${lockedDistrictClean || profile?.district}`
+              : isStateNodal
+              ? `State Geographic Intelligence — ${profile?.state}`
+              : 'National MPLADS Geographic Intelligence'}
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
-            Geospatial anomaly clustering across all 543 Parliamentary Constituencies and States
+            {isDistrictOfficer
+              ? `Geospatial constituency and boundary intelligence localized to ${lockedDistrictClean || profile?.district}, ${profile?.state}`
+              : isStateNodal
+              ? `Geospatial anomaly clustering across constituencies in ${profile?.state}`
+              : 'Geospatial anomaly clustering across all 543 Parliamentary Constituencies and States'}
           </p>
         </div>
 
@@ -754,7 +845,7 @@ export function GISIntelligenceMap() {
             if (f.house !== activeHouse) {
               handleHouseSwitch(f.house);
             } else {
-              setFilters(f);
+              setFilters(lockedState ? { ...f, state: lockedState } : f);
             }
           }}
           onReset={() => {
@@ -762,7 +853,7 @@ export function GISIntelligenceMap() {
               search: '',
               house: activeHouse,
               tenure: '',
-              state: '',
+              state: lockedState,
               constituency: '',
               mpName: '',
               riskLevel: '',
@@ -789,7 +880,7 @@ export function GISIntelligenceMap() {
             className="absolute top-4 left-4 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-md border border-[#E9ECEF] shadow-md text-xs font-semibold text-[#000a1f] hover:bg-[#F8F9FA] transition-colors"
           >
             <RotateCcw size={12} className="text-[#005eb2]" />
-            National View
+            {isDistrictOfficer ? 'District View' : isStateNodal ? 'State View' : 'National View'}
           </button>
 
           {/* Map Loading indicator */}

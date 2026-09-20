@@ -1,9 +1,11 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   AlertTriangle, Clock, DollarSign, Users, TrendingUp,
-  ChevronRight, ChevronLeft, Info, Shield, RefreshCw, CheckCircle2, AlertCircle
+  ChevronRight, ChevronLeft, Info, Shield, RefreshCw, CheckCircle2, AlertCircle,
+  ArrowRight, ExternalLink
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
+import { useAuthStore } from '../store/authStore';
 import { RiskBadge } from '../components/RiskBadge';
 import { formatCurrency, truncate } from '../utils';
 import type { EnrichedProject } from '../data/types';
@@ -44,7 +46,19 @@ export function RiskAnomaliesCenter() {
     anomalyCounts,
     lastAnalysisSummary,
     loadAnomalyData,
+    setActiveHouse,
   } = useAppStore();
+
+  const { profile } = useAuthStore();
+  const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
+  const isStateNodal = profile?.role === 'STATE_NODAL_OFFICER';
+  const cleanDistrict = profile?.district ? profile.district.split('(')[0].trim() : '';
+
+  const scopeBadge = isDistrictOfficer
+    ? `District: ${cleanDistrict}, ${profile?.state} (Locked)`
+    : isStateNodal
+    ? `State: ${profile?.state} (Locked)`
+    : 'National';
 
   const [activeTab, setActiveTab] = useState<AnomalyTab>('stale');
   const [page, setPage] = useState(1);
@@ -64,13 +78,6 @@ export function RiskAnomaliesCenter() {
 
   // Fetch paginated projects for activeTab & page
   const fetchPageProjects = useCallback(async () => {
-    if (activeTab === 'vendor') {
-      setPaginatedProjects([]);
-      setListLoading(false);
-      setListError(null);
-      return;
-    }
-
     setListLoading(true);
     setListError(null);
     try {
@@ -91,7 +98,6 @@ export function RiskAnomaliesCenter() {
 
   // Card counts: dataset-wide server counts from Supabase RPC
   const getTabCount = (tab: AnomalyTab): number => {
-    if (tab === 'vendor') return 0;
     if (anomalyCounts && anomalyCounts[tab] !== undefined) {
       return anomalyCounts[tab];
     }
@@ -102,6 +108,18 @@ export function RiskAnomaliesCenter() {
   const totalPages = Math.max(1, Math.ceil(totalTabCount / PAGE_SIZE));
   const activeTabConfig = TAB_CONFIG.find(t => t.id === activeTab)!;
 
+  const handleProjectClick = (project: EnrichedProject) => {
+    if (project.house && (project.house === 'Lok Sabha' || project.house === 'Rajya Sabha')) {
+      if (project.house !== activeHouse) {
+        setActiveHouse(project.house);
+      }
+    }
+    selectProject(project.workId);
+    setCurrentPage('monitoring');
+    window.history.pushState({}, '', '/monitoring');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Header */}
@@ -109,14 +127,14 @@ export function RiskAnomaliesCenter() {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#DC3545] mb-1 flex items-center gap-2">
             <AlertTriangle size={11} />
-            Anomaly Center — Risk Observatory · {activeHouse}
+            Anomaly Center — Risk Observatory · {activeHouse} · {scopeBadge}
           </p>
           <h1 className="text-2xl font-bold text-[#000a1f]"
               style={{ fontFamily: 'Montserrat, sans-serif' }}>
             Risk &amp; Anomaly Intelligence
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
-            Automatically detected risk patterns for {activeHouse} · For human verification only
+            Automatically detected risk patterns for {activeHouse} ({scopeBadge}) · For human verification only
           </p>
         </div>
       </div>
@@ -186,9 +204,7 @@ export function RiskAnomaliesCenter() {
                 {activeTabConfig.label}
               </h2>
               <p className="text-[11px] text-[#747780]">
-                {activeTab === 'vendor'
-                  ? 'Vendor data unavailable for this dataset'
-                  : totalTabCount === 0
+                {totalTabCount === 0
                   ? '0 anomalies detected'
                   : `Showing ${Math.min((page - 1) * PAGE_SIZE + 1, totalTabCount)}–${Math.min(page * PAGE_SIZE, totalTabCount)} of ${totalTabCount.toLocaleString('en-IN')} priority anomaly cases · ${totalTabCount.toLocaleString('en-IN')} total detected`}
               </p>
@@ -209,12 +225,6 @@ export function RiskAnomaliesCenter() {
             <RefreshCw size={24} className="mx-auto text-[#005eb2] animate-spin mb-2" />
             <div className="text-[#44474f] text-sm font-semibold">Analyzing MPLADS project data...</div>
             <div className="text-[#747780] text-xs mt-1">Evaluating multi-dimensional risk signals from Supabase</div>
-          </div>
-        ) : activeTab === 'vendor' ? (
-          <div className="py-16 text-center">
-            <Users size={32} className="mx-auto text-[#747780] mb-2 opacity-50" />
-            <div className="text-[#44474f] text-sm font-semibold">Vendor data unavailable for this dataset</div>
-            <div className="text-[#747780] text-xs mt-1">Contractor and vendor fields are unrecorded in official {activeHouse} project data.</div>
           </div>
         ) : listError ? (
           <div className="py-16 text-center">
@@ -256,8 +266,9 @@ export function RiskAnomaliesCenter() {
               return (
                 <div
                   key={`${project.house}-${project.workId}-${activeTab}`}
-                  onClick={() => { selectProject(project.workId); setCurrentPage('monitoring'); }}
-                  className="anomaly-card cursor-pointer"
+                  onClick={() => handleProjectClick(project)}
+                  className="anomaly-card cursor-pointer group hover:border-[#005eb2] hover:shadow-[0_4px_16px_rgba(0,10,31,0.08)] transition-all"
+                  title="Click to open project intelligence"
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -268,7 +279,7 @@ export function RiskAnomaliesCenter() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="text-sm font-semibold text-[#000a1f]">
+                            <span className="text-sm font-semibold text-[#000a1f] group-hover:text-[#005eb2] transition-colors">
                               {truncate(project.workDescription || project.workCategory, 80)}
                             </span>
                             <RiskBadge level={project.risk.level} size="sm" />
@@ -283,7 +294,7 @@ export function RiskAnomaliesCenter() {
                             <span>·</span>
                             <span>{project.district || 'District N/A'}</span>
                             <span>·</span>
-                            <span>{project.constituency || 'Constituency N/A'}</span>
+                            <span>{project.house === 'Rajya Sabha' ? (project.state || 'State N/A') : (project.constituency || 'Constituency N/A')}</span>
                             {project.sanctionAmount !== null && (
                               <>
                                 <span>·</span>
@@ -302,11 +313,14 @@ export function RiskAnomaliesCenter() {
                             )}
                           </div>
                         </div>
-                        <div className="flex-shrink-0 text-right">
-                          <div className="text-base font-bold" style={{ color: tab.color, fontFamily: 'Montserrat, sans-serif' }}>
-                            +{factor?.score ?? project.risk.score}
+                        <div className="flex-shrink-0 text-right flex items-center gap-2.5">
+                          <div>
+                            <div className="text-base font-bold" style={{ color: tab.color, fontFamily: 'Montserrat, sans-serif' }}>
+                              +{factor?.score ?? project.risk.score}
+                            </div>
+                            <div className="text-[10px] text-[#747780]">factor score</div>
                           </div>
-                          <div className="text-[10px] text-[#747780]">factor score</div>
+                          <ArrowRight size={15} className="text-[#CED4DA] group-hover:text-[#005eb2] group-hover:translate-x-0.5 transition-all" />
                         </div>
                       </div>
 

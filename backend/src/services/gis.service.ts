@@ -18,6 +18,7 @@ export interface GISAggregateRegion {
 
 export interface GISFilters {
   state?: string;
+  district?: string;
   constituency?: string;
   mpName?: string;
   riskLevel?: string;
@@ -38,6 +39,7 @@ export async function fetchConstituencyGIS(filters: GISFilters = {}): Promise<GI
       p_category: filters.category || null,
       p_tenure: filters.tenure || null,
       p_search: filters.search || null,
+      p_district: filters.district || null,
     });
 
     if (!error && Array.isArray(data)) {
@@ -47,8 +49,8 @@ export async function fetchConstituencyGIS(filters: GISFilters = {}): Promise<GI
         state: item.state || 'State',
         constituency: item.constituency,
         totalWorks: Number(item.total_works || 0),
-        sanctionedAmount: Number(item.sanctioned_amount || 0),
-        disbursedAmount: Number(item.disbursed_amount || 0),
+        sanctionedAmount: Number(item.sanctioned_amount ?? item.total_sanctioned ?? 0),
+        disbursedAmount: Number(item.disbursed_amount ?? item.total_disbursed ?? 0),
         completedWorks: Number(item.completed_works || 0),
         highRiskCount: Number(item.high_risk_count || 0),
         medRiskCount: Number(item.med_risk_count || 0),
@@ -68,6 +70,7 @@ export async function fetchStateGIS(filters: GISFilters = {}): Promise<GISAggreg
   try {
     const { data, error } = await supabase.rpc('get_state_gis_metrics', {
       p_state: filters.state || null,
+      p_constituency: null,
       p_mp: filters.mpName || null,
       p_risk: filters.riskLevel || null,
       p_status: filters.status || null,
@@ -82,8 +85,8 @@ export async function fetchStateGIS(filters: GISFilters = {}): Promise<GISAggreg
         name: item.state || 'State',
         state: item.state || 'State',
         totalWorks: Number(item.total_works || 0),
-        sanctionedAmount: Number(item.sanctioned_amount || 0),
-        disbursedAmount: Number(item.disbursed_amount || 0),
+        sanctionedAmount: Number(item.sanctioned_amount ?? item.total_sanctioned ?? 0),
+        disbursedAmount: Number(item.disbursed_amount ?? item.total_disbursed ?? 0),
         completedWorks: Number(item.completed_works || 0),
         highRiskCount: Number(item.high_risk_count || 0),
         medRiskCount: Number(item.med_risk_count || 0),

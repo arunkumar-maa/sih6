@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppStore } from '../data/store';
+import { useAuthStore } from '../store/authStore';
 import { formatCurrency } from '../utils';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -25,12 +26,25 @@ const PALETTE = ['#0084ff', '#10b981', '#f59e0b', '#8b5cf6', '#ea580c', '#64748b
 
 export function Analytics() {
   const { projects, activeHouse } = useAppStore();
+  const { profile } = useAuthStore();
+
+  const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
+  const isStateNodal = profile?.role === 'STATE_NODAL_OFFICER';
+  const lockedState = (isStateNodal || isDistrictOfficer) ? (profile?.state || '') : '';
+  const lockedDistrict = isDistrictOfficer ? (profile?.district || '') : '';
+  const cleanDistrict = lockedDistrict ? lockedDistrict.split('(')[0].trim() : '';
+
+  const scopeBadge = isDistrictOfficer
+    ? `District: ${cleanDistrict}, ${profile?.state}`
+    : isStateNodal
+    ? `State: ${profile?.state}`
+    : 'National';
 
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
     house: activeHouse,
     tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
-    state: '',
+    state: lockedState,
     constituency: '',
     mpName: '',
     riskLevel: '',
@@ -51,7 +65,7 @@ export function Analytics() {
         ...f,
         house: activeHouse,
         tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
-        state: '',
+        state: lockedState,
         constituency: '',
         mpName: '',
         riskLevel: '',
@@ -60,14 +74,18 @@ export function Analytics() {
         search: '',
       }));
     }
-  }, [activeHouse]);
+  }, [activeHouse, lockedState]);
 
   // Fetch unified observatory analytics from backend / Supabase RPC
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAnalyticsObservatory(activeHouse, filters);
+      const data = await getAnalyticsObservatory(activeHouse, {
+        ...filters,
+        state: lockedState || filters.state,
+        district: isDistrictOfficer ? lockedDistrict : undefined,
+      });
       setObservatoryData(data);
     } catch (err: any) {
       console.error('[Analytics] Error fetching observatory analytics:', err);
@@ -75,7 +93,7 @@ export function Analytics() {
     } finally {
       setLoading(false);
     }
-  }, [activeHouse, filters]);
+  }, [activeHouse, filters, lockedState, isDistrictOfficer, lockedDistrict]);
 
   useEffect(() => {
     fetchAnalytics();
@@ -127,13 +145,17 @@ export function Analytics() {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
             <BarChart3 size={11} />
-            Performance Observatory — Analytics · {activeHouse}
+            Performance Observatory — Analytics · {activeHouse} · {scopeBadge}
           </p>
           <h1 className="text-2xl font-bold text-[#000a1f]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
             MPLADS Analytics &amp; Empirical Insights
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
-            Aggregated statistical analysis derived dynamically from active {activeHouse} dataset
+            {isDistrictOfficer
+              ? `Aggregated statistical analysis for ${cleanDistrict} (${profile?.state}) derived dynamically from active ${activeHouse} dataset`
+              : isStateNodal
+              ? `Aggregated statistical analysis for ${profile?.state} derived dynamically from active ${activeHouse} dataset`
+              : `Aggregated statistical analysis derived dynamically from active ${activeHouse} dataset`}
           </p>
         </div>
         {loading && (
@@ -168,12 +190,12 @@ export function Analytics() {
           filteredCount={kpis.total}
           totalCount={houseTotalCount}
           filters={filters}
-          onFilterChange={setFilters}
+          onFilterChange={(f) => setFilters(lockedState ? { ...f, state: lockedState } : f)}
           onReset={() => setFilters({
             search: '',
             house: activeHouse,
             tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
-            state: '',
+            state: lockedState,
             constituency: '',
             mpName: '',
             riskLevel: '',

@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import type { EnrichedProject, RiskLevel } from '../data/types';
 import { useAppStore } from '../data/store';
+import { useAuthStore } from '../store/authStore';
+import { getRajyaSabhaMPsByState } from '../data/rajyaSabhaMPs';
 
 export interface OfficialFilterState {
   search: string;
@@ -71,6 +73,13 @@ export function OfficialFilterBar({
   showPDF = true,
 }: OfficialFilterBarProps) {
   const { setActiveHouse, isLoadingRajyaSabha, activeHouse, filterOptions, loadFilterOptions, isUsingSupabase } = useAppStore();
+  const { profile } = useAuthStore();
+  const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
+  const isStateLocked = (profile?.role === 'STATE_NODAL_OFFICER' || isDistrictOfficer) && !!profile?.state;
+  const lockedState = isStateLocked ? (profile.state as string) : '';
+  const isDistrictLocked = isDistrictOfficer && !!profile?.district;
+  const lockedDistrictRaw = isDistrictLocked ? (profile.district as string) : '';
+  const lockedDistrictClean = lockedDistrictRaw.split('(')[0].trim();
 
   const [popoverOpen, setPopoverOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -80,19 +89,32 @@ export function OfficialFilterBar({
   const [toast, setToast] = useState<string | null>(null);
 
   // Draft filters inside popover before clicking "Search"
-  const [draft, setDraft] = useState<OfficialFilterState>(filters);
+  const [draft, setDraft] = useState<OfficialFilterState>(() => {
+    if (isStateLocked) {
+      return { ...filters, state: lockedState };
+    }
+    return filters;
+  });
 
   // Sync draft when external filters change
   useEffect(() => {
-    setDraft(filters);
-  }, [filters]);
+    if (isStateLocked) {
+      setDraft({ ...filters, state: lockedState });
+      if (filters.state !== lockedState) {
+        onFilterChange({ ...filters, state: lockedState });
+      }
+    } else {
+      setDraft(filters);
+    }
+  }, [filters, isStateLocked, lockedState, onFilterChange]);
 
   // Dynamically load options from Supabase when draft state changes
   useEffect(() => {
-    if (draft.state) {
-      loadFilterOptions(draft.state);
+    const targetState = isStateLocked ? lockedState : draft.state;
+    if (targetState) {
+      loadFilterOptions(targetState);
     }
-  }, [draft.state, loadFilterOptions]);
+  }, [isStateLocked, lockedState, draft.state, loadFilterOptions]);
 
   // Close popover when clicking outside
   useEffect(() => {
@@ -133,9 +155,24 @@ export function OfficialFilterBar({
     return Array.from(s).sort();
   }, [projects, draft.state, filterOptions?.constituencies]);
 
-  // MPs filtered by selected draft state & constituency
+  // MPs filtered strictly by house and selected draft state & constituency
   const mps = useMemo(() => {
-    if (filterOptions?.mps && filterOptions.mps.length > 0) return filterOptions.mps;
+    if (draft.house === 'Rajya Sabha') {
+      return getRajyaSabhaMPsByState(draft.state);
+    }
+    if (filterOptions?.mps && filterOptions.mps.length > 0) {
+      if (draft.state) {
+        const s = new Set<string>();
+        projects.forEach(p => {
+          if (p.state === draft.state) {
+            if (draft.constituency && p.constituency !== draft.constituency) return;
+            if (p.mp) s.add(p.mp);
+          }
+        });
+        if (s.size > 0) return Array.from(s).sort();
+      }
+      return filterOptions.mps;
+    }
     const s = new Set<string>();
     projects.forEach(p => {
       if (draft.state && p.state !== draft.state) return;
@@ -143,7 +180,7 @@ export function OfficialFilterBar({
       if (p.mp) s.add(p.mp);
     });
     return Array.from(s).sort();
-  }, [projects, draft.state, draft.constituency, filterOptions?.mps]);
+  }, [projects, draft.house, draft.state, draft.constituency, filterOptions?.mps]);
 
   // Count active popover filters (excluding search and default house/tenure)
   const activeFilterCount = useMemo(() => {
@@ -175,7 +212,7 @@ export function OfficialFilterBar({
       ...filters,
       house: newHouse,
       tenure: '',
-      state: '',
+      state: isStateLocked ? lockedState : '',
       constituency: '',
       mpName: '',
       riskLevel: '',
@@ -191,7 +228,8 @@ export function OfficialFilterBar({
 
   const handleApplySearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    onFilterChange(draft);
+    const finalDraft = isStateLocked ? { ...draft, state: lockedState } : draft;
+    onFilterChange(finalDraft);
     setPopoverOpen(false);
   };
 
@@ -200,7 +238,7 @@ export function OfficialFilterBar({
       search: '',
       house: filters.house,
       tenure: '',
-      state: '',
+      state: isStateLocked ? lockedState : '',
       constituency: '',
       mpName: '',
       riskLevel: '',
@@ -214,6 +252,7 @@ export function OfficialFilterBar({
   };
 
   const removeFilter = (key: keyof OfficialFilterState) => {
+    if (isStateLocked && key === 'state') return; // Cannot remove assigned state
     const updated = { ...filters, [key]: '' };
     onFilterChange(updated);
   };
@@ -390,38 +429,71 @@ export function OfficialFilterBar({
 
                 {/* State */}
                 <div>
-                  <label className="block text-sm font-normal text-slate-600 mb-1.5">
-                    State
-                  </label>
-                  <select
-                    value={draft.state}
-                    onChange={e => setDraft(prev => ({
-                      ...prev,
-                      state: e.target.value,
-                      constituency: '', // reset child selection
-                      mpName: '',
-                    }))}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/30 transition-all cursor-pointer"
-                  >
-                    <option value="">Please Select</option>
-                    {states.map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-normal text-slate-600">
+                      State
+                    </label>
+                    {isStateLocked && (
+                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                        ASSIGNED STATE (LOCKED)
+                      </span>
+                    )}
+                  </div>
+                  {isStateLocked ? (
+                    <div className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-slate-800 font-semibold flex items-center justify-between cursor-not-allowed">
+                      <span>{lockedState}</span>
+                      <span className="text-xs text-slate-400 font-normal">State Locked</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={draft.state}
+                      onChange={e => setDraft(prev => ({
+                        ...prev,
+                        state: e.target.value,
+                        constituency: '', // reset child selection
+                        mpName: '',
+                      }))}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/30 transition-all cursor-pointer"
+                    >
+                      <option value="">Please Select</option>
+                      {states.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
+
+                {/* District (if District Locked) */}
+                {isDistrictLocked && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-sm font-normal text-slate-600">
+                        District
+                      </label>
+                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                        ASSIGNED DISTRICT (LOCKED)
+                      </span>
+                    </div>
+                    <div className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-slate-800 font-semibold flex items-center justify-between cursor-not-allowed">
+                      <span>{lockedDistrictClean}</span>
+                      <span className="text-xs text-slate-400 font-normal">District Locked</span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Constituency / Representation */}
                 <div>
                   <label className="block text-sm font-normal text-slate-600 mb-1.5">
-                    {draft.house === 'Rajya Sabha' ? 'Representation' : 'Constituency'}
+                    {draft.house === 'Rajya Sabha' ? 'Constituency (Lok Sabha Only)' : 'Constituency'}
                   </label>
                   <select
-                    value={draft.constituency}
+                    value={draft.house === 'Rajya Sabha' ? '' : draft.constituency}
                     onChange={e => setDraft(prev => ({ ...prev, constituency: e.target.value, mpName: '' }))}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/30 transition-all cursor-pointer"
+                    disabled={draft.house === 'Rajya Sabha'}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/30 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
                   >
-                    <option value="">Please Select</option>
-                    {constituencies.map(c => (
+                    <option value="">{draft.house === 'Rajya Sabha' ? 'State Representation (N/A)' : 'Please Select'}</option>
+                    {draft.house !== 'Rajya Sabha' && constituencies.map(c => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
@@ -430,7 +502,7 @@ export function OfficialFilterBar({
                 {/* MP Name */}
                 <div>
                   <label className="block text-sm font-normal text-slate-600 mb-1.5">
-                    {filters.house === 'Rajya Sabha' ? 'Member of Rajya Sabha' : 'MP Name'}
+                    {draft.house === 'Rajya Sabha' ? 'Member of Rajya Sabha (MP)' : 'MP Name'}
                   </label>
                   <select
                     value={draft.mpName}
@@ -571,9 +643,18 @@ export function OfficialFilterBar({
           </span>
 
           {filters.state && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e0e9f2] text-[#00204a] text-xs font-semibold">
-              State: {filters.state}
-              <button onClick={() => removeFilter('state')} className="hover:text-red-600 ml-0.5"><X size={11} /></button>
+            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+              isStateLocked ? 'bg-blue-100 text-blue-900 border border-blue-200' : 'bg-[#e0e9f2] text-[#00204a]'
+            }`}>
+              State: {filters.state} {isStateLocked && '(Locked)'}
+              {!isStateLocked && (
+                <button onClick={() => removeFilter('state')} className="hover:text-red-600 ml-0.5"><X size={11} /></button>
+              )}
+            </span>
+          )}
+          {isDistrictLocked && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-900 border border-blue-200">
+              District: {lockedDistrictClean} (Locked)
             </span>
           )}
           {filters.constituency && (
@@ -584,7 +665,7 @@ export function OfficialFilterBar({
           )}
           {filters.mpName && (
             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e0e9f2] text-[#00204a] text-xs font-semibold">
-              MP: {filters.mpName.split(' ').slice(0, 2).join(' ')}
+              {filters.house === 'Rajya Sabha' ? 'RS MP' : 'MP'}: {filters.mpName.replace(/\s*\([^)]*\)/g, '').trim()}
               <button onClick={() => removeFilter('mpName')} className="hover:text-red-600 ml-0.5"><X size={11} /></button>
             </span>
           )}

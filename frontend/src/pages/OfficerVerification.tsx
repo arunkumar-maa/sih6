@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppStore } from '../data/store';
 import { RiskBadge } from '../components/RiskBadge';
 import { formatCurrency, formatDateStr, truncate } from '../utils';
 import type { VerificationStatus, EnrichedProject } from '../data/types';
+import { getProjects } from '../data/supabase/projectQueries';
 import {
   ClipboardCheck, UserCheck, ShieldAlert, CheckCircle2,
-  XCircle, Clock, AlertTriangle, FileText, Send, History
+  XCircle, Clock, AlertTriangle, FileText, Send, History, RefreshCw
 } from 'lucide-react';
 
 const STATUS_OPTIONS: { status: VerificationStatus; label: string; icon: React.ElementType; color: string }[] = [
@@ -27,17 +28,41 @@ const STATUS_BADGE_CLASS: Record<string, string> = {
 };
 
 export function OfficerVerification() {
-  const { projects, updateVerification, selectProject, setCurrentPage } = useAppStore();
+  const { projects, updateVerification, selectProject, setCurrentPage, activeHouse, isUsingSupabase } = useAppStore();
 
   const [activeStatusFilter, setActiveStatusFilter] = useState<string>('ALL');
   const [selectedWorkId, setSelectedWorkId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState('');
   const [selectedStatusInput, setSelectedStatusInput] = useState<VerificationStatus>('Under Review');
+  const [serverFlagged, setServerFlagged] = useState<EnrichedProject[]>([]);
+  const [loadingFlagged, setLoadingFlagged] = useState(false);
 
-  const flaggedProjects = useMemo(() =>
-    projects.filter(p => p.risk.level !== 'LOW' || p.verificationStatus !== 'New Alert'),
-    [projects]
-  );
+  useEffect(() => {
+    if (!isUsingSupabase) return;
+    setLoadingFlagged(true);
+    getProjects({
+      house: activeHouse,
+      pageSize: 100,
+      sortField: 'risk',
+      sortDir: 'desc',
+    })
+      .then(res => {
+        setServerFlagged(res.projects);
+        setLoadingFlagged(false);
+      })
+      .catch(err => {
+        console.error('[OfficerVerification] Failed to fetch attention projects:', err);
+        setLoadingFlagged(false);
+      });
+  }, [isUsingSupabase, activeHouse]);
+
+  const sourceProjects = isUsingSupabase && serverFlagged.length > 0 ? serverFlagged : projects;
+
+  const flaggedProjects = useMemo(() => {
+    const flagged = sourceProjects.filter(p => p.risk.level !== 'LOW' || p.verificationStatus !== 'New Alert');
+    if (flagged.length > 0) return flagged;
+    return sourceProjects.slice(0, 50);
+  }, [sourceProjects]);
 
   const filteredList = useMemo(() => {
     if (activeStatusFilter === 'ALL') return flaggedProjects;
@@ -45,14 +70,30 @@ export function OfficerVerification() {
   }, [flaggedProjects, activeStatusFilter]);
 
   const activeProject = useMemo(() => {
-    if (selectedWorkId) return projects.find(p => p.workId === selectedWorkId) || null;
+    if (selectedWorkId) return sourceProjects.find(p => p.workId === selectedWorkId) || null;
     return filteredList[0] || null;
-  }, [projects, selectedWorkId, filteredList]);
+  }, [sourceProjects, selectedWorkId, filteredList]);
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeProject) return;
     updateVerification(activeProject.workId, selectedStatusInput, commentInput);
+    setServerFlagged(prev => prev.map(p => {
+      if (p.workId !== activeProject.workId) return p;
+      return {
+        ...p,
+        verificationStatus: selectedStatusInput,
+        verificationHistory: [
+          {
+            timestamp: new Date().toISOString(),
+            action: `Status updated to ${selectedStatusInput}`,
+            actor: 'Auditor / Field Officer',
+            comment: commentInput,
+          },
+          ...p.verificationHistory,
+        ],
+      };
+    }));
     setCommentInput('');
   };
 

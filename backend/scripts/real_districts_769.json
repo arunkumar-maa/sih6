@@ -1,0 +1,3078 @@
+[
+  {
+    "state": "Andaman And Nicobar Islands",
+    "district": "NICOBARS(DEPUTY COMMISSIONER NICOBAR_IDA)"
+  },
+  {
+    "state": "Andaman And Nicobar Islands",
+    "district": "NORTH AND MIDDLE ANDAMAN(Implementing District Authority(N&MA))"
+  },
+  {
+    "state": "Andaman And Nicobar Islands",
+    "district": "SOUTH ANDAMANS(Implementing District Authority(SA))"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Alluri Sitharama Raju(DISTRICT COLLECTOR ALLURI SITHARAMARAJU_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Anakapalli(DISTRICT COLLECTOR ANAKAPALLI_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Ananthapuramu(DISTRICT COLLECTOR ANANTAPUR_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Annamayya(DISTRICT COLLECTOR ANNAMAYYA_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Bapatla(DISTRICT COLLECTOR BAPATLA_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "CHITTOOR(DISTRICT COLLECTOR CHITTOOR_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Dr. B.R. Ambedkar Konaseema(DISTRICT COLLECTOR Dr B R AMBEDKAR KONASEEMA_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "EAST GODAVARI(DISTRICT COLLECTOR, EAST GODAVARI)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Eluru(DISTRICT COLLECTOR ELURU_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "GUNTUR(DISTRICT COLLECTOR GUNTUR_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Kakinada(DISTRICT COLLECTOR KAKINADA_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "KRISHNA(DISTRICT COLLECTOR KRISHNA_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "KURNOOL(DISTRICT COLLECTOR KURNOOL_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Nandyal(DISTRICT COLLECTOR NANDYAL_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "NTR(DISTRICT COLLECTOR NTR_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Palnadu(District Collector Palnadu_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Parvathipuram Manyam(District Collector Parvathipuram Manyam_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "PRAKASAM(DISTRICT COLLECTOR PRAKASAM_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Sri Potti Sriramulu Nellore(DISTRICT COLLECTOR NELLORE_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Sri Sathya Sai(DISTRICT COLLECTOR SRI SATHYA SAI_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "SRIKAKULAM(District Collector Srikakulam_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Tirupati(DISTRICT COLLECTOR TIRUPATI_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Visakhapatnam(DISTRICT COLLECTOR VISAKHAPATNAM_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "VIZIANAGARAM(DISTRICT COLLECTOR VIZIANAGARAM_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "WEST GODAVARI(DISTRICT COLLECTOR WEST GODAVARI_IDA)"
+  },
+  {
+    "state": "Andhra Pradesh",
+    "district": "Y.S.R. Kadapa(DISTRICT COLLECTOR CUDDAPAH_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "ANJAW(Deputy Commisioner Anjaw_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "CHANGLANG(Deputy Commisioner Changlang_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "DIBANG VALLEY(Deputy Commisioner Dibang Valley_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "EAST KAMENG(Deputy Commisioner East Kameng_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "EAST SIANG(Deputy Commisioner East Siang_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "KAMLE(Deputy Commisioner Kamle_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "KRA DAADI(DC KRADAADI_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "KURUNG KUMEY(Deputy Commissioner Kurung Kumey_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "LEPARADA(Deputy Commisioner Leparada_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "LOHIT(DEPUTY COMMISSIONER LOHIT_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "LONGDING(Deputy Commisioner Longding_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "LOWER DIBANG VALLEY(Deputy Commisioner Lower Dibang Valley_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "LOWER SIANG(Deputy Commisioner Lower Siang_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "LOWER SUBANSIRI(Deputy Commissioner Lower Subansir_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "NAMSAI(Deputy Commisioner Namsai_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "PAPUM PARE(DEPUTY COMMISSIONER PAPUM PARE_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "SIANG(Deputy Commisioner Siang_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "TAWANG(Deputy Commisioner Tawang_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "TIRAP(DEPUTY COMMISSIONER TIRAP_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "UPPER SIANG(DISTRICT PLANNING OFFICER,YINGKIONG)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "UPPER SUBANSIRI(Deputy Commisioner Upper Subansiri_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "WEST KAMENG(Deputy Commisioner West Kameng_IDA)"
+  },
+  {
+    "state": "Arunachal Pradesh",
+    "district": "WEST SIANG(DEPUTY COMMISSIONER, WEST SIANG (IDA))"
+  },
+  {
+    "state": "Assam",
+    "district": "BAJALI(DC Office Bajali)"
+  },
+  {
+    "state": "Assam",
+    "district": "BAKSA(DEPUTY COMMISSIONER BAKSA_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "BARPETA(DEPUTY COMMISSIONER BARPETA 1)"
+  },
+  {
+    "state": "Assam",
+    "district": "Biswanath(Deputy Commissioner Biswanath_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "BONGAIGAON(Deputy Commissioner Bongaigaon_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "CACHAR(DEPUTY COMMISSIONER CACHAR_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "CHARAIDEO(Deputy Commissioner Charaideo_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "CHIRANG(Deputy Commissioner Chirang_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "DARRANG(DEPUTY COMMISSIONER DARRANG_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "DHEMAJI(DEPUTY COMMISSIONER DHEMAJI_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "DHUBRI(DEPUTY COMMISSIONER DHUBRI_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "DIBRUGARH(DEPUTY COMMISSIONER DIBRUGARH_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "DIMA HASAO(DEPUTY COMMISSIONER Dima Hasao_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "GOALPARA(Deputy Commissioner Goalpara_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "GOLAGHAT(Deputy Commissioner Golaghat_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "HOJAI(DC office Hojai)"
+  },
+  {
+    "state": "Assam",
+    "district": "JORHAT(DEPUTY COMMISSIONER JORHAT_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "KAMRUP METRO(DEPUTY COMMISSIONER KAMRUP METROPOLITAN_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "KAMRUP(DEPUTY COMMISSIONER KAMRUP_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "KARBI ANGLONG(DEPUTY COMMISSIONER KARBI ANGLONG_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "KOKRAJHAR(DEPUTY COMMISSIONER KOKRAJHAR_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "LAKHIMPUR(DEPUTY COMMISSIONER LAKHIMPUR_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "MAJULI(District Commissioner, Majuli)"
+  },
+  {
+    "state": "Assam",
+    "district": "MARIGAON(District Development Commissioner Morigaon)"
+  },
+  {
+    "state": "Assam",
+    "district": "NAGAON(DEPUTY COMMISSIONER NOWGONG_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "NALBARI(DEPUTY COMMISSIONER NALBARI_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "SIVASAGAR(Deputy Commissioner Sivsagar_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "SONITPUR(Deputy Commissioner Sonitpur, Tezpur)"
+  },
+  {
+    "state": "Assam",
+    "district": "SOUTH SALMARA MANCACHAR(Deputy Commissioner South Salmara Mankachar_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "Sribhumi(Deputy Commissioner , Karimganj)"
+  },
+  {
+    "state": "Assam",
+    "district": "TAMULPUR(IDA Tamulpur)"
+  },
+  {
+    "state": "Assam",
+    "district": "TINSUKIA(DC Tinsukia)"
+  },
+  {
+    "state": "Assam",
+    "district": "UDALGURI(DEPUTY COMMISSIONER Udalguri_IDA)"
+  },
+  {
+    "state": "Assam",
+    "district": "WEST KARBI ANGLONG(DISTRICT COMMISSIONER WEST KARBI ANGLONG)"
+  },
+  {
+    "state": "Bihar",
+    "district": "ARARIA(DISTRICT PLANNING OFFICER ARARIA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "ARWAL(District Planning Officer Arwal_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "AURANGABAD(DISTRICT PLANNING OFFICER AURANGABAD_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "BANKA(DISTRICT PLANNING OFFICER BANKA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "BEGUSARAI(DISTRICT PLANNING OFFICER BEGUSARAI_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "BHAGALPUR(DISTRICT PLANNING OFFICER BHAGALPUR_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "BHOJPUR(DISTRICT PLANNING OFFICER BHOJPUR ARRAH_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "BUXAR(DISTRICT PLANNING OFFICER BUXAR_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "DARBHANGA(DISTRICT PLANNING OFFICER DARBANGA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "GAYA(DISTRICT PLANNING OFFICER GAYA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "GOPALGANJ(DISTRICT PLANNING OFFICER GOPALGANJ_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "JAMUI(DISTRICT PLANNING OFFICER JAMUI_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "JEHANABAD(DISTRICT PLANNING OFFICER JEHANABAD_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "KAIMUR (BHABUA)(DISTRICT PLANNING OFFICER KAIMUR BHABUA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "KATIHAR(DISTRICT PLANNING OFFICER KATIHAR_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "KHAGARIA(DISTRICT PLANNING OFFICER KHAGARIA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "KISHANGANJ(DISTRICT PLANNING OFFICER KISHANGANJ_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "MADHEPURA(DISTRICT PLANNING OFFICER MADHEPURA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "MADHUBANI(DISTRICT PLANNING OFFICER MADHUBANI_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "MUNGER(DISTRICT PLANNING OFFICER MUNGER_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "MUZAFFARPUR(DISTRICT PLANNING OFFICER MUZAFFARPUR_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "NALANDA(DISTRICT PLANNING OFFICER NALANDA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "NAWADA(District Planning Officer NAWADA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "PASHCHIM CHAMPARAN(DISTRICT PLANNING OFFICER WEST CHAMPARANBETTIAH_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "PATNA(DISTRICT PLANNING OFFICER PATNA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "PURBI CHAMPARAN(DISTRICT PLANNING OFFICER MOTHIHARI EAST CHAMPARAN_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "PURNIA(DISTRICT PLANNING OFFICER PURNIA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "ROHTAS(District Planning Officer Rohtas_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "SAHARSA(DISTRICT PLANNING OFFICER SAHARSA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "SAMASTIPUR(DISTRICT PLANNING OFFICER SAMASTIPUR_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "SARAN(DISTRICT PLANNING OFFICE SARAN CHAPRA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "SHEIKHPURA(DISTRICT PLANNING OFFICER SHEIKHPURA_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "SHEOHAR(DISTRICT PLANNING OFFICER SEOHAR_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "SITAMARHI(DISTRICT PLANNING OFFICER SITAMARHI_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "SIWAN(DISTRICT PLANNING OFFICER SIWAN_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "SUPAUL(DISTRICT PLANNING OFFICER SUPAUL_IDA)"
+  },
+  {
+    "state": "Bihar",
+    "district": "VAISHALI(DISTRICT PLANNING OFFICER VAISHALI_IDA)"
+  },
+  {
+    "state": "Chandigarh",
+    "district": "CHANDIGARH(DEPUTY COMMISSIONER ZILLA PARISHAD CHANDIGARH_IDA)"
+  },
+  {
+    "state": "Chandigarh",
+    "district": "JALANDHAR(DEPUTY COMMISSIONER JALANDHAR_IDA)"
+  },
+  {
+    "state": "Chandigarh",
+    "district": "Shahid Bhagat Singh Nagar(Deputy Commissioner Shahid Bhagat Singh Nagar_ida)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "BALOD(Collector Balod_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Balodabazar-Bhatapara(Collector Baloda Bazar_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Balrampur-Ramanujganj(District Collector BALRAMPUR_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "BASTAR(DISTRICT COLLECTOR BASTAR_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "BEMETARA(Collector Bemetara_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "BIJAPUR(Collector Bijapur_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "BILASPUR(DISTRICT COLLECTOR BILASPUR_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Dakshin Bastar Dantewada(Collector Dantewada_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "DHAMTARI(DISTRICT COLLECTOR DHAMTARI_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "DURG(DISTRICT COLLECTOR DURG_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "GARIYABAND(Collectro Gariaband_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Gaurela-Pendra-Marwahi(Collector GPM_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "JANJGIR-CHAMPA(DISTRICT COLLECTOR JANJGIR CHAMPA_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "JASHPUR(DISTRICT COLLECTOR JASHPUR_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Kabeerdham(DISTRICT COLLECTOR KABIRDHAM)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Khairagarh-Chhuikhadan-Gandai(District Collector Khairagarh_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "KONDAGAON(DISTRICT COLLECTOR KONDAGAON_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "KORBA(Collector-Korba)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "KOREA(Collector Korea_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "MAHASAMUND(DISTRICT COLLECTOR MAHASAMUND_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Manendragarh-Chirmiri-Bharatpur(M C B)(Collector MCB_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Mohla-Manpur-Ambagarh Chouki(Collector MMC_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "MUNGELI(Collector Mungeli_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "NARAYANPUR(Collector Narayanpur_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "RAIGARH(DISTRICT COLLECTOR RAIGARH_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "RAIPUR(DISTRICT COLLECTOR RAIPUR_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "RAJNANDGAON(DISTRICT COLLECTOR RAJNANDGAON_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "SAKTI(COLLECTOR SAKTI_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Sarangarh-Bilaigarh(Collector SB_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "SUKMA(Collector Sukma_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "SURAJPUR(DISTRICT COLLECTOR Surajpur_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "SURGUJA(Collector Surguja_IDA)"
+  },
+  {
+    "state": "Chhattisgarh",
+    "district": "Uttar Bastar Kanker(DISTRICT COLLECTOR KANKER_IDA)"
+  },
+  {
+    "state": "Delhi",
+    "district": "CENTRAL(COMMISSIONER MCD (CENTRAL DISTRICT))"
+  },
+  {
+    "state": "Delhi",
+    "district": "EAST(COMMISSIONER EAST)"
+  },
+  {
+    "state": "Delhi",
+    "district": "NEW DELHI(COMMISSIONER MCD NEW DELHI)"
+  },
+  {
+    "state": "Delhi",
+    "district": "NORTH EAST(COMMISSIONER MCD NORTH EAST)"
+  },
+  {
+    "state": "Delhi",
+    "district": "NORTH WEST(COMMISSIONER NORTH WEST)"
+  },
+  {
+    "state": "Delhi",
+    "district": "NORTH(COMMISSIONER MCD NORTH_IDA)"
+  },
+  {
+    "state": "Delhi",
+    "district": "South East(COMMISSIONER MCD SOUTH EAST_IDA)"
+  },
+  {
+    "state": "Delhi",
+    "district": "SOUTH WEST(COMMISSIONER MCD SOUTH WEST)"
+  },
+  {
+    "state": "Delhi",
+    "district": "SOUTH(COMMISSIONER SOUTH)"
+  },
+  {
+    "state": "Delhi",
+    "district": "WEST(COMMISSIONER MCD WEST)"
+  },
+  {
+    "state": "Goa",
+    "district": "NORTH GOA(DISTRICT COLLECTOR NORTH GOA_IDA)"
+  },
+  {
+    "state": "Goa",
+    "district": "SOUTH GOA(DISTRICT COLLECTOR SOUTH GOA_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "Ahmedabad(DISTRICT COLLECTOR AHMADABAD_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "AMRELI(DISTRICT COLLECTOR AMRELI_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "ANAND(District Collector ANAND_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "ARVALLI(DISTRICT COLLECTOR ARVALLI_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "BANAS KANTHA(DISTRICT COLLECTOR BANAS KANTHA_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "BHARUCH(DISTRICT COLLECTOR BROACH_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "BHAVNAGAR(DISTRICT COLLECTOR BHAVNAGAR_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "BOTAD(District collector Botad_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "CHHOTAUDEPUR(DISTRICT COLLECTOR CHHOTA UDEPUR_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "Dahod(DISTRICT COLLECTOR DOHAD_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "Dangs(DISTRICT COLLECTOR DANG_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "DEVBHUMI DWARKA(DISTRICT COLLECTOR DEVBHUMI DWARKA_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "GANDHINAGAR(DISTRICT COLLECTOR GANDHINAGAR_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "GIR SOMNATH(DISTRICT COLLECTOR GIR SOMNATH_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "JAMNAGAR(DISTRICT COLLECTOR JAMNAGAR_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "JUNAGADH(DISTRICT COLLECTOR JUNAGADH_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "KACHCHH(DISTRICT COLLECTOR KUTCH_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "KHEDA(DISTRICT COLLECTOR KHEDA_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "MAHESANA(DISTRICT COLLECTOR MAHESANA_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "Mahisagar(COLLECTOR MAHISAGAR_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "MORBI(District collector Morbi_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "NARMADA(DISTRICT COLLECTOR NARMADA_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "NAVSARI(DISTRICT COLLECTOR NAVSARI_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "PANCH MAHALS(DISTRICT COLLECTOR PANCHMAHALS_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "PATAN(DISTRICT COLLECTOR PATAN_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "PORBANDAR(DISTRICT COLLECTOR PORBANDAR_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "RAJKOT(DISTRICT COLLECTOR RAJKOT_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "SABAR KANTHA(DISTRICT COLLECTOR SABARKANTHA_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "SURAT(DISTRICT COLLECTOR SURAT_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "SURENDRANAGAR(DISTRICT COLLECTOR SURENDRANAGAR_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "TAPI(District collector Tapi_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "VADODARA(DISTRICT COLLECTOR VADODARA_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "VALSAD(DISTRICT COLLECTOR VALSAD_IDA)"
+  },
+  {
+    "state": "Gujarat",
+    "district": "Vav-Tharad(DISTRICT COLLECTOR VAV-THARAD)"
+  },
+  {
+    "state": "Haryana",
+    "district": "AMBALA(DEPUTY COMMISSIONER AMBALA_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "BHIWANI(DC Cum Nodal Officer MPLADS Bhiwani)"
+  },
+  {
+    "state": "Haryana",
+    "district": "Charkhi Dadri(Deputy Commissioner Charkhi Dadri_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "FARIDABAD(DEPUTY COMMISSIONER FARIDABAD_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "FATEHABAD(Deputy Commissioner Fatehabad)"
+  },
+  {
+    "state": "Haryana",
+    "district": "GURUGRAM(DC CUM NODAL OFFICER MPLADS_5)"
+  },
+  {
+    "state": "Haryana",
+    "district": "HISAR(DEPUTY COMMISSIONER HISSAR_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "JAIPUR(DISTRICT COLLECTOR JAIPUR_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "JHAJJAR(DEPUTY COMMISSIONER cum NODAL OFFICER MPLADS JHAJJAR)"
+  },
+  {
+    "state": "Haryana",
+    "district": "JIND(DEPUTY COMMISSIONER JIND)"
+  },
+  {
+    "state": "Haryana",
+    "district": "KAITHAL(DC CUM NODAL OFFICERS MPLADS)"
+  },
+  {
+    "state": "Haryana",
+    "district": "KURUKSHETRA(DEPUTY COMMISSIONER KURUKSHETRA_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "MAHENDRAGARH(DEPUTY COMMISSIONER MAHENDRAGARH_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "NUH(Deputy Commissioner Nuh)"
+  },
+  {
+    "state": "Haryana",
+    "district": "PALWAL(CEO DRDA MPLADS PALWAL)"
+  },
+  {
+    "state": "Haryana",
+    "district": "PANCHKULA(DRDA PANCHKULA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "PANIPAT(DC CUM NODAL OFFICER MPLADS)"
+  },
+  {
+    "state": "Haryana",
+    "district": "REWARI(District Commissioner Rewari)"
+  },
+  {
+    "state": "Haryana",
+    "district": "ROHTAK(DEPUTY COMMISSIONER ROHTAK_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "SIRSA(DEPUTY COMMISSIONER SIRSA_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "SONIPAT(DEPUTY COMMISSIONER SONEPAT_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "VARANASI(DISTRICT MAGISTRAE VARANASI_IDA)"
+  },
+  {
+    "state": "Haryana",
+    "district": "YAMUNANAGAR(Deputy Commissioner YamunaNagar_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "BILASPUR(DEPUTY COMMISSIONER, BILASPUR)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "CHAMBA(DEPUTY COMMISSIONER CHAMBA_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "HAMIRPUR(DEPUTY COMMISSIONER HAMIRPUR_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "KANGRA(DEPUTY COMMISSIONER KANGRA_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "KINNAUR(DEPUTY COMMISSIONER KINNAUR_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "KULLU(DEPUTY COMMISSIONER KULLU_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "Lahaul And Spiti(DEPUTY COMMISSIONER L and S_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "MANDI(DEPUTY COMMISSIONER MANDI_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "SHIMLA(DEPUTY COMMISSIONER SHIMLA_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "SIRMAUR(DEPUTY COMMISSIONER SIRMOUR_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "SOLAN(DEPUTY COMMISSIONER SOLAN_IDA)"
+  },
+  {
+    "state": "Himachal Pradesh",
+    "district": "UNA(DEPUTY COMMISSIOENR UNA_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "ANANTNAG(DEPUTY COMMISSIONER ANANTNAG_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "BANDIPORA(Deputy Commissioner Bandipora_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "BARAMULLA(DEPUTY COMMISSIONER BARAMULLAH_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "Budgam(Deputy Commissioner  Budgam_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "DODA(Deputy Commissioner Doda_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "GANDERBAL(Deputy Commissioner Ganderbal_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "JAMMU(DEPUTY COMMISSIONER JAMMU_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "KATHUA(DISTRICT DEVELOPMENT COMMISSIONER KATHUA_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "KISHTWAR(Deputy Commissioner Kishtwar_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "KULGAM(Deputy Commissioner Kulgam_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "KUPWARA(Deputy Commissioner Kupwara_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "POONCH(Deputy Commissioner Poonch_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "PULWAMA(Deputy Commissioner  Pulwama_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "RAJOURI(Deputy Commissioner Rajouri_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "RAMBAN(Deputy Commissioner Ramban_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "REASI(DC Reasi_2)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "SAMBA(Deputy Commissioner Samba_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "SHOPIAN(Deputy Commissioner Shopian_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "SRINAGAR(DEPUTY COMMISSIONER SRINAGAR_IDA)"
+  },
+  {
+    "state": "Jammu And Kashmir",
+    "district": "UDHAMPUR(Deputy Commissioner Udhampur_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "BOKARO(DEPUTY COMMISSIONER BOKARO_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "CHATRA(DEPUTY COMMISSIONER CHATRA_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "DEOGHAR(DEPUTY COMMISSIONER DEOGHAR_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "DHANBAD(DEPUTY COMMISSIONER DHANBAD_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "DUMKA(DEPUTY COMMISSIONER DUMKA_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "EAST SINGHBUM(DEPUTY COMMISSIONER EAST SINGHBUM_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "GARHWA(Deputy Commissioner garhwa_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "GIRIDIH(Deputy Commissioner Giridh_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "GODDA(Deputy Commissioner Godda_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "GUMLA(DEPUTY COMMISSIONER GUMLA_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "HAZARIBAGH(DEPUTY COMMISSIONER HAZARIBAGH_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "JAMTARA(Deputy Commissioner Jamtara_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "KHUNTI(DEPUTY COMMISSIONER KHUNTI_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "KODERMA(DEPUTY COMMISSIONER KODARMA_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "LATEHAR(Deputy Commissioner latehar_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "LOHARDAGA(DEPUTY COMMISSIONER LOHARDAGA_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "PAKUR(Deputy Commissioner Pakur_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "PALAMU(DEPUTY COMMISSIONER PALAMAU_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "RAMGARH(Deputy Commissioner ramgarh_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "RANCHI(DEPUTY COMMISSIONER RANCHI_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "SAHEBGANJ(DEPUTY COMMISSIONER SAHEBGANJ_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "SARAIKELA KHARSAWAN(Deputy Commissioner saraikela_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "SIMDEGA(Deputy Commissioner simdega_IDA)"
+  },
+  {
+    "state": "Jharkhand",
+    "district": "WEST SINGHBHUM(DEPUTY COMMISSIONER WEST SINGHBHUM_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "BAGALKOTE(DEPUTY COMMISSIONER BAGALKOT_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "BALLARI(DEPUTY COMMISSIONER BELLARY_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "BELAGAVI(DEPUTY COMMISSIONER BELGAUM_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "BENGALURU RURAL(DEPUTY COMMISSIONER BANGALORE RURAL SBM URBAN)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "Bengaluru South(DEPUTY COMMISSIONER RAMANAGARA_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "BENGALURU URBAN(DEPUTY COMMISSIONER BANGALORE URBAN_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "BIDAR(DEPUTY COMMISSIONER BIDAR_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "Chamarajanagar(DEPUTY COMMISSIONER CHAMARAJNAGAR_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "CHIKKABALLAPURA(DEPUTY COMMISSIONER CHICKKABALLAPUR_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "CHIKKAMAGALURU(DEPUTY COMMISSIONER CHIKMAGALUR)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "CHITRADURGA(DEPUTY COMMISSIONER CHITRADURGA_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "DAKSHINA KANNADA(DEPUTY COMMISSIONER DAKSHIN KANNAD MANGALORE_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "Davanagere(DEPUTY COMMISSIONER DAUANAGERE_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "DHARWAD(DEPUTY COMMISSIONER DHARWAR_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "GADAG(Deputy Commsioner Gadag_ida)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "HASSAN(DEPUTY COMMISSIONER HASSAN_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "HAVERI(DEPUTY COMMISSIONER HAVERI_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "KALABURAGI(DEPUTY COMMISSIONER GULBARGA_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "KODAGU(Deputy Commsioner Kodagu_ida)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "KOLAR(DEPUTY COMMISSIONER KOLAR_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "KOPPAL(DEPUTY COMMISSIONER KOPPAL_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "MANDYA(DEPUTY COMMISSIONER MANDYA_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "MYSURU(DEPUTY COMMISSIONER MYSORE_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "RAICHUR(DEPUTY COMMISSIONER RAICHUR_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "SHIVAMOGGA(DEPUTY COMMISSIONER SHIMOGA_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "TUMAKURU(DEPUTY COMMISSIONER TUMKUR_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "UDUPI(DEPUTY COMMISSIONER UDUPI_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "UTTARA KANNADA(DEPUTY COMMISSIONER UTTARKANNADA KARWAR_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "Vijayanagara(DEPUTY COMMISSIONER VIJAYANAGARA_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "VIJAYAPURA(DEPUTY COMMISSIONER BIJAPUR_IDA)"
+  },
+  {
+    "state": "Karnataka",
+    "district": "YADGIR(Deputy Commsioner Yadgir_ida)"
+  },
+  {
+    "state": "Kerala",
+    "district": "ALAPPUZHA(DISTRICT COLLECTOR ALAPPUZHA_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "ERNAKULAM(DISTRICT COLLECTOR ERNAKULAM_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "IDUKKI(DISTRICT COLLECTOR IDUKKI_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "KANNUR(DISTRICT COLLECTOR KANNUR_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "KASARAGOD(DISTRICT COLLECTOR KASARAGOD_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "KOLLAM(DISTRICT COLLECTOR KOLLAM_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "KOTTAYAM(DISTRICT COLLECTOR KOTTAYAM_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "KOZHIKODE(DISTRICT COLLECTOR KOZHIKODE_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "MALAPPURAM(DISTRICT COLLECTOR MALAPPURAM_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "PALAKKAD(DISTRICT COLLECTOR PALAKKAD_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "PATHANAMTHITTA(DISTRICT COLLECTOR PATHANAMTHITTA_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "THIRUVANANTHAPURAM(DISTRICT COLLECTOR THIRUVANANTHAPURAM_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "THRISSUR(DISTRICT COLLECTOR THRISSUR_IDA)"
+  },
+  {
+    "state": "Kerala",
+    "district": "WAYANAD(DISTRICT COLLECTOR WAYANAD_IDA)"
+  },
+  {
+    "state": "Ladakh",
+    "district": "KARGIL(Deputy CommissionerKargil)"
+  },
+  {
+    "state": "Lakshadweep",
+    "district": "LAKSHADWEEP DISTRICT(COLLECTOR CUM DEV COMMISSIONER LAKSHADWEEP_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "Agar-Malwa(District Collector Agar Malwa_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "ALIRAJPUR(District Collector Alirajpur_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "ANUPPUR(DISTRICT COLLECTOR ANUPPUR_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "ASHOKNAGAR(DISTRICT COLLECTOR ASHOKNAGAR_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "BALAGHAT(DISTRICT COLLECTOR BALAGHAT_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "BARWANI(DISTRICT COLLECTOR BADWANI_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "BETUL(DISTRICT COLLECTOR BETUL_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "BHIND(DISTRICT COLLECTOR BHIND_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "BHOPAL(DISTRICT COLLECTOR BHOPAL_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "BURHANPUR(District Collector Burhanpur_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "CHHATARPUR(District Collector Chhatarpur_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "CHHINDWARA(DISTRICT COLLECTOR CHHINDWARA_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "DAMOH(DISTRICT COLLECTOR DAMOH_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "DATIA(District Collector Datia_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "DEWAS(DISTRICT COLLECTOR DEWAS_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "DHAR(DISTRICT COLLECTOR DHAR_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "DINDORI(District Collector Dindori_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "GUNA(District Collector Guna_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "GWALIOR(DISTRICT COLLECTOR GWALIOR_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "HARDA(District Collector Harda_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "INDORE(DISTRICT COLLECTOR INDORE_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "JABALPUR(DISTRICT COLLECTOR JABALPUR_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "JHABUA(DISTRICT COLLECTOR JHABUA_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "KATNI(District Collector Katni_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "Khandwa (East Nimar)(DISTRICT COLLECTOR EAST NIMAR_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "Khargone (West Nimar)(DISTRICT COLLECTOR KHARGONE_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "Maihar(District Collector Maihar_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "MANDLA(DISTRICT COLLECTOR MANDLA_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "MANDSAUR(DISTRICT COLLECTOR MANDSAUR_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "MAUGANJ(District Collector Mauganj_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "MORENA(DISTRICT COLLECTOR MORENA_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "NARMADAPURAM(DISTRICT COLLECTOR NARMADAPURAM_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "Narsimhapur(DISTRICT COLLECTOR NARSINGHPUR_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "NEEMUCH(District Collector Neemuch_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "Niwari(District Collector Niwari_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "Pandhurna(District Collector Pandhurna_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "PANNA(DISTRICT COLLECTOR PANNA_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "RAISEN(DISTRICT COLLECTOR RAISEN_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "RAJGARH(DISTRICT COLLECTOR RAJGARH_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "RATLAM(District Collector Ratlam_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "REWA(DISTRICT COLLECTOR REWA_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SAGAR(DISTRICT COLLECTOR SAGAR_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SATNA(DISTRICT COLLECTOR SATNA_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SEHORE(DISTRICT COLLECTOR SEHORE_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SEONI(District Collector Seoni_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SHAHDOL(District Collector Shahdol_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SHAJAPUR(District Collector Shajapur_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SHEOPUR(District Collector Sheopur_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SHIVPURI(District Collector Shivpuri_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SIDHI(DISTRICT COLLECTOR SIDHI_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "SINGRAULI(District Collector Singrauli_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "TIKAMGARH(DISTRICT COLLECTOR TIKAMGARH_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "UJJAIN(DISTRICT COLLECTOR UJJAIN_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "UMARIA(District Collector Umariya_IDA)"
+  },
+  {
+    "state": "Madhya Pradesh",
+    "district": "VIDISHA(District Collector Vidisha_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "Ahilyanagar(DISTRICT COLLECTOR AHMEDNAGAR_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "AKOLA(DISTRICT COLLECTOR AKOLA_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "AMRAVATI(DISTRICT COLLECTOR AMRAVATI_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "AZAMGARH(DISTRICT MAGISTRATE AZAMGARH_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "BEED(DISTRICT COLLECTOR BEED_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "BHANDARA(DISTRICT COLLECTOR BHANDARA_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "BULDHANA(DISTRICT COLLECTOR BULDHANA_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "CHANDRAPUR(DISTRICT COLLECTOR CHANDRAPUR_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "Chhatrapati Sambhajinagar(DISTRICT COLLECTOR AURANGABAD_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "Dharashiv(DISTRICT COLLECTOR OSMANABAD_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "DHULE(DISTRICT COLLECTOR DHULE_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "ETAH(DISTRICT MAGISTRATE ETAH_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "GADCHIROLI(DISTRICT COLLECTOR GADCHIROLI_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "GONDIA(DISTRICT COLLECTOR GONDIA_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "HINGOLI(DISTRICT COLLECTOR HINGOLI_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "JALGAON(DISTRICT COLLECTOR JALGAON_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "JALNA(DISTRICT COLLECTOR JALNA_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "KOLHAPUR(DISTRICT COLLECTOR KOLHAPUR_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "LATUR(DISTRICT COLLECTOR LATUR_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "MUMBAI SUBURBAN(DISTRICT COLLECTOR MUMBAI SUBURBAN_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "MUMBAI(DISTRICT COLLECTOR MUMBAI CITY_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "NAGPUR(DISTRICT COLLECTOR NAGPUR_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "NANDED(DISTRICT COLLECTOR NANDED_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "NANDURBAR(DISTRICT COLLECTOR NANDURBAR_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "NASHIK(DISTRICT COLLECTOR NASHIK_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "PALGHAR(DISTRICT COLLECTOR PALGHAR_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "PARBHANI(DISTRICT COLLECTOR PARBHANI_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "PUNE(DISTRICT COLLECTOR PUNE_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "RAIGAD(DISTRICT COLLECTOR RAIGAD_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "RATNAGIRI(District Collector Ratnagiri_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "SAHARSA(DISTRICT PLANNING OFFICER SAHARSA_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "SANGLI(DISTRICT COLLECTOR SANGLI_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "SATARA(DISTRICT COLLECTOR SATARA_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "SINDHUDURG(DISTRICT COLLECTOR SINDHUDURG_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "SOLAPUR(DISTRICT COLLECTOR SOLAPUR_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "THANE(DISTRICT COLLECTOR THANE_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "WARDHA(DISTRICT COLLECTOR WARDHA_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "WASHIM(DISTRICT COLLECTOR WASHIM_IDA)"
+  },
+  {
+    "state": "Maharashtra",
+    "district": "YAVATMAL(DISTRICT COLLECTOR YAVATMAL_IDA)"
+  },
+  {
+    "state": "Manipur",
+    "district": "BISHNUPUR(Deputy Commissioner Bishnupur_ida)"
+  },
+  {
+    "state": "Manipur",
+    "district": "CHURACHANDPUR(Deputy Commissioner Churachandpur MPLADS_ida)"
+  },
+  {
+    "state": "Manipur",
+    "district": "IMPHAL EAST(Deputy Commissioner Imphal East_IDA)"
+  },
+  {
+    "state": "Manipur",
+    "district": "IMPHAL WEST(Deputy Commissioner Imphal West MPLADS_IDA)"
+  },
+  {
+    "state": "Manipur",
+    "district": "KAKCHING(Deputy Commissioner Kakching_ida)"
+  },
+  {
+    "state": "Manipur",
+    "district": "KAMJONG(Deputy Commissioner Kamjong MPLADS_ida)"
+  },
+  {
+    "state": "Manipur",
+    "district": "KANGPOKPI(Deputy Commissioner Kangpokpi MPLADS_ida)"
+  },
+  {
+    "state": "Manipur",
+    "district": "SENAPATI(Deputy Commissioner Senapati_IDA)"
+  },
+  {
+    "state": "Manipur",
+    "district": "TENGNOUPAL(Deputy Commissioner Tengnoupal MPLADS_ida)"
+  },
+  {
+    "state": "Manipur",
+    "district": "THOUBAL(Deputy Commissioner Thoubal MPLADS_ida)"
+  },
+  {
+    "state": "Manipur",
+    "district": "UKHRUL(Deputy Commissioner Ukhrul_ida)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "EAST GARO HILLS(DEPUTY COMMISSIONER EAST GARO HILLS WILLIAMNAGAR_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "EAST JAINTIA HILLS(DEPUTY COMMISSIONER EAST JAINTIA HILLS KHLIEHRIAT_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "EAST KHASI HILLS(Deputy Commissioner, East Khasi Hills District)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "EASTERN WEST KHASI HILLS(DEPUTY COMMISSIONER EASTERN WEST KHASI HILLS MAIRANG_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "NORTH GARO HILLS(DEPUTY COMMISSIONER NORTH GARO HILLS RESUBELPARA_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "RI BHOI(DEPUTY COMMISSIONER RIBHOI NONGPOH_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "SOUTH GARO HILLS(DEPUTY COMMISSIONER BAGHMARA_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "SOUTH WEST GARO HILLS(DEPUTY COMMISSIONER SOUTH WEST GARO HILLS AMPATI_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "SOUTH WEST KHASI HILLS(DEPUTY COMMISSIONER SOUTH WEST KHASI HILLS MAWKRYWAT_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "WEST GARO HILLS(DEPUTY COMMISSIONER WEST GARO HILLS_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "WEST JAINTIA HILLS(DEPUTY COMMISSIONER WEST JAINTIA HILLS JOWAI_IDA)"
+  },
+  {
+    "state": "Meghalaya",
+    "district": "WEST KHASI HILLS(DEPUTY COMMISSIONER WEST KHASI HILLS NONGSTOIN_IDA)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "AIZAWL(DEPUTY COMMISSIONER AIZAWL_IDA)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "CHAMPHAI(DEPUTY COMMISIONER, CHAMPHAI)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "Hnahthial(Deputy Commissioner Hnahthial_IDA)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "KHAWZAWL(Office of the Deputy Commissioner, Khawzawl)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "KOLASIB(Deputy Commissioner Kolasib)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "LAWNGTLAI(DSC Lawngtlai)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "LUNGLEI(Deputy Commissioner, Lunglei)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "MAMIT(DEPUTY COMMISSIONER MAMIT)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "SAITUAL(Dy. Commissioners Office, Saitual)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "SERCHHIP(Deputy Commissioner Serchhip)"
+  },
+  {
+    "state": "Mizoram",
+    "district": "Siaha(Deputy Commissioner, Siaha)"
+  },
+  {
+    "state": "Nagaland",
+    "district": "Chumoukedima(Deputy Commissioner Chumoukedima_IDA)"
+  },
+  {
+    "state": "Nagaland",
+    "district": "DIMAPUR(DEPUTY COMMISSIONER DIMAPUR_IDA)"
+  },
+  {
+    "state": "Nagaland",
+    "district": "KOHIMA(DEPUTY COMMISIONER_7)"
+  },
+  {
+    "state": "Nagaland",
+    "district": "MOKOKCHUNG(Deputy Commissioner Mokokchung_IDA)"
+  },
+  {
+    "state": "Nagaland",
+    "district": "MON(Deputy Commissioner Mon_IDA)"
+  },
+  {
+    "state": "Nagaland",
+    "district": "PEREN(Deputy Commissioner Peren_IDA)"
+  },
+  {
+    "state": "Nagaland",
+    "district": "PHEK(Deputy Commissioner Phek_IDA)"
+  },
+  {
+    "state": "Nagaland",
+    "district": "WOKHA(Deputy Commissioner Wokha_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Anugola(DISTRICT COLLECTORANGUL_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "BALANGIR(DISTRICT COLLECTOR BOLANGIR_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Baleshwar(DISTRICT COLLECTOR BALESHWAR_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Baragada(DISTRICT COLLECTOR BARAGARH_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "BHADRAK(DISTRICT COLLECTOR BHADRAK_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "BOUDH(District Collector Boudh_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Debagada(District Collector Deogarh_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "DHENKANAL(DISTRICT COLLECTOR DHENKANAL_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "GANJAM(DISTRICT COLLECTOR GANJAM_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "JAGATSINGHAPUR(DISTRICT COLLECTOR JAGATSINGHPUR_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Jajpur(DISTRICT COLLECTOR JAJPUR_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "JHARSUGUDA(DISTRICT COLLECTORJHARSUGUDA_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "KALAHANDI(DISTRICT COLLECTOR KALAHANDI_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Kandhamala(DISTRICT COLLECTOR KANDHAMAL_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Kataka(DISTRICT COLLECTOR CUTTACK_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Kendrapada(DISTRICT COLLECTOR KENDRAPARA_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Kendujhar(DISTRICT COLLECTOR KEONJHAR_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "KHORDHA(DISTRICT COLLECTOR KHORDHA_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "KORAPUT(District Collector Koraput_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "MALKANGIRI(District Collector Malkangiri_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "MAYURBHANJ(DISTRICT COLLECTOR MAYURBHANJ_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "NABARANGPUR(DISTRICT COLLECTOR NABARANGPUR_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Nayagada(DISTRICT COLLECTOR  NAYAGARH_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "NUAPADA(DISTRICT COLLECTOR  NUAPADA_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "PURI(DISTRICT COLLECTOR PURI_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "RAYAGADA(DISTRICT COLLECTOR RAYAGADA_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "SAMBALPUR(DISTRICT COLLECTOR SAMBALPUR_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Subarnapur(District Collector Subarnapur_IDA)"
+  },
+  {
+    "state": "Odisha",
+    "district": "Sundaragada(DISTRICT COLLECTOR SUNDARGARH_IDA)"
+  },
+  {
+    "state": "Puducherry",
+    "district": "Kancheepuram(DISTRICT COLLECTOR KANCHEEPURAM_IDA)"
+  },
+  {
+    "state": "Puducherry",
+    "district": "Puducherry(PROJECT DIRECTOR RDA PUDUCHERRY_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "AMRITSAR(DEPUTY COMMISSIONER AMRITSAR_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "BARNALA(DEPUTY COMMISSIONER BARNALA_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "BATHINDA(DEPUTY COMMISSIONER BHATINDA_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "CHANDIGARH(DEPUTY COMMISSIONER ZILLA PARISHAD CHANDIGARH_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "FARIDKOT(DEPUTY COMMISSIONER FARIDKOT_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "FATEHGARH SAHIB(DEPUTY COMMISSIONER FATEHGARH SAHIB_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "FAZILKA(DEPUTY COMMISSIONER FAZILKA_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "FEROZEPUR(DEPUTY COMMISSIONER FIROZEPUR_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "GURDASPUR(DEPUTY COMMISSIONER GURDASPUR_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "HOSHIARPUR(DEPUTY COMMISSIONER HOSHIARPUR_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "JALANDHAR(DEPUTY COMMISSIONER JALANDHAR_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "KAPURTHALA(DEPUTY COMMISSIONER KAPURTHALA_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "LUDHIANA(DEPUTY COMMISSIONER LUDHIANA_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "MALERKOTLA(Deputy Commissioner Malerkotla_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "MANSA(DEPUTY COMMISSIONER MANSA_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "MOGA(Deputy Commissioner Moga)"
+  },
+  {
+    "state": "Punjab",
+    "district": "PATHANKOT(DEPUTY COMMISSIONER PATHANKOT_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "PATIALA(DEPUTY COMMISSIONER PATIALA_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "RUPNAGAR(DEPUTY COMMISSIONER ROOPNAGAR_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "S.A.S Nagar(DEPUTY COMMISSIONER SAHIBZADA AJIT SINGH NAGAR MOHALI_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "SANGRUR(DEPUTY COMMISSIONER SANGRUR_IDA)"
+  },
+  {
+    "state": "Punjab",
+    "district": "Shahid Bhagat Singh Nagar(Deputy Commissioner Shahid Bhagat Singh Nagar_ida)"
+  },
+  {
+    "state": "Punjab",
+    "district": "SRI MUKTSAR SAHIB(DEPUTY COMMISSIONER SRI MUKTSAR SAHIB_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "AJMER(DISTRICT COLLECTOR AJMER_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "ALWAR(DISTRICT COLLECTOR ALWAR_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Anoopgarh(DISTRICT COLLECTOR Anoopgarh_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Balotra(DISTRICT COLLECTOR Balotra_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "BANSWARA(DISTRICT COLLECTOR BANSWARA_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "BARAN(DISTRICT COLLECTOR BARAN_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "BARMER(DISTRICT COLLECTOR BARMER_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Beawar(DISTRICT COLLECTOR Beawar_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "BHARATPUR(DISTRICT COLLECTOR BHARATPUR_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "BHILWARA(DISTRICT COLLECTOR BHILWARA_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "BIKANER(DISTRICT COLLECTOR BIKANER_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "BUNDI(DISTRICT COLLECTOR BUNDI_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "CHITTORGARH(DISTRICT COLLECTOR CHITTORGARH_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "CHURU(DISTRICT COLLECTOR CHURU_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "DAUSA(DISTRICT COLLECTOR DAUSA_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Deeg(DISTRICT COLLECTOR Deeg_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "DHOLPUR(DISTRICT COLLECTOR DHOLPUR_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Didwana-Kuchaman(DISTRICT COLLECTOR Didwana Kuchaman_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Dudu(DISTRICT COLLECTOR Dudu_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "DUNGARPUR(DISTRICT COLLECTOR DUNGARPUR_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "GANGANAGAR(Zilla GANGANAGAR)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Gangapurcity(DISTRICT COLLECTOR Gangapur City_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "HANUMANGARH(DISTRICT COLLECTOR HANUMANGARH_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Jaipur Gramin(DISTRICT COLLECTOR Jaipur Gramin_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "JAIPUR(DISTRICT COLLECTOR JAIPUR_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "JAISALMER(DISTRICT COLLECTOR JAISLAMER_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "JALORE(DISTRICT COLLECTOR JALORE_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "JHALAWAR(DISTRICT COLLECTOR JHALAWAR_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "JHUNJHUNU(DISTRICT COLLECTOR JHUNJHUNU_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Jodhpur Gramin(DISTRICT COLLECTOR JODHPUR RURAL_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "JODHPUR(DISTRICT COLLECTOR JODHPUR IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "KAITHAL(DC CUM NODAL OFFICERS MPLADS)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "KARAULI(DISTRICT COLLECTOR KARAULI_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Kekri(DISTRICT COLLECTOR Kekri_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Khairthal-Tijara(DISTRICT COLLECTOR KHAIRTHAL TIJARA_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "KOTA(DISTRICT COLLECTOR KOTA_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Kotputli-Behror(DISTRICT COLLECTOR Kotputli Behror_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "NAGAUR(DISTRICT COLLECTOR NAGAUR_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Neem Ka Thana(DISTRICT COLLECTOR Neem Ka Thana_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "PALI(DISTRICT COLLECTOR PALI_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "PRATAPGARH(DISTRICT COLLECTOR PRATAPGARH_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "RAJSAMAND(DISTRICT COLLECTOR RAJSAMAND_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Salumbar(DISTRICT COLLECTOR Salumbar_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Sanchor(DISTRICT COLLECTOR Sanchor_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "Shahpura(DISTRICT COLLECTOR Shahpura_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "SIKAR(DISTRICT COLLECTOR SIKAR_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "SIROHI(DISTRICT COLLECTOR SIROHI_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "TONK(DISTRICT COLLECTOR TONK_IDA)"
+  },
+  {
+    "state": "Rajasthan",
+    "district": "UDAIPUR(DISTRICT COLLECTOR UDAIPUR_IDA)"
+  },
+  {
+    "state": "Sikkim",
+    "district": "Gangtok(DISTRICT COLLECTOR EAST DISTRICT_IDA)"
+  },
+  {
+    "state": "Sikkim",
+    "district": "Gyalshing(DISTRICT COLLECTOR GYALSHING_IDA)"
+  },
+  {
+    "state": "Sikkim",
+    "district": "Mangan(DISTRICT COLLECTOR MANGAN_IDA)"
+  },
+  {
+    "state": "Sikkim",
+    "district": "Namchi(IMPLEMENTING DISTRICT AGENCY, NAMCHI)"
+  },
+  {
+    "state": "Sikkim",
+    "district": "Pakyong(DISTRICT COLLECTOR PAKYONG_IDA)"
+  },
+  {
+    "state": "Sikkim",
+    "district": "Soreng(DISTRICT COLLECTOR SORENG_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "Ariyalur(District Collector Ariyalur_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "CHENGALPATTU(District Collector Chengalpattu_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "CHENNAI(COMMISSIONER MUNCIPAL CORPORATION CHENNAI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "COIMBATORE(DISTRICT COLLECTOR COIMBATORE_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "CUDDALORE(DISTRICT COLLECTOR CUDDALORE_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "DHARMAPURI(DISTRICT COLLECTOR DHARMAPURI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "DINDIGUL(DISTRICT COLLECTOR DINDIGUL_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "ERODE(DISTRICT_COLLECTORE_ERODE_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "KALLAKURICHI(District Collector Kallakurichi_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "Kancheepuram(DISTRICT COLLECTOR KANCHEEPURAM_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "KANNIYAKUMARI(DISTRICT COLLECTOR KANNIYAKUMARI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "KARUR(DISTRICT COLLECTOR KARUR_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "KRISHNAGIRI(DISTRICT COLLECTOR KRISHNAGIRI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "MADURAI(DISTRICT COLLECTOR MADURAI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "Mayiladuthurai(District Collector Mayiladuthurai_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "NAGAPATTINAM(DISTRICT COLLECTOR NAGAPATTINAM_4)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "NAMAKKAL(DISTRICT COLLECTOR NAMAKKAL_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "PERAMBALUR(DISTRICT COLLECTOR PERAMBALUR_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "PUDUKKOTTAI(DISTRICT COLLECTOR PUDUKKOTTAI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "RAMANATHAPURAM(DISTRICT COLLECTOR RAMANATHAPURAM_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "Ranipet(District Collector, Ranipet_2)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "SALEM(DISTRICT COLLECTOR SALEM_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "SIVAGANGA(DISTRICT COLLECTOR SIVAGANGA_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "TENKASI(DISTRICT COLLECTOR TENKASI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "THANJAVUR(DISTRICT COLLECTOR THANJAVUR_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "THE NILGIRIS(DISTRICT COLLECTOR NILGIRIS_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "THENI(District Collector Theni_5)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "THIRUVALLUR(DISTRICT COLLECTOR TIRUVALLUR_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "THIRUVARUR(DISTRICT COLLECTOR THIRUVARUR_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "Thoothukkudi(DISTRICT COLLECTOR THOOTHUKUDI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "TIRUCHIRAPPALLI(DISTRICT COLLECTOR TIRUCHIRAPPALLI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "TIRUNELVELI(DISTRICT COLLECTOR TIRUNELVELI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "Tirupathur(District Collector Tirupathur_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "TIRUPPUR(DISTRICT COLLECTOR TIRUPPUR_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "TIRUVANNAMALAI(DISTRICT COLLECTOR TIRUVANNAMALAI_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "VELLORE(DISTRICT COLLECTOR VELLORE_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "Viluppuram(DISTRICT COLLECTOR VILLUPURAM_IDA)"
+  },
+  {
+    "state": "Tamil Nadu",
+    "district": "VIRUDHUNAGAR(DISTRICT COLLECTOR VIRUDHUNAGAR_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "ADILABAD(DISTRICT COLLECTOR ADILABAD_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "BHADRADRI KOTHAGUDEM(District Collector Bhadradri Ktdm_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "HANUMAKONDA(DISTRICT COLLECTOR HANUMAKONDA_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "HYDERABAD(DISTRICT COLLECTOR HYDERABAD_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "Jagitial(DISTRICT COLLECTOR JAGTIAL_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "JANGOAN(DISTRICT COLLECTOR JANGAON_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "JAYASHANKAR BHUPALAPALLY(DISTRICT COLLECTOR JAYASHANKAR BHUPALPALLY_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "JOGULAMBA GADWAL(DISTRICT COLLECTOR JOGULAMBA GADWAL_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "KAMAREDDY(District Collector Kamareddy_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "KARIMNAGAR(DISTRICT COLLECTOR KARIMNAGAR_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "KHAMMAM(DISTRICT COLLECTOR KHAMMAM_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "KUMURAM BHEEM ASIFABAD(District Collector KB Asifabad_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "MAHABUBABAD(DISTRICT COLLECTOR MAHABUBABAD_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "MAHABUBNAGAR(DISTRICT COLLECTOR MAHABUBNAGAR_3)"
+  },
+  {
+    "state": "Telangana",
+    "district": "MANCHERIAL(District Collector Mancherial_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "MEDAK(COLLECTOR MEDAK DISTRICT)"
+  },
+  {
+    "state": "Telangana",
+    "district": "MEDCHAL MALKAJGIRI(DISTRICT COLLECTOR MEDCHAL MALKAJGIRI_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "Mulugu(District Collector Mulugu_ida)"
+  },
+  {
+    "state": "Telangana",
+    "district": "NAGARKURNOOL(DISTRICT COLLECTOR NAGARKURNOOL_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "NALGONDA(DISTRICT COLLECTOR NALGONDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "Narayanpet(DISTRICT COLLECTOR NARAYANPET_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "Nirmal(DISTRICT COLLECTOR NIRMAL_3)"
+  },
+  {
+    "state": "Telangana",
+    "district": "NIZAMABAD(DISTRICT COLLECTOR NIZAMABAD_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "PEDDAPALLI(District Collector Peddapally_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "PRAKASAM(DISTRICT COLLECTOR PRAKASAM_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "RAJANNA SIRCILLA(DISTRICT COLLECTOR RAJANNA SIRCILLA_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "RANGA REDDY(DISTRICT COLLECTOR RANGAREDDY_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "SANGAREDDY(District Collector Sangareddy_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "SIDDIPET(District Collector Siddipet_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "SURYAPET(DISTRICT COLLECTOR SURYAPET)"
+  },
+  {
+    "state": "Telangana",
+    "district": "VIKARABAD(DISTRICT COLLECTOR VIKARABAD_2)"
+  },
+  {
+    "state": "Telangana",
+    "district": "WANAPARTHY(DISTRICT COLLECTOR WANAPARTHY_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "WARANGAL(District Collector Warangal_IDA)"
+  },
+  {
+    "state": "Telangana",
+    "district": "YADADRI BHUVANAGIRI(DISTRICT COLLECTOR YADADRI BHUVANAGIRI_IDA)"
+  },
+  {
+    "state": "The Dadra And Nagar Haveli And Daman And Diu",
+    "district": "JHUNJHUNU(DISTRICT COLLECTOR JHUNJHUNU_IDA)"
+  },
+  {
+    "state": "Tripura",
+    "district": "Dhalai(DISTRICT MAGISTRATE DHALAI_IDA)"
+  },
+  {
+    "state": "Tripura",
+    "district": "Gomati(DM OFFICE GOMATI MPLADS)"
+  },
+  {
+    "state": "Tripura",
+    "district": "Khowai(DISTRICT MAGISTRATE and COLLECTOR  KHOWAI_IDA)"
+  },
+  {
+    "state": "Tripura",
+    "district": "North Tripura(DISTRICT MAGISTRATE and COLLECTOR NORTH TRIPURA DISTRICT_IDA)"
+  },
+  {
+    "state": "Tripura",
+    "district": "Sepahijala(DISTRICT MAGISTRATE and COLLECTOR SIPAHIJALA_IDA)"
+  },
+  {
+    "state": "Tripura",
+    "district": "South Tripura(DISTRICT MAGISTRATE and COLLECTOR SOUTH TRIPURA DISTRICT_IDA)"
+  },
+  {
+    "state": "Tripura",
+    "district": "West Tripura(DISTRICT MAGISTRATE WEST TRIPURA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "AGRA(DISTRICT MAGISTRAE AGRA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "ALIGARH(DISTRICT MAGISTRATE ALIGARH_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "AMBEDKAR NAGAR(DISTRICT MAGISTRATE AMBEDKAR NAGAR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "Amethi(DISTRICT MAGISTRAE AMETHI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "AMROHA(DISTRICT MAGISTRATE JYOTIBAPHULE NAGAR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "AURAIYA(DISTRICT MAGISTRATE AURAIYA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "AYODHYA(DISTRICT MAGISTRAE FAIZABAD_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "AZAMGARH(DISTRICT MAGISTRATE AZAMGARH_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BAGHPAT(DISTRICT MAGISTRATE BAGHPAT_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BAHRAICH(DISTRICT MAGISTRAE BAHRAICH_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BALLIA(DISTRICT MAGISTRAE BALLIA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BALRAMPUR(DISTRICT MAGISTRATE BALRAMPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BANDA(DISTRICT MAGISTRATE BANDA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "Bara Banki(DISTRICT MAGISTRATE BARABANKI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BAREILLY(DISTRICT MAGISTRAE BAREILLY_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BASTI(DISTRICT MAGISTRATE BASTI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BHADOHI(DISTRICT MAGISTRATE BHADOHI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BIJNOR(DISTRICT MAGISTRATE BIJNOR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BUDAUN(DISTRICT MAGISTRATE BUDAUN_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "BULANDSHAHR(DISTRICT MAGISTRATE BULANDSHAHR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "CHANDAULI(DISTRICT MAGISTRATE CHANDAULI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "CHITRAKOOT(DISTRICT MAGISTRATE CHITRAKOOT_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "DEORIA(DISTRICT MAGISTRATE DEORIA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "ETAH(DISTRICT MAGISTRATE ETAH_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "ETAWAH(DISTRICT MAGISTRATE ETAWAH_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "FARRUKHABAD(DISTRICT MAGISTRAE FARRUKHABAD_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "FATEHPUR(DISTRICT MAGISTRATE FATEHPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "FIROZABAD(DISTRICT MAGISTRATE FIROZABAD_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "GAUTAM BUDDHA NAGAR(DISTRICT MAGISTRATE GAUTAMBUDHNAGAR)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "GHAZIABAD(DISTRICT MAGISTRAE GHAZIABAD_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "GHAZIPUR(DISTRICT MAGISTRAE GHAZIPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "GONDA(DISTRICT MAGISTRATE GONDA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "GORAKHPUR(DISTRICT MAGISTRATE GORAKHPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "HAMIRPUR(DEPUTY COMMISSIONER HAMIRPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "HAMIRPUR(DISTRICT MAGISTRATE HAMIRPUR_2)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "HAPUR(DISTRICT MAGISTRATE HAPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "HARDOI(DISTRICT MAGISTRATE HARDOI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "HATHRAS(DISTRICT MAGISTRATE HATHRAS_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "JALAUN(DISTRICT MAGISTRATE JALAUN_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "JAUNPUR(DISTRICT MAGISTRATE JAUNPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "JHANSI(DISTRICT MAGISTRAE JHANSI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "KANNAUJ(DISTRICT MAGISTRATE KANNAUJ_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "KANPUR DEHAT(DISTRICT MAGISTRATE KANPUR DEHAT_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "KANPUR NAGAR(DISTRICT MAGISTRAE KANPUR NAGAR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "Kasganj(DISTRICT MAGISTRATE KASGANJ KANSHIRAMNAGAR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "KAUSHAMBI(DISTRICT MAGISTRAE KAUSHAMBI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "KHERI(DISTRICT MAGISTRAE KHERI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "Kushinagar(DISTRICT MAGISTRATE KUSHINAGAR PADRAUNA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "LALITPUR(DISTRICT MAGISTRATE LALITPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "LUCKNOW(DISTRICT MAGISTRAE LUCKNOW_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "MAHOBA(DISTRICT MAGISTRAE MAHOBA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "Mahrajganj(DISTRICT MAGISTRAE MAHARAJGANJ_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "MAINPURI(DISTRICT MAGISTRATE MAINPURI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "MATHURA(DISTRICT MAGISTRAE MATHURA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "MAU(DISTRICT MAGISTRATE MAU_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "MEERUT(DISTRICT MAGISTRATE MEERUT_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "MIRZAPUR(DISTRICT MAGISTRATE MIRZAPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "MORADABAD(DISTRICT MAGISTRATE MORADABAD_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "MUZAFFARNAGAR(DISTRICT MAGISTRATE MUZAFFARNAGAR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "PHEK(Deputy Commissioner Phek_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "PILIBHIT(DISTRICT MAGISTRAE PILIBHIT_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "PRATAPGARH(DISTRICT MAGISTRAE PRATAPGARH_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "PRAYAGRAJ(DISTRICT MAGISTRAE ALLAHABAD_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "RAE BARELI(DISTRICT MAGISTRATE RAE BARELI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "RAMPUR(DISTRICT MAGISTRATE RAMPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "SAHARANPUR(DISTRICT MAGISTRAE SAHARANPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "SAMBHAL(DISTRICT MAGISTRAE BHIMNAGAR SAMBHAL_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "Sant Kabir Nagar(DISTRICT MAGISTRATE SANT KABIR NAGAR_2)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "SHAHJAHANPUR(DISTRICT MAGISTRAE SHAHJAHANAPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "SHAMLI(DISTRICT MAGISTRATE SHAMLI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "Shrawasti(DISTRICT MAGISTRATE SHRAVASTI_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "Siddharthnagar(DISTRICT MAGISTRATE SIDDHARTH NAGAR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "SITAPUR(DISTRICT MAGISTRATE SITAPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "SONBHADRA(DISTRICT MAGISTRATE SONBHADRA_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "SULTANPUR(DISTRICT MAGISTRATE SULTANPUR_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "UNNAO(DISTRICT MAGIISTRATE UNNAO_IDA)"
+  },
+  {
+    "state": "Uttar Pradesh",
+    "district": "VARANASI(DISTRICT MAGISTRAE VARANASI_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "AGRA(DISTRICT MAGISTRAE AGRA_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "ALMORA(DISTRICT MAGISTRATE ALMORA_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "BAGESHWAR(DISTRICT MAGISTRATE BAGESHWAR_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "CHAMOLI(DM Chamoli_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "CHAMPAWAT(DISTRICT MAGISTRATE CHAMPAWAT_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "DEHRADUN(DISTRICT MAGISTRATE DEHRADUN_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "HARIDWAR(DISTRICT MAGISTRATE HARIDWAR_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "NAINITAL(DISTRICT MAGISTRATE NAINITAL_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "PAURI GARHWAL(DISTRICT MAGISTRATE PAURI GARHWAL_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "PITHORAGARH(NRLM , pithoragarh)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "TEHRI GARHWAL(DISTRICT MAGISTRATE TEHRI GARHWAL_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "Udham Singh Nagar(DISTRICT MAGISTRATE UDHAMSINGH NAGAR_IDA)"
+  },
+  {
+    "state": "Uttarakhand",
+    "district": "Uttarkashi(DISTRICT COLLECTOR UTTARKASHI_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "Alipurduar(DISTRICT MAGISTRATE ALIPURDUARS_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "BANKURA(DISTRICT MAGISTRATE BANKURA_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "BIRBHUM(DISTRICT MAGISTRATE BIRBHUM_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "Cooch Behar(DISTRICT MAGISTRATE COOCHBEHAR_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "Dakshin Dinajpur(DISTRICT MAGISTRATE DINAJPUR DAKSHIN_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "DARJEELING(DISTRICT MAGISTRATE DARJEELING_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "HOOGHLY(DISTRICT MAGISTRATE HOOGHLY_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "HOWRAH(DISTRICT MAGISTRATE HOWRAH_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "JALPAIGURI(DISTRICT MAGISTRATE JALPAIGURI_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "Jhargram(DISTRICT MAGISTRATE JHARGRAM_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "KALIMPONG(District Magistrate Kalimpong_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "KOLKATA(COMMISSIONER KOLKATA MUNICIPAL CORPORATION_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "Malda(DISTRICT MAGISTRATE MALDA_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "MURSHIDABAD(DISTRICT MAGISTRATE MURSHIDABAD_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "NADIA(DISTRICT MAGISTRATE NADIA_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "North 24 Parganas(DISTRICT MAGISTRATE NORTH TWENTY FOUR PARGANAS_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "PASCHIM BARDHAMAN(DISTRICT MAGISTRATE PASCHIM BARDHAMAN_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "Paschim Medinipur(DISTRICT MAGISTRATE PASCHIM MEDINIPUR_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "PURBA BARDHAMAN(DISTRICT MAGISTRATE PURBA BARDHAMAN_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "Purba Medinipur(DISTRICT MAGISTRATE PURBA MEDINIPUR_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "PURULIA(DISTRICT MAGISTRATE PURULIA_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "South 24 Parganas(DISTRICT MAGISTRATE SOUTH TWENTY FOUR PARGANAS_IDA)"
+  },
+  {
+    "state": "West Bengal",
+    "district": "Uttar Dinajpur(DISTRICT MAGISTRATE UTTAR DINAJPUR_IDA)"
+  }
+]

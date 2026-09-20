@@ -1,11 +1,40 @@
 import { Request, Response } from 'express';
 import { fetchDashboardKPIs, fetchCategoryAnalytics, fetchObservatoryAnalytics } from '../services/analytics.service.js';
+import { getUserDataScope } from '../utils/rbac.js';
 
 export async function getDashboardKPIs(req: Request, res: Response) {
   try {
     const house = (req.query.house as 'Lok Sabha' | 'Rajya Sabha') || 'Lok Sabha';
+    let state = req.query.state as string;
+    let district = req.query.district as string;
+
+    if (req.profile) {
+      const scope = getUserDataScope(req.profile);
+      if (scope.scope === 'STATE') {
+        if (state && state.trim().toLowerCase() !== scope.state.trim().toLowerCase()) {
+          return res.status(403).json({
+            success: false,
+            message: `Access Denied: You are not authorized to view analytics outside your assigned state (${scope.state}).`,
+          });
+        }
+        state = scope.state;
+      } else if (scope.scope === 'DISTRICT') {
+        if (scope.state && state && state.trim().toLowerCase() !== scope.state.trim().toLowerCase()) {
+          return res.status(403).json({
+            success: false,
+            message: `Access Denied: You are not authorized to view analytics outside your assigned state (${scope.state}).`,
+          });
+        }
+        if (scope.state) {
+          state = scope.state;
+        }
+        district = scope.district;
+      }
+    }
+
     const filters = {
-      state: req.query.state as string,
+      state,
+      district,
       constituency: req.query.constituency as string,
       mpName: req.query.mp as string,
       riskLevel: req.query.risk as string,
@@ -35,8 +64,36 @@ export async function getCategoryBreakdown(req: Request, res: Response) {
 export async function getObservatoryAnalytics(req: Request, res: Response) {
   try {
     const house = (req.query.house as 'Lok Sabha' | 'Rajya Sabha') || 'Lok Sabha';
+    let state = req.query.state as string;
+    let district = req.query.district as string;
+
+    if (req.profile) {
+      const scope = getUserDataScope(req.profile);
+      if (scope.scope === 'STATE') {
+        if (state && state.trim().toLowerCase() !== scope.state.trim().toLowerCase()) {
+          return res.status(403).json({
+            success: false,
+            message: `Access Denied: You are not authorized to view analytics outside your assigned state (${scope.state}).`,
+          });
+        }
+        state = scope.state;
+      } else if (scope.scope === 'DISTRICT') {
+        if (scope.state && state && state.trim().toLowerCase() !== scope.state.trim().toLowerCase()) {
+          return res.status(403).json({
+            success: false,
+            message: `Access Denied: You are not authorized to view analytics outside your assigned state (${scope.state}).`,
+          });
+        }
+        if (scope.state) {
+          state = scope.state;
+        }
+        district = scope.district;
+      }
+    }
+
     const filters = {
-      state: req.query.state as string,
+      state,
+      district,
       constituency: req.query.constituency as string,
       mpName: req.query.mp as string,
       riskLevel: req.query.risk as string,

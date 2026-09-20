@@ -2,6 +2,7 @@
 // Integrates high-performance Supabase database backend services.
 // CRITICAL: Lok Sabha and Rajya Sabha datasets are ALWAYS kept strictly separate.
 import { create } from 'zustand';
+import { useAuthStore } from './authStore';
 import type {
   EnrichedProject,
   VerificationStatus,
@@ -9,7 +10,6 @@ import type {
   DatasetSummary,
 } from '../types';
 import { loadVerificationOverrides, saveVerificationOverride } from '../utils/verificationStorage';
-import { checkSupabaseConnection } from '../services/client';
 import {
   getProjects,
   getProjectById,
@@ -97,7 +97,17 @@ interface AppStore {
   selectedProjectId: string | null;
   currentPage: string;
   activeTab: string;
-  monitoringFilter: { house?: 'Lok Sabha' | 'Rajya Sabha'; state?: string; constituency?: string } | null;
+  monitoringFilter: {
+    house?: 'Lok Sabha' | 'Rajya Sabha';
+    state?: string;
+    constituency?: string;
+    district?: string;
+    category?: string;
+    fy?: string;
+    riskLevel?: string;
+    status?: string;
+    search?: string;
+  } | null;
 
   // Global Filter State
   filters: AppFilters;
@@ -107,7 +117,17 @@ interface AppStore {
   setCurrentPage: (page: string) => void;
   setActiveTab: (tab: string) => void;
   selectProject: (workId: string | null) => void;
-  setMonitoringFilter: (filter: { house?: 'Lok Sabha' | 'Rajya Sabha'; state?: string; constituency?: string } | null) => void;
+  setMonitoringFilter: (filter: {
+    house?: 'Lok Sabha' | 'Rajya Sabha';
+    state?: string;
+    constituency?: string;
+    district?: string;
+    category?: string;
+    fy?: string;
+    riskLevel?: string;
+    status?: string;
+    search?: string;
+  } | null) => void;
   setFilters: (filters: Partial<AppFilters>) => void;
   resetFilters: () => void;
   loadDatasets: () => Promise<void>;
@@ -130,7 +150,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   rajyaSabhaProjects: [],
   activeHouse: 'Lok Sabha',
   projects: [],
-  totalProjectCount: 65000,
+  totalProjectCount: 0,
 
   isUsingSupabase: true,
   kpis: null,
@@ -179,15 +199,34 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setActiveHouse: async (house) => {
     if (get().activeHouse === house) return;
 
+    const authProfile = useAuthStore.getState().profile;
+    let lockedState = '';
+    let lockedDistrict = '';
+    if (authProfile?.role === 'STATE_NODAL_OFFICER') {
+      lockedState = authProfile.state || '';
+    } else if (authProfile?.role === 'DISTRICT_OFFICER') {
+      lockedState = authProfile.state || '';
+      lockedDistrict = authProfile.district || '';
+    }
+
     set({
       activeHouse: house,
       selectedProjectId: null,
       isLoading: true,
       kpisLoading: true,
+      kpis: null,
+      anomalyCounts: null,
+      anomalyProjects: {
+        pending: [],
+        stale: [],
+        cost: [],
+        disbursement: [],
+        vendor: [],
+      },
       filters: {
         search: '',
-        state: '',
-        district: '',
+        state: lockedState,
+        district: lockedDistrict,
         constituency: '',
         mpName: '',
         riskLevel: '',
@@ -208,7 +247,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         kpis: kpiData,
         filterOptions: optionsData,
         projects: applyVerificationOverrides(paginatedData.projects),
-        totalProjectCount: paginatedData.totalCount,
+        totalProjectCount: paginatedData.totalCount || (kpiData?.total ?? 0),
         isLoading: false,
         kpisLoading: false,
       });
@@ -225,23 +264,60 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
-  setCurrentPage: (page) => set({ currentPage: page }),
+  setCurrentPage: (page) => {
+    set({ currentPage: page });
+    if (typeof window !== 'undefined') {
+      const pageRouteMap: Record<string, string> = {
+        dashboard: '/',
+        monitoring: '/monitoring',
+        anomalies: '/anomalies',
+        gis: '/gis',
+        verification: '/verification',
+        analytics: '/analytics',
+        explorer: '/explorer',
+        comparative: '/comparative',
+        sanctioned: '/sanctioned',
+        disbursed: '/disbursed',
+        completed: '/completed',
+      };
+      const targetRoute = pageRouteMap[page];
+      if (targetRoute && window.location.pathname !== targetRoute) {
+        window.history.pushState({}, '', targetRoute);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+      }
+    }
+  },
   setActiveTab: (tab) => set({ activeTab: tab }),
   selectProject: (workId) => set({ selectedProjectId: workId }),
 
   setFilters: (newFilters) => {
+    const isRS = get().activeHouse === 'Rajya Sabha';
+    const cleanFilters = { ...newFilters };
+    if (isRS) {
+      cleanFilters.constituency = '';
+    }
     set((state) => ({
-      filters: { ...state.filters, ...newFilters },
+      filters: { ...state.filters, ...cleanFilters },
     }));
     get().fetchProjectsPage(1);
   },
 
   resetFilters: () => {
+    const authProfile = useAuthStore.getState().profile;
+    let lockedState = '';
+    let lockedDistrict = '';
+    if (authProfile?.role === 'STATE_NODAL_OFFICER') {
+      lockedState = authProfile.state || '';
+    } else if (authProfile?.role === 'DISTRICT_OFFICER') {
+      lockedState = authProfile.state || '';
+      lockedDistrict = authProfile.district || '';
+    }
+
     set({
       filters: {
         search: '',
-        state: '',
-        district: '',
+        state: lockedState,
+        district: lockedDistrict,
         constituency: '',
         mpName: '',
         riskLevel: '',
@@ -295,12 +371,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const house = targetHouse || get().activeHouse;
     set({ anomalyLoading: true, anomalyError: null });
     try {
-      const [counts, pending, stale, cost, disbursement] = await Promise.all([
+      const [counts, pending, stale, cost, disbursement, vendor] = await Promise.all([
         getAnomalyCounts(house),
         getAnomalyProjects(house, 'pending', 25),
         getAnomalyProjects(house, 'stale', 25),
         getAnomalyProjects(house, 'cost', 25),
         getAnomalyProjects(house, 'disbursement', 25),
+        getAnomalyProjects(house, 'vendor', 25),
       ]);
 
       if (get().activeHouse === house) {
@@ -311,7 +388,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
             stale,
             cost,
             disbursement,
-            vendor: [],
+            vendor,
           },
           anomalyLoading: false,
         });
@@ -370,76 +447,60 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   loadDatasets: async () => {
-    set({ isLoading: true, loadError: null });
+    set({ isLoading: true, loadError: null, isUsingSupabase: true });
 
-    const supabaseHealthy = await checkSupabaseConnection();
-    if (supabaseHealthy) {
-      console.log('[Store] Supabase connection healthy. Using PostgreSQL data layer.');
-      set({ isUsingSupabase: true });
+    try {
+      console.log('[Store] Loading datasets from Supabase PostgreSQL…');
+      const [kpiData, optionsData, paginatedData] = await Promise.all([
+        getDashboardKPIs('Lok Sabha'),
+        getDistinctFilterOptions('Lok Sabha'),
+        getProjects({ house: 'Lok Sabha', page: 1, pageSize: 500, sortField: 'risk', sortDir: 'desc' }),
+      ]);
 
-      try {
-        const [kpiData, optionsData, paginatedData] = await Promise.all([
-          getDashboardKPIs('Lok Sabha'),
-          getDistinctFilterOptions('Lok Sabha'),
-          getProjects({ house: 'Lok Sabha', page: 1, pageSize: 500, sortField: 'risk', sortDir: 'desc' }),
-        ]);
+      const datasetSummary: DatasetSummary = {
+        datasets: [
+          {
+            name: 'Lok Sabha Works (PostgreSQL Indexed)',
+            filename: 'public.lok_sabha_projects',
+            records: 65000,
+            columns: ['work_id', 'work_category', 'state', 'district', 'mp_name', 'constituency', 'work_description', 'sanction_amount', 'total_paid', 'work_status', 'risk_score', 'risk_level'],
+            sampleValues: { State: 'National / All States', Status: 'Work Completed' },
+            missingValueCounts: {},
+          },
+          {
+            name: 'Rajya Sabha Works (PostgreSQL Indexed)',
+            filename: 'public.rajya_sabha_projects',
+            records: 79219,
+            columns: ['work_id', 'work_category', 'state', 'district', 'mp_name', 'work_description', 'sanction_amount', 'total_paid', 'work_status', 'risk_score', 'risk_level'],
+            sampleValues: { State: 'Uttar Pradesh', Status: 'Sanction' },
+            missingValueCounts: {},
+          },
+        ],
+        totalProjects: kpiData?.total || paginatedData.totalCount || 65000,
+        loadedAt: new Date().toISOString(),
+      };
 
-        const datasetSummary: DatasetSummary = {
-          datasets: [
-            {
-              name: 'Lok Sabha Works (PostgreSQL Indexed)',
-              filename: 'public.lok_sabha_projects',
-              records: 65000,
-              columns: ['work_id', 'work_category', 'state', 'district', 'mp_name', 'constituency', 'work_description', 'sanction_amount', 'total_paid', 'work_status', 'risk_score', 'risk_level'],
-              sampleValues: {
-                State: 'National / All States',
-                Status: 'Work Completed',
-              },
-              missingValueCounts: {},
-            },
-            {
-              name: 'Rajya Sabha Works (PostgreSQL Indexed)',
-              filename: 'public.rajya_sabha_projects',
-              records: 79219,
-              columns: ['work_id', 'work_category', 'state', 'district', 'mp_name', 'work_description', 'sanction_amount', 'total_paid', 'work_status', 'risk_score', 'risk_level'],
-              sampleValues: {
-                State: 'Uttar Pradesh',
-                Status: 'Sanction',
-              },
-              missingValueCounts: {},
-            },
-          ],
-          totalProjects: 65000,
-          loadedAt: new Date().toISOString(),
-        };
+      set({
+        kpis: kpiData,
+        filterOptions: optionsData,
+        projects: applyVerificationOverrides(paginatedData.projects),
+        totalProjectCount: paginatedData.totalCount || (kpiData?.total ?? 0),
+        isLoading: false,
+        analysisComplete: true,
+        datasetSummary,
+        loadError: null,
+      });
 
-        set({
-          kpis: kpiData,
-          filterOptions: optionsData,
-          projects: applyVerificationOverrides(paginatedData.projects),
-          totalProjectCount: paginatedData.totalCount || 65000,
-          isLoading: false,
-          analysisComplete: true,
-          datasetSummary,
-        });
-
-        get().loadAnomalyData('Lok Sabha');
-        return;
-      } catch (err: any) {
-        console.error('[Store] Error querying initial Supabase batch:', err);
-        set({
-          isLoading: false,
-          loadError: err.message || 'Failed to initialize database connection',
-        });
-        return;
-      }
+      get().loadAnomalyData('Lok Sabha');
+    } catch (err: any) {
+      console.error('[Store] Error loading Supabase datasets:', err);
+      set({
+        isLoading: false,
+        loadError: err.message || 'Failed to connect to Supabase. Please check your internet connection.',
+      });
     }
-
-    set({
-      isLoading: false,
-      loadError: 'Supabase database is currently unreachable. Please check network connection.',
-    });
   },
+
 
   loadRajyaSabha: async () => {
     // When using Supabase, Rajya Sabha is directly available in PostgreSQL

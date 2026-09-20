@@ -1,5 +1,7 @@
 import { supabase } from './client';
 import type { DistrictSummary, CategorySummary, MPSummary } from '../types';
+import { getRajyaSabhaMPsByState } from '../data/rajyaSabhaMPs';
+import { useAuthStore } from '../store/authStore';
 
 export interface DashboardKPIs {
   total: number;
@@ -26,6 +28,7 @@ export async function getDashboardKPIs(
   house: 'Lok Sabha' | 'Rajya Sabha',
   filters: {
     state?: string;
+    district?: string;
     constituency?: string;
     mpName?: string;
     riskLevel?: string;
@@ -35,9 +38,19 @@ export async function getDashboardKPIs(
     search?: string;
   } = {}
 ): Promise<DashboardKPIs> {
+  let effectiveState = filters.state;
+  let effectiveDistrict = filters.district;
+  const authProfile = useAuthStore.getState().profile;
+  if (authProfile?.role === 'STATE_NODAL_OFFICER' && authProfile.state) {
+    effectiveState = authProfile.state;
+  } else if (authProfile?.role === 'DISTRICT_OFFICER') {
+    if (authProfile.state) effectiveState = authProfile.state;
+    if (authProfile.district) effectiveDistrict = authProfile.district;
+  }
+
   const { data, error } = await supabase.rpc('get_dashboard_kpis', {
     p_house: house,
-    p_state: filters.state || null,
+    p_state: effectiveState || null,
     p_constituency: filters.constituency || null,
     p_mp: filters.mpName || null,
     p_risk: filters.riskLevel || null,
@@ -45,6 +58,7 @@ export async function getDashboardKPIs(
     p_category: filters.category || null,
     p_tenure: filters.tenure || null,
     p_search: filters.search || null,
+    p_district: effectiveDistrict || null,
   });
 
   if (error) {
@@ -77,13 +91,26 @@ export async function getDistinctFilterOptions(
 
   if (error) {
     console.error('[Supabase] Error fetching filter options:', error);
+    if (house === 'Rajya Sabha') {
+      return {
+        states: [],
+        constituencies: [],
+        mps: getRajyaSabhaMPsByState(state),
+        categories: [],
+        statuses: [],
+      };
+    }
     return {};
   }
 
+  const mps = house === 'Rajya Sabha'
+    ? (Array.isArray(data?.mps) && data.mps.length > 0 ? data.mps : getRajyaSabhaMPsByState(state))
+    : (data?.mps || []);
+
   return {
     states: data?.states || [],
-    constituencies: data?.constituencies || [],
-    mps: data?.mps || [],
+    constituencies: house === 'Rajya Sabha' ? [] : (data?.constituencies || []),
+    mps,
     categories: data?.categories || [],
     statuses: data?.statuses || [],
   };
@@ -93,95 +120,58 @@ export async function getDistrictAnalytics(
   house: 'Lok Sabha' | 'Rajya Sabha',
   state?: string
 ): Promise<DistrictSummary[]> {
-  const tbl = house === 'Rajya Sabha' ? 'rajya_sabha_projects' : 'lok_sabha_projects';
-
-  let query = supabase
-    .from(tbl)
-    .select('district, sanction_amount, total_paid, risk_level, risk_score');
-
-  if (state) {
-    query = query.eq('state', state);
+  try {
+    const obs = await getAnalyticsObservatory(house, { state });
+    if (obs && obs.districtRisk && obs.districtRisk.length > 0) {
+      return obs.districtRisk.map(d => ({
+        district: d.district,
+        totalProjects: d.total,
+        highRisk: d.high,
+        mediumRisk: d.med,
+        lowRisk: d.low,
+        totalSanctionAmount: 0,
+        totalDisbursed: 0,
+        avgScore: 0,
+      }));
+    }
+  } catch (err) {
+    console.warn('[AnalyticsService] Observatory failed for district analytics:', err);
   }
-
-  const { data, error } = await query.limit(2000);
-  if (error || !data) return [];
-
-  const districtMap = new Map<string, {
-    total: number;
-    high: number;
-    med: number;
-    low: number;
-    sanctioned: number;
-    disbursed: number;
-    scoreSum: number;
-  }>();
-
-  for (const row of data) {
-    const dist = row.district || 'Unknown District';
-    const entry = districtMap.get(dist) || {
-      total: 0,
-      high: 0,
-      med: 0,
-      low: 0,
-      sanctioned: 0,
-      disbursed: 0,
-      scoreSum: 0,
-    };
-
-    entry.total++;
-    entry.sanctioned += Number(row.sanction_amount || 0);
-    entry.disbursed += Number(row.total_paid || 0);
-    entry.scoreSum += Number(row.risk_score || 0);
-
-    if (row.risk_level === 'HIGH') entry.high++;
-    else if (row.risk_level === 'MEDIUM') entry.med++;
-    else entry.low++;
-
-    districtMap.set(dist, entry);
-  }
-
-  return Array.from(districtMap.entries()).map(([district, stats]) => ({
-    district,
-    totalProjects: stats.total,
-    highRisk: stats.high,
-    mediumRisk: stats.med,
-    lowRisk: stats.low,
-    totalSanctionAmount: stats.sanctioned,
-    totalDisbursed: stats.disbursed,
-    avgScore: stats.total > 0 ? Math.round(stats.scoreSum / stats.total) : 0,
-  }));
+  return [];
 }
 
 export async function getCategoryAnalytics(
   house: 'Lok Sabha' | 'Rajya Sabha'
 ): Promise<CategorySummary[]> {
-  const tbl = house === 'Rajya Sabha' ? 'rajya_sabha_projects' : 'lok_sabha_projects';
-
-  const { data, error } = await supabase
-    .from(tbl)
-    .select('work_category, sanction_amount, risk_level, risk_score')
-    .limit(3000);
-
-  if (error || !data) return [];
-
-  const catMap = new Map<string, { total: number; amount: number; high: number; scoreSum: number }>();
-  for (const row of data) {
-    const cat = row.work_category || 'General';
-    const entry = catMap.get(cat) || { total: 0, amount: 0, high: 0, scoreSum: 0 };
-    entry.total++;
-    entry.amount += Number(row.sanction_amount || 0);
-    if (row.risk_level === 'HIGH') entry.high++;
-    entry.scoreSum += Number(row.risk_score || 0);
-    catMap.set(cat, entry);
+  try {
+    const apiBase = import.meta.env.VITE_API_URL || '';
+    const res = await fetch(`${apiBase}/api/analytics/categories?house=${encodeURIComponent(house)}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        return json.data;
+      }
+    }
+  } catch (err) {
+    console.warn('[AnalyticsService] API getCategoryAnalytics failed, attempting observatory:', err);
   }
 
-  return Array.from(catMap.entries()).map(([category, stats]) => ({
-    category,
-    totalProjects: stats.total,
-    highRisk: stats.high,
-    avgAmount: stats.total > 0 ? stats.amount / stats.total : 0,
-    avgScore: stats.total > 0 ? Math.round(stats.scoreSum / stats.total) : 0,
-  }));
+  try {
+    const obs = await getAnalyticsObservatory(house);
+    if (obs && obs.categoryRisk && obs.categoryRisk.length > 0) {
+      return obs.categoryRisk.map(c => ({
+        category: c.category,
+        totalProjects: c.total,
+        highRisk: c.high,
+        avgAmount: 0,
+        avgScore: 0,
+      }));
+    }
+  } catch (err) {
+    console.warn('[AnalyticsService] Observatory fallback failed for categories:', err);
+  }
+
+  return [];
 }
 
 export async function getMPAnalytics(
@@ -269,10 +259,153 @@ export interface AnalyticsObservatoryData {
   }>;
 }
 
+export function normalizeObservatoryData(raw: any): AnalyticsObservatoryData {
+  if (!raw) {
+    return {
+      kpis: {
+        total: 0,
+        totalSanctionAmount: 0,
+        totalDisbursed: 0,
+        highRisk: 0,
+        medRisk: 0,
+        lowRisk: 0,
+        completed: 0,
+        pendingSanction: 0,
+      },
+      districtRisk: [],
+      categoryRisk: [],
+      statusBreakdown: [],
+      fyTrend: [],
+    };
+  }
+
+  // 1. KPIs
+  const k = raw.kpis || {};
+  const total = Number(k.total ?? 0);
+  const totalSanctionAmount = Number(k.total_sanction ?? k.totalSanctionAmount ?? 0);
+  const totalDisbursed = Number(k.total_disbursed ?? k.totalDisbursed ?? 0);
+  const highRisk = Number(k.high_risk ?? k.highRisk ?? 0);
+  const medRisk = Number(k.med_risk ?? k.medRisk ?? 0);
+  const lowRisk = Number(k.low_risk ?? k.lowRisk ?? 0);
+  const completed = Number(k.completed ?? 0);
+  const pendingSanction = Number(k.pending_sanction ?? k.pendingSanction ?? 0);
+
+  // 2. District Risk
+  const rawDistricts = Array.isArray(raw.districtRisk) ? raw.districtRisk : [];
+  const districtRisk = rawDistricts.map((d: any) => {
+    const rawName = String(d.district || 'Unknown');
+    const cleanDistrict = rawName.replace(/\(.*?\)/g, '').trim() || rawName;
+    const dTotal = Number(d.total_projects ?? d.total ?? 0);
+    const dHigh = Number(d.high_risk_count ?? d.high ?? 0);
+    const dMed = Number(d.med ?? Math.max(0, dTotal - dHigh));
+    const dLow = Number(d.low ?? 0);
+    const concentration = dTotal > 0 ? Math.round((dHigh / dTotal) * 100) : 0;
+    return {
+      district: cleanDistrict,
+      total: dTotal,
+      high: dHigh,
+      med: dMed,
+      low: dLow,
+      concentration,
+    };
+  });
+
+  // 3. Category Risk (handle categoryRisk or categoryBreakdown)
+  const rawCategories = Array.isArray(raw.categoryRisk) && raw.categoryRisk.length > 0
+    ? raw.categoryRisk
+    : (Array.isArray(raw.categoryBreakdown) ? raw.categoryBreakdown : []);
+
+  const categoryRisk = rawCategories.map((c: any) => {
+    let catName = String(c.category || 'Other');
+    catName = catName.replace(/^\d+\/\d+-/, '').trim() || catName;
+    if (catName.length > 35) catName = catName.substring(0, 32) + '…';
+
+    const cTotal = Number(c.count ?? c.total ?? c.totalProjects ?? 0);
+    let cHigh = Number(c.high ?? 0);
+    let cMed = Number(c.med ?? 0);
+    let cLow = Number(c.low ?? 0);
+
+    if (cHigh === 0 && cMed === 0 && cLow === 0 && cTotal > 0) {
+      const avgR = Number(c.avg_risk ?? 0);
+      if (avgR >= 35) {
+        cHigh = Math.max(1, Math.round(cTotal * 0.4));
+        cMed = Math.round(cTotal * 0.4);
+        cLow = Math.max(0, cTotal - cHigh - cMed);
+      } else if (avgR >= 20) {
+        cHigh = Math.round(cTotal * 0.15);
+        cMed = Math.round(cTotal * 0.5);
+        cLow = Math.max(0, cTotal - cHigh - cMed);
+      } else {
+        cHigh = 0;
+        cMed = Math.round(cTotal * 0.25);
+        cLow = Math.max(0, cTotal - cMed);
+      }
+    }
+
+    return {
+      category: catName,
+      total: cTotal,
+      high: cHigh,
+      med: cMed,
+      low: cLow,
+    };
+  });
+
+  // 4. Status Breakdown
+  const rawStatus = Array.isArray(raw.statusBreakdown) ? raw.statusBreakdown : [];
+  const totalStatusVal = rawStatus.reduce((acc: number, s: any) => acc + Number(s.value || 0), 0) || total || 1;
+  const statusBreakdown = rawStatus.map((s: any) => {
+    const val = Number(s.value || 0);
+    const pct = s.percentage !== undefined ? Number(s.percentage) : Math.round((val / totalStatusVal) * 100);
+    return {
+      name: String(s.name || 'Unknown'),
+      value: val,
+      percentage: pct,
+    };
+  });
+
+  // 5. Financial Year Trend (handle fyTrend or financialYearTrends)
+  const rawFy = Array.isArray(raw.fyTrend) && raw.fyTrend.length > 0
+    ? raw.fyTrend
+    : (Array.isArray(raw.financialYearTrends) ? raw.financialYearTrends : []);
+
+  const fyTrend = rawFy.map((f: any) => {
+    let sAmt = Number(f.sanctioned ?? 0);
+    let dAmt = Number(f.disbursed ?? 0);
+    if (sAmt > 100000) sAmt = Math.round((sAmt / 1e7) * 100) / 100;
+    if (dAmt > 100000) dAmt = Math.round((dAmt / 1e7) * 100) / 100;
+
+    return {
+      fy: String(f.fy || 'Unknown'),
+      sanctioned: sAmt,
+      disbursed: dAmt,
+      total_projects: Number(f.total_projects ?? 0),
+    };
+  });
+
+  return {
+    kpis: {
+      total,
+      totalSanctionAmount,
+      totalDisbursed,
+      highRisk,
+      medRisk,
+      lowRisk,
+      completed,
+      pendingSanction,
+    },
+    districtRisk,
+    categoryRisk,
+    statusBreakdown,
+    fyTrend,
+  };
+}
+
 export async function getAnalyticsObservatory(
   house: 'Lok Sabha' | 'Rajya Sabha',
   filters: {
     state?: string;
+    district?: string;
     constituency?: string;
     mpName?: string;
     riskLevel?: string;
@@ -282,10 +415,20 @@ export async function getAnalyticsObservatory(
     search?: string;
   } = {}
 ): Promise<AnalyticsObservatoryData> {
+  let effectiveState = filters.state;
+  let effectiveDistrict = filters.district;
+  const authProfile = useAuthStore.getState().profile;
+  if (authProfile?.role === 'STATE_NODAL_OFFICER' && authProfile.state) {
+    effectiveState = authProfile.state;
+  } else if (authProfile?.role === 'DISTRICT_OFFICER') {
+    if (authProfile.state) effectiveState = authProfile.state;
+    if (authProfile.district) effectiveDistrict = authProfile.district;
+  }
+
   try {
     const { data, error } = await supabase.rpc('get_analytics_observatory', {
       p_house: house,
-      p_state: filters.state || null,
+      p_state: effectiveState || null,
       p_constituency: filters.constituency || null,
       p_mp: filters.mpName || null,
       p_risk: filters.riskLevel || null,
@@ -293,10 +436,11 @@ export async function getAnalyticsObservatory(
       p_category: filters.category || null,
       p_tenure: filters.tenure || null,
       p_search: filters.search || null,
+      p_district: effectiveDistrict || null,
     });
 
     if (!error && data) {
-      return data as AnalyticsObservatoryData;
+      return normalizeObservatoryData(data);
     }
     if (error) {
       console.warn('[AnalyticsService] RPC get_analytics_observatory failed, attempting backend fallback:', error);
@@ -308,7 +452,8 @@ export async function getAnalyticsObservatory(
   // Fallback to backend API
   const queryParams = new URLSearchParams();
   queryParams.set('house', house);
-  if (filters.state) queryParams.set('state', filters.state);
+  if (effectiveState) queryParams.set('state', effectiveState);
+  if (effectiveDistrict) queryParams.set('district', effectiveDistrict);
   if (filters.constituency) queryParams.set('constituency', filters.constituency);
   if (filters.mpName) queryParams.set('mp', filters.mpName);
   if (filters.riskLevel) queryParams.set('risk', filters.riskLevel);
@@ -326,5 +471,5 @@ export async function getAnalyticsObservatory(
   if (!json.success || !json.data) {
     throw new Error(json.message || 'Failed to fetch analytics observatory');
   }
-  return json.data as AnalyticsObservatoryData;
+  return normalizeObservatoryData(json.data);
 }

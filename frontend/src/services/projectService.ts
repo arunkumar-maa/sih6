@@ -1,6 +1,9 @@
+// projectService.ts — queries Supabase directly (no backend required)
 import type { EnrichedProject, RiskLevel, WorkStatus, PaymentStatus, VerificationStatus } from '../types';
 import { getRiskLevel } from '../utils/risk';
 import { loadVerificationOverrides, saveVerificationOverride } from '../utils/verificationStorage';
+import { supabase } from './client';
+import { useAuthStore } from '../store/authStore';
 
 export interface ProjectQueryParams {
   house: 'Lok Sabha' | 'Rajya Sabha';
@@ -68,72 +71,137 @@ export function rowToEnrichedProject(row: any): EnrichedProject {
     daysToComplete: row.days_to_complete !== null ? Number(row.days_to_complete) : null,
     vendorName: row.vendor_name || null,
 
-    risk: {
-      score: Number(row.risk_score || 0),
-      level: (row.risk_level as RiskLevel) || getRiskLevel(Number(row.risk_score || 0)),
-      factors: Array.isArray(row.risk_factors) ? row.risk_factors : [],
-      explanation: row.risk_explanation || '',
-      factorsAvailable: Array.isArray(row.risk_factors) ? row.risk_factors.filter((f: any) => f.available).length : 0,
-      factorsTotal: 6,
-    },
+    risk: (() => {
+      const daysSinceSanction = row.days_since_sanction !== null ? Number(row.days_since_sanction) : null;
+      const sanctionAmount = row.sanction_amount !== null ? Number(row.sanction_amount) : null;
+      const totalPaid = row.total_paid !== null ? Number(row.total_paid) : null;
+      const workStatus = row.work_status || 'Unknown';
+      const isCompleted = !!row.is_completed;
+
+      let computedFactors = Array.isArray(row.risk_factors) && row.risk_factors.length > 0 ? row.risk_factors : [];
+      if (computedFactors.length === 0) {
+        computedFactors = [
+          { name: 'Completion Status', score: isCompleted ? 0 : 40, available: true, description: isCompleted ? 'Work completed' : 'Work not completed' },
+          { name: 'Disbursement Delay', score: (daysSinceSanction && daysSinceSanction > 365) ? 30 : 0, available: daysSinceSanction !== null, description: daysSinceSanction && daysSinceSanction > 365 ? `${daysSinceSanction} days since sanction` : 'Within acceptable limits' },
+          { name: 'Payment Ratio', score: (totalPaid !== null && sanctionAmount !== null && sanctionAmount > 0 && totalPaid / sanctionAmount < 0.3) ? 25 : 0, available: totalPaid !== null && sanctionAmount !== null, description: 'Expenditure vs sanction analysis' },
+        ];
+      }
+
+      const primaryFactor = computedFactors.find((f: any) => f.score > 0);
+      const explanation = row.risk_explanation || (primaryFactor ? primaryFactor.description : 'Standard progress monitoring parameters applied.');
+
+      return {
+        score: Number(row.risk_score || 0),
+        level: (row.risk_level as RiskLevel) || getRiskLevel(Number(row.risk_score || 0)),
+        factors: computedFactors,
+        explanation,
+        factorsAvailable: computedFactors.filter((f: any) => f.available).length,
+        factorsTotal: computedFactors.length,
+      };
+    })(),
 
     verificationStatus: (row.verification_status as VerificationStatus) || 'New Alert',
     verificationHistory: Array.isArray(row.verification_history) ? row.verification_history : [],
   };
 }
 
+// ── Main query: directly from Supabase ────────────────────────────────────────
+
 export async function getProjects(params: ProjectQueryParams): Promise<PaginatedProjectsResult> {
-  const query = new URLSearchParams();
-  query.set('house', params.house || 'Lok Sabha');
-  if (params.page) query.set('page', String(params.page));
-  if (params.pageSize) query.set('pageSize', String(params.pageSize));
-  if (params.search && params.search.trim()) query.set('search', params.search.trim());
-  if (params.state) query.set('state', params.state);
-  if (params.district) query.set('district', params.district);
-  if (params.constituency) query.set('constituency', params.constituency);
-  if (params.mpName) query.set('mpName', params.mpName);
-  if (params.riskLevel) query.set('riskLevel', params.riskLevel);
-  if (params.status) query.set('status', params.status);
-  if (params.category) query.set('category', params.category);
-  if (params.tenure && params.tenure !== 'All Tenures' && params.tenure.trim() !== '') {
-    query.set('tenure', params.tenure);
-  }
-  if (params.isSanctioned !== undefined) query.set('isSanctioned', String(params.isSanctioned));
-  if (params.isCompleted !== undefined) query.set('isCompleted', String(params.isCompleted));
-  if (params.hasDisbursement !== undefined) query.set('hasDisbursement', String(params.hasDisbursement));
-  if (params.sortField) query.set('sortBy', params.sortField);
-  const apiBase = import.meta.env.VITE_API_URL || '';
-  const res = await fetch(`${apiBase}/api/projects?${query.toString()}`);
-  if (!res.ok) {
-    throw new Error(`API error ${res.status}: ${res.statusText}`);
+  const table = params.house === 'Rajya Sabha' ? 'rajya_sabha_projects' : 'lok_sabha_projects';
+  const page = params.page || 1;
+  const pageSize = Math.min(params.pageSize || 100, 500);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  // Build Supabase query
+  let query = supabase
+    .from(table as 'lok_sabha_projects')
+    .select('*', { count: 'exact' });
+
+  // Filters
+  if (params.search && params.search.trim()) {
+    const s = params.search.trim();
+    query = query.or(
+      `work_description.ilike.%${s}%,mp_name.ilike.%${s}%,work_id.ilike.%${s}%,district.ilike.%${s}%`
+    );
   }
 
-  const json = await res.json();
-  if (!json.success || !json.data) {
-    throw new Error(json.message || 'Failed to fetch projects');
+  // Strict Role Data Scope Enforcement
+  const authProfile = useAuthStore.getState().profile;
+  if (authProfile?.role === 'STATE_NODAL_OFFICER' && authProfile.state) {
+    const assignedState = authProfile.state;
+    if (params.state && params.state.trim().toLowerCase() !== assignedState.trim().toLowerCase()) {
+      throw new Error(`Access Denied: You are not authorized to view projects outside your assigned state (${assignedState}).`);
+    }
+    query = query.eq('state', assignedState);
+  } else if (authProfile?.role === 'DISTRICT_OFFICER') {
+    if (authProfile.state) {
+      if (params.state && params.state.trim().toLowerCase() !== authProfile.state.trim().toLowerCase()) {
+        throw new Error(`Access Denied: You are not authorized to view projects outside your assigned state (${authProfile.state}).`);
+      }
+      query = query.eq('state', authProfile.state);
+    }
+    if (authProfile.district) {
+      const cleanD = authProfile.district.split('(')[0].trim();
+      query = query.or(`district.eq.${authProfile.district},district.ilike.${cleanD}%`);
+    }
+  } else if (params.state) {
+    query = query.eq('state', params.state);
   }
 
-  const { projects: rawProjects, totalCount, page, pageSize, totalPages } = json.data;
+  if (authProfile?.role !== 'DISTRICT_OFFICER' && params.district) {
+    query = query.eq('district', params.district);
+  }
+  if (params.house === 'Lok Sabha' && params.constituency) {
+    query = query.eq('constituency', params.constituency);
+  }
+  if (params.mpName)       query = query.ilike('mp_name', `%${params.mpName}%`);
+  if (params.riskLevel)    query = query.eq('risk_level', params.riskLevel);
+  if (params.status)       query = query.eq('work_status', params.status);
+  if (params.category)     query = query.eq('work_category', params.category);
+  if (params.isSanctioned !== undefined) query = query.eq('is_sanctioned', params.isSanctioned);
+  if (params.isCompleted !== undefined)  query = query.eq('is_completed', params.isCompleted);
+
+  // Sort
+  const sortColumnMap: Record<string, string> = {
+    risk: 'risk_score',
+    amount: 'sanction_amount',
+    district: 'district',
+    status: 'work_status',
+    fy: 'financial_year',
+  };
+  const sortCol = sortColumnMap[params.sortField || 'risk'] || 'risk_score';
+  query = query.order(sortCol, { ascending: params.sortDir === 'asc' });
+
+  // Pagination
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    console.error('[projectService] Supabase query error:', error);
+    throw new Error(error.message);
+  }
+
   const overrides = loadVerificationOverrides();
-  const projects: EnrichedProject[] = (rawProjects || []).map((p: any) => {
+  const projects: EnrichedProject[] = (data || []).map((row: any) => {
+    const p = rowToEnrichedProject(row);
     const override = overrides[p.workId];
-    return {
-      ...p,
-      recommendedDate: p.recommendedDate ? new Date(p.recommendedDate) : null,
-      sanctionDate: p.sanctionDate ? new Date(p.sanctionDate) : null,
-      completionDate: p.completionDate ? new Date(p.completionDate) : null,
-      expenditureDate: p.expenditureDate ? new Date(p.expenditureDate) : null,
-      verificationStatus: override?.status || p.verificationStatus || 'New Alert',
-      verificationHistory: override?.history || p.verificationHistory || [],
-    };
+    if (override) {
+      p.verificationStatus = override.status;
+      p.verificationHistory = override.history;
+    }
+    return p;
   });
 
+  const totalCount = count || 0;
   return {
     projects,
-    totalCount: Number(totalCount || 0),
-    page: Number(page || 1),
-    pageSize: Number(pageSize || 20),
-    totalPages: Number(totalPages || 1),
+    totalCount,
+    page,
+    pageSize,
+    totalPages: Math.ceil(totalCount / pageSize),
   };
 }
 
@@ -142,27 +210,223 @@ export async function getProjectById(
   house: 'Lok Sabha' | 'Rajya Sabha' = 'Lok Sabha'
 ): Promise<EnrichedProject | null> {
   try {
-    const apiBase = import.meta.env.VITE_API_URL || '';
-    const res = await fetch(`${apiBase}/api/projects/${encodeURIComponent(workId)}?house=${encodeURIComponent(house)}`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    if (!json.success || !json.data) return null;
-    const p = json.data;
+    const table = house === 'Rajya Sabha' ? 'rajya_sabha_projects' : 'lok_sabha_projects';
+    let { data, error } = await supabase
+      .from(table as 'lok_sabha_projects')
+      .select('*')
+      .eq('work_id', workId)
+      .maybeSingle();
+
+    if (!data) {
+      const fallbackTable = house === 'Rajya Sabha' ? 'lok_sabha_projects' : 'rajya_sabha_projects';
+      const fallbackRes = await supabase
+        .from(fallbackTable as 'lok_sabha_projects')
+        .select('*')
+        .eq('work_id', workId)
+        .maybeSingle();
+      if (fallbackRes.data) {
+        data = fallbackRes.data;
+      }
+    }
+
+    if (!data) return null;
+
+    const authProfile = useAuthStore.getState().profile;
+    const p = rowToEnrichedProject(data);
+
+    // Cross-State access restriction for State Nodal Officers
+    if (authProfile?.role === 'STATE_NODAL_OFFICER' && authProfile.state) {
+      if (p.state && p.state.trim().toLowerCase() !== authProfile.state.trim().toLowerCase()) {
+        console.warn(`[projectService] Access Denied: State Nodal Officer (${authProfile.state}) denied access to project from ${p.state}`);
+        return null;
+      }
+    }
+
+    // Cross-District access restriction for District Officers
+    if (authProfile?.role === 'DISTRICT_OFFICER') {
+      if (authProfile.state && p.state && p.state.trim().toLowerCase() !== authProfile.state.trim().toLowerCase()) {
+        console.warn(`[projectService] Access Denied: District Officer (${authProfile.state}) denied access to project from ${p.state}`);
+        return null;
+      }
+      if (authProfile.district && p.district) {
+        const cleanD = authProfile.district.split('(')[0].trim().toLowerCase();
+        const pDist = p.district.split('(')[0].trim().toLowerCase();
+        const isMatch = pDist.includes(cleanD) || cleanD.includes(pDist) || p.district.toLowerCase().includes(cleanD);
+        if (!isMatch) {
+          console.warn(`[projectService] Access Denied: District Officer (${authProfile.district}) denied access to project from ${p.district}`);
+          return null;
+        }
+      }
+    }
+
     const overrides = loadVerificationOverrides();
     const override = overrides[p.workId];
-    return {
-      ...p,
-      recommendedDate: p.recommendedDate ? new Date(p.recommendedDate) : null,
-      sanctionDate: p.sanctionDate ? new Date(p.sanctionDate) : null,
-      completionDate: p.completionDate ? new Date(p.completionDate) : null,
-      expenditureDate: p.expenditureDate ? new Date(p.expenditureDate) : null,
-      verificationStatus: override?.status || p.verificationStatus || 'New Alert',
-      verificationHistory: override?.history || p.verificationHistory || [],
-    };
+    if (override) {
+      p.verificationStatus = override.status;
+      p.verificationHistory = override.history;
+    }
+    return p;
   } catch (err) {
     console.error('[projectService] getProjectById error:', err);
     return null;
   }
+}
+
+export interface StateNodalOverview {
+  state: string;
+  house: 'Lok Sabha' | 'Rajya Sabha';
+  kpis: {
+    total: number;
+    totalSanctionAmount: number;
+    totalDisbursed: number;
+    completed: number;
+    highRisk: number;
+    medRisk: number;
+    lowRisk: number;
+    requiresVerification: number;
+    avgRiskScore: number;
+  };
+  districts: Array<{
+    district: string;
+    total: number;
+    sanctioned: number;
+    disbursed: number;
+    high_risk: number;
+    completed: number;
+  }>;
+  constituencies: Array<{
+    constituency: string;
+    mp_name: string;
+    total: number;
+    sanctioned: number;
+    high_risk: number;
+  }>;
+  mps: Array<{
+    mp_name: string;
+    total: number;
+    sanctioned: number;
+    disbursed: number;
+    high_risk: number;
+  }>;
+  priorityQueue: Array<{
+    work_id: string;
+    work_description: string;
+    district: string;
+    constituency?: string;
+    mp_name: string;
+    sanction_amount: number;
+    total_paid: number;
+    risk_score: number;
+    risk_level: string;
+    verification_status: string;
+  }>;
+}
+
+export async function getStateNodalOverview(
+  house: 'Lok Sabha' | 'Rajya Sabha',
+  state?: string
+): Promise<StateNodalOverview> {
+  const authProfile = useAuthStore.getState().profile;
+  const effectiveState = (authProfile?.role === 'STATE_NODAL_OFFICER' && authProfile.state)
+    ? authProfile.state
+    : (state || 'Tamil Nadu');
+
+  const { data, error } = await supabase.rpc('get_state_nodal_overview', {
+    p_house: house,
+    p_state: effectiveState,
+  });
+
+  if (error) {
+    console.error('[projectService] Error in getStateNodalOverview:', error);
+    throw error;
+  }
+
+  return data as StateNodalOverview;
+}
+
+export interface DistrictOfficerOverview {
+  state: string;
+  district: string;
+  cleanDistrict: string;
+  house: 'Lok Sabha' | 'Rajya Sabha';
+  kpis: {
+    total: number;
+    totalSanctionAmount: number;
+    totalDisbursed: number;
+    completed: number;
+    highRisk: number;
+    medRisk: number;
+    lowRisk: number;
+    pendingSanction: number;
+    requiresVerification: number;
+    staleCount: number;
+    costAnomalies: number;
+    disbAnomalies: number;
+    avgRiskScore: number;
+  };
+  constituencies: Array<{
+    constituency: string;
+    mp_name: string;
+    total: number;
+    sanctioned: number;
+    disbursed: number;
+    completed: number;
+    high_risk: number;
+    avg_risk: number;
+  }>;
+  mps: Array<{
+    mp_name: string;
+    total: number;
+    sanctioned: number;
+    disbursed: number;
+    completed: number;
+    high_risk: number;
+    avg_risk: number;
+  }>;
+  priorityQueue: Array<{
+    work_id: string;
+    work_description: string;
+    constituency?: string;
+    mp_name: string;
+    sanction_amount: number;
+    total_paid: number;
+    disbursement_ratio: number;
+    risk_score: number;
+    risk_level: string;
+    risk_explanation: string;
+    days_since_sanction: number;
+    work_status: string;
+    verification_status: string;
+    vendor_name?: string;
+  }>;
+}
+
+export async function getDistrictOfficerOverview(
+  house: 'Lok Sabha' | 'Rajya Sabha',
+  state?: string,
+  district?: string
+): Promise<DistrictOfficerOverview> {
+  const authProfile = useAuthStore.getState().profile;
+  const effectiveState = (authProfile?.role === 'DISTRICT_OFFICER' && authProfile.state)
+    ? authProfile.state
+    : (state || 'Uttar Pradesh');
+
+  const effectiveDistrict = (authProfile?.role === 'DISTRICT_OFFICER' && authProfile.district)
+    ? authProfile.district
+    : (district || 'VARANASI');
+
+  const { data, error } = await supabase.rpc('get_district_officer_overview', {
+    p_house: house,
+    p_state: effectiveState,
+    p_district: effectiveDistrict,
+  });
+
+  if (error) {
+    console.error('[projectService] Error in getDistrictOfficerOverview:', error);
+    throw error;
+  }
+
+  return data as DistrictOfficerOverview;
 }
 
 export async function updateProjectVerification(
@@ -178,8 +442,6 @@ export async function updateProjectVerification(
     actor,
     comment,
   };
-
   saveVerificationOverride(workId, { status, history: [event] });
   return true;
 }
-

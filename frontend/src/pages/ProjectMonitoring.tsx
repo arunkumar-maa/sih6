@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Search, ChevronLeft, ChevronRight, ArrowUpDown,
-  X, SlidersHorizontal, FolderOpen
+  X, SlidersHorizontal, FolderOpen, AlertTriangle
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
+import { useAuthStore } from '../store/authStore';
 import { RiskBadge } from '../components/RiskBadge';
 import { OfficialFilterBar, OfficialFilterState } from '../components/OfficialFilterBar';
 import { formatCurrency, truncate } from '../utils';
@@ -29,11 +30,17 @@ export function ProjectMonitoring() {
     isUsingSupabase,
   } = useAppStore();
 
+  const { profile } = useAuthStore();
+  const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
+  const isStateNodal = profile?.role === 'STATE_NODAL_OFFICER';
+  const lockedState = (isStateNodal || isDistrictOfficer) ? (profile?.state || '') : '';
+  const lockedDistrictClean = isDistrictOfficer && profile?.district ? profile.district.split('(')[0].trim() : '';
+
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
     house: activeHouse,
     tenure: '',
-    state: '',
+    state: lockedState,
     constituency: '',
     mpName: '',
     riskLevel: '',
@@ -51,6 +58,8 @@ export function ProjectMonitoring() {
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [selectedProjectDetail, setSelectedProjectDetail] = useState<EnrichedProject | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   // Apply pre-filter from GIS Map / drill-down navigation
   useEffect(() => {
@@ -61,9 +70,13 @@ export function ProjectMonitoring() {
       setFilters(f => ({
         ...f,
         house: monitoringFilter.house || activeHouse,
-        tenure: '',
+        tenure: monitoringFilter.fy || '',
         state: monitoringFilter.state || '',
         constituency: monitoringFilter.constituency || '',
+        category: monitoringFilter.category || '',
+        riskLevel: monitoringFilter.riskLevel || '',
+        status: monitoringFilter.status || '',
+        search: monitoringFilter.search || '',
       }));
       setPage(1);
       setMonitoringFilter(null);
@@ -98,7 +111,8 @@ export function ProjectMonitoring() {
       page,
       pageSize: PAGE_SIZE,
       search: filters.search,
-      state: filters.state,
+      state: lockedState || filters.state,
+      district: isDistrictOfficer ? (profile?.district || undefined) : undefined,
       constituency: filters.constituency,
       mpName: filters.mpName,
       riskLevel: filters.riskLevel,
@@ -127,24 +141,45 @@ export function ProjectMonitoring() {
     return () => {
       cancelled = true;
     };
-  }, [isUsingSupabase, activeHouse, page, filters, sortField, sortDir]);
+  }, [isUsingSupabase, activeHouse, page, filters, sortField, sortDir, lockedState, isDistrictOfficer, profile?.district]);
 
   // Fetch single project details when clicked
   useEffect(() => {
     if (!selectedProjectId) {
       setSelectedProjectDetail(null);
+      setDetailError(null);
+      setIsLoadingDetail(false);
       return;
     }
 
-    if (isUsingSupabase) {
-      getProjectById(selectedProjectId, activeHouse).then(p => {
-        setSelectedProjectDetail(p);
-      });
-    } else {
-      const p = projects.find(x => x.workId === selectedProjectId) || null;
-      setSelectedProjectDetail(p);
+    // Check if already in memory
+    const existing = projects.find(x => x.workId === selectedProjectId)
+      || supabaseProjects.find(x => x.workId === selectedProjectId);
+    if (existing) {
+      setSelectedProjectDetail(existing);
     }
-  }, [selectedProjectId, activeHouse, isUsingSupabase, projects]);
+
+    setIsLoadingDetail(true);
+    setDetailError(null);
+
+    getProjectById(selectedProjectId, activeHouse)
+      .then(p => {
+        if (p) {
+          setSelectedProjectDetail(p);
+        } else if (!existing) {
+          setDetailError(`Project "${selectedProjectId}" could not be found or access is restricted.`);
+        }
+      })
+      .catch(err => {
+        console.error('[ProjectMonitoring] Error fetching project detail:', err);
+        if (!existing) {
+          setDetailError(err.message || 'Error loading project detail');
+        }
+      })
+      .finally(() => {
+        setIsLoadingDetail(false);
+      });
+  }, [selectedProjectId, activeHouse, projects, supabaseProjects]);
 
   // Fallback local filtering for offline mode
   const localFiltered = useMemo(() => {
@@ -198,8 +233,47 @@ export function ProjectMonitoring() {
     setPage(1);
   };
 
-  if (selectedProjectDetail) {
-    return <ProjectIntelligenceView project={selectedProjectDetail} onBack={() => selectProject(null)} />;
+  if (selectedProjectId) {
+    if (selectedProjectDetail) {
+      return (
+        <ProjectIntelligenceView
+          project={selectedProjectDetail}
+          onBack={() => {
+            setSelectedProjectDetail(null);
+            selectProject(null);
+          }}
+        />
+      );
+    }
+
+    if (isLoadingDetail) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-[#005eb2] border-t-transparent animate-spin" />
+          <p className="text-xs text-[#747780] font-semibold">Loading Project Intelligence Profile…</p>
+        </div>
+      );
+    }
+
+    if (detailError) {
+      return (
+        <div className="panel p-8 text-center space-y-4">
+          <AlertTriangle size={32} className="mx-auto text-[#DC3545]" />
+          <h2 className="text-base font-bold text-[#000a1f]">Project Not Found or Access Restricted</h2>
+          <p className="text-xs text-[#747780]">{detailError}</p>
+          <button
+            onClick={() => {
+              setDetailError(null);
+              setSelectedProjectDetail(null);
+              selectProject(null);
+            }}
+            className="btn-primary text-xs"
+          >
+            Return to Project List
+          </button>
+        </div>
+      );
+    }
   }
 
   return (
@@ -209,11 +283,19 @@ export function ProjectMonitoring() {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
             <FolderOpen size={11} />
-            Project Intelligence List
+            {isDistrictOfficer
+              ? `District Project Intelligence · ${lockedDistrictClean || profile?.district}, ${profile?.state}`
+              : isStateNodal
+              ? `State Project Intelligence · ${profile?.state}`
+              : 'National Project Intelligence'}
           </p>
           <h1 className="text-2xl font-bold text-[#000a1f]"
               style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            Project Monitoring
+            {isDistrictOfficer
+              ? `District Projects — ${lockedDistrictClean || profile?.district}`
+              : isStateNodal
+              ? `State Projects — ${profile?.state}`
+              : 'Project Intelligence & Monitoring'}
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
             {isLoadingList
@@ -233,13 +315,16 @@ export function ProjectMonitoring() {
           filteredCount={activeTotalCount}
           totalCount={activeTotalCount}
           filters={filters}
-          onFilterChange={f => { setFilters(f); setPage(1); }}
+          onFilterChange={f => {
+            setFilters(lockedState ? { ...f, state: lockedState } : f);
+            setPage(1);
+          }}
           onReset={() => {
             setFilters({
               search: '',
               house: filters.house,
               tenure: '',
-              state: '',
+              state: lockedState,
               constituency: '',
               mpName: '',
               riskLevel: '',

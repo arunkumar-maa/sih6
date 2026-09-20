@@ -1,0 +1,418 @@
+[
+  {
+    "role": "MOSPI_ADMIN",
+    "email": "admin@mplads-demo.local",
+    "passwordFormat": "MospiAdmin@123",
+    "name": "Dr. Rajesh Kumar (MoSPI Admin)",
+    "scope": "National Command Center",
+    "house": "National (Lok Sabha & Rajya Sabha)"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "andamanandnicobarislands.nodal@mplads-demo.local",
+    "passwordFormat": "AndamanAndNicobarIslands@123",
+    "name": "State Nodal Officer - Andaman And Nicobar Islands",
+    "scope": "State: Andaman And Nicobar Islands",
+    "state": "Andaman And Nicobar Islands"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "andhrapradesh.nodal@mplads-demo.local",
+    "passwordFormat": "AndhraPradesh@123",
+    "name": "State Nodal Officer - Andhra Pradesh",
+    "scope": "State: Andhra Pradesh",
+    "state": "Andhra Pradesh"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "arunachalpradesh.nodal@mplads-demo.local",
+    "passwordFormat": "ArunachalPradesh@123",
+    "name": "State Nodal Officer - Arunachal Pradesh",
+    "scope": "State: Arunachal Pradesh",
+    "state": "Arunachal Pradesh"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "assam.nodal@mplads-demo.local",
+    "passwordFormat": "Assam@123",
+    "name": "State Nodal Officer - Assam",
+    "scope": "State: Assam",
+    "state": "Assam"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "bihar.nodal@mplads-demo.local",
+    "passwordFormat": "Bihar@123",
+    "name": "State Nodal Officer - Bihar",
+    "scope": "State: Bihar",
+    "state": "Bihar"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "chandigarh.nodal@mplads-demo.local",
+    "passwordFormat": "Chandigarh@123",
+    "name": "State Nodal Officer - Chandigarh",
+    "scope": "State: Chandigarh",
+    "state": "Chandigarh"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "chhattisgarh.nodal@mplads-demo.local",
+    "passwordFormat": "Chhattisgarh@123",
+    "name": "State Nodal Officer - Chhattisgarh",
+    "scope": "State: Chhattisgarh",
+    "state": "Chhattisgarh"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "delhi.nodal@mplads-demo.local",
+    "passwordFormat": "Delhi@123",
+    "name": "State Nodal Officer - Delhi",
+    "scope": "State: Delhi",
+    "state": "Delhi"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "goa.nodal@mplads-demo.local",
+    "passwordFormat": "Goa@123",
+    "name": "State Nodal Officer - Goa",
+    "scope": "State: Goa",
+    "state": "Goa"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "gujarat.nodal@mplads-demo.local",
+    "passwordFormat": "Gujarat@123",
+    "name": "State Nodal Officer - Gujarat",
+    "scope": "State: Gujarat",
+    "state": "Gujarat"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "haryana.nodal@mplads-demo.local",
+    "passwordFormat": "Haryana@123",
+    "name": "State Nodal Officer - Haryana",
+    "scope": "State: Haryana",
+    "state": "Haryana"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "himachalpradesh.nodal@mplads-demo.local",
+    "passwordFormat": "HimachalPradesh@123",
+    "name": "State Nodal Officer - Himachal Pradesh",
+    "scope": "State: Himachal Pradesh",
+    "state": "Himachal Pradesh"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "jammuandkashmir.nodal@mplads-demo.local",
+    "passwordFormat": "JammuAndKashmir@123",
+    "name": "State Nodal Officer - Jammu And Kashmir",
+    "scope": "State: Jammu And Kashmir",
+    "state": "Jammu And Kashmir"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "jharkhand.nodal@mplads-demo.local",
+    "passwordFormat": "Jharkhand@123",
+    "name": "State Nodal Officer - Jharkhand",
+    "scope": "State: Jharkhand",
+    "state": "Jharkhand"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "karnataka.nodal@mplads-demo.local",
+    "passwordFormat": "Karnataka@123",
+    "name": "State Nodal Officer - Karnataka",
+    "scope": "State: Karnataka",
+    "state": "Karnataka"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "kerala.nodal@mplads-demo.local",
+    "passwordFormat": "Kerala@123",
+    "name": "State Nodal Officer - Kerala",
+    "scope": "State: Kerala",
+    "state": "Kerala"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "ladakh.nodal@mplads-demo.local",
+    "passwordFormat": "Ladakh@123",
+    "name": "State Nodal Officer - Ladakh",
+    "scope": "State: Ladakh",
+    "state": "Ladakh"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "lakshadweep.nodal@mplads-demo.local",
+    "passwordFormat": "Lakshadweep@123",
+    "name": "State Nodal Officer - Lakshadweep",
+    "scope": "State: Lakshadweep",
+    "state": "Lakshadweep"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "madhyapradesh.nodal@mplads-demo.local",
+    "passwordFormat": "MadhyaPradesh@123",
+    "name": "State Nodal Officer - Madhya Pradesh",
+    "scope": "State: Madhya Pradesh",
+    "state": "Madhya Pradesh"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "maharashtra.nodal@mplads-demo.local",
+    "passwordFormat": "Maharashtra@123",
+    "name": "State Nodal Officer - Maharashtra",
+    "scope": "State: Maharashtra",
+    "state": "Maharashtra"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "manipur.nodal@mplads-demo.local",
+    "passwordFormat": "Manipur@123",
+    "name": "State Nodal Officer - Manipur",
+    "scope": "State: Manipur",
+    "state": "Manipur"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "meghalaya.nodal@mplads-demo.local",
+    "passwordFormat": "Meghalaya@123",
+    "name": "State Nodal Officer - Meghalaya",
+    "scope": "State: Meghalaya",
+    "state": "Meghalaya"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "mizoram.nodal@mplads-demo.local",
+    "passwordFormat": "Mizoram@123",
+    "name": "State Nodal Officer - Mizoram",
+    "scope": "State: Mizoram",
+    "state": "Mizoram"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "nagaland.nodal@mplads-demo.local",
+    "passwordFormat": "Nagaland@123",
+    "name": "State Nodal Officer - Nagaland",
+    "scope": "State: Nagaland",
+    "state": "Nagaland"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "odisha.nodal@mplads-demo.local",
+    "passwordFormat": "Odisha@123",
+    "name": "State Nodal Officer - Odisha",
+    "scope": "State: Odisha",
+    "state": "Odisha"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "puducherry.nodal@mplads-demo.local",
+    "passwordFormat": "Puducherry@123",
+    "name": "State Nodal Officer - Puducherry",
+    "scope": "State: Puducherry",
+    "state": "Puducherry"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "punjab.nodal@mplads-demo.local",
+    "passwordFormat": "Punjab@123",
+    "name": "State Nodal Officer - Punjab",
+    "scope": "State: Punjab",
+    "state": "Punjab"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "rajasthan.nodal@mplads-demo.local",
+    "passwordFormat": "Rajasthan@123",
+    "name": "State Nodal Officer - Rajasthan",
+    "scope": "State: Rajasthan",
+    "state": "Rajasthan"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "sikkim.nodal@mplads-demo.local",
+    "passwordFormat": "Sikkim@123",
+    "name": "State Nodal Officer - Sikkim",
+    "scope": "State: Sikkim",
+    "state": "Sikkim"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "tamilnadu.nodal@mplads-demo.local",
+    "passwordFormat": "TamilNadu@123",
+    "name": "State Nodal Officer - Tamil Nadu",
+    "scope": "State: Tamil Nadu",
+    "state": "Tamil Nadu"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "telangana.nodal@mplads-demo.local",
+    "passwordFormat": "Telangana@123",
+    "name": "State Nodal Officer - Telangana",
+    "scope": "State: Telangana",
+    "state": "Telangana"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "dadranagarhaveli.nodal@mplads-demo.local",
+    "passwordFormat": "DadraNagarHaveli@123",
+    "name": "State Nodal Officer - The Dadra And Nagar Haveli And Daman And Diu",
+    "scope": "State: The Dadra And Nagar Haveli And Daman And Diu",
+    "state": "The Dadra And Nagar Haveli And Daman And Diu"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "tripura.nodal@mplads-demo.local",
+    "passwordFormat": "Tripura@123",
+    "name": "State Nodal Officer - Tripura",
+    "scope": "State: Tripura",
+    "state": "Tripura"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "uttarpradesh.nodal@mplads-demo.local",
+    "passwordFormat": "UttarPradesh@123",
+    "name": "State Nodal Officer - Uttar Pradesh",
+    "scope": "State: Uttar Pradesh",
+    "state": "Uttar Pradesh"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "uttarakhand.nodal@mplads-demo.local",
+    "passwordFormat": "Uttarakhand@123",
+    "name": "State Nodal Officer - Uttarakhand",
+    "scope": "State: Uttarakhand",
+    "state": "Uttarakhand"
+  },
+  {
+    "role": "STATE_NODAL_OFFICER",
+    "email": "westbengal.nodal@mplads-demo.local",
+    "passwordFormat": "WestBengal@123",
+    "name": "State Nodal Officer - West Bengal",
+    "scope": "State: West Bengal",
+    "state": "West Bengal"
+  },
+  {
+    "role": "DISTRICT_OFFICER",
+    "email": "do.varanasi@mplads-demo.local",
+    "passwordFormat": "DistrictOfficerVaranasi@123",
+    "name": "District Magistrate - VARANASI (Uttar Pradesh)",
+    "scope": "District: VARANASI (Uttar Pradesh)",
+    "state": "Uttar Pradesh",
+    "district": "VARANASI(DISTRICT MAGISTRAE VARANASI_IDA)"
+  },
+  {
+    "role": "DISTRICT_OFFICER",
+    "email": "madurai.tamilnadu.district@mplads-demo.local",
+    "passwordFormat": "Madurai@123",
+    "name": "District Magistrate - MADURAI (Tamil Nadu)",
+    "scope": "District: MADURAI (Tamil Nadu)",
+    "state": "Tamil Nadu",
+    "district": "MADURAI(DISTRICT COLLECTOR MADURAI_IDA)"
+  },
+  {
+    "role": "DISTRICT_OFFICER",
+    "email": "patna.bihar.district@mplads-demo.local",
+    "passwordFormat": "Patna@123",
+    "name": "District Magistrate - PATNA (Bihar)",
+    "scope": "District: PATNA (Bihar)",
+    "state": "Bihar",
+    "district": "PATNA(DISTRICT PLANNING OFFICER PATNA_IDA)"
+  },
+  {
+    "role": "DISTRICT_OFFICER",
+    "email": "pune.maharashtra.district@mplads-demo.local",
+    "passwordFormat": "Pune@123",
+    "name": "District Magistrate - PUNE (Maharashtra)",
+    "scope": "District: PUNE (Maharashtra)",
+    "state": "Maharashtra",
+    "district": "PUNE(DISTRICT COLLECTOR PUNE_IDA)"
+  },
+  {
+    "role": "DISTRICT_OFFICER",
+    "email": "ahmedabad.gujarat.district@mplads-demo.local",
+    "passwordFormat": "Ahmedabad@123",
+    "name": "District Magistrate - Ahmedabad (Gujarat)",
+    "scope": "District: Ahmedabad (Gujarat)",
+    "state": "Gujarat",
+    "district": "Ahmedabad(DISTRICT COLLECTOR AHMADABAD_IDA)"
+  },
+  {
+    "role": "DISTRICT_OFFICER",
+    "email": "kamrupmetro.assam.district@mplads-demo.local",
+    "passwordFormat": "KamrupMetro@123",
+    "name": "District Magistrate - KAMRUP METRO (Assam)",
+    "scope": "District: KAMRUP METRO (Assam)",
+    "state": "Assam",
+    "district": "KAMRUP METRO(DEPUTY COMMISSIONER KAMRUP METROPOLITAN_IDA)"
+  },
+  {
+    "role": "DISTRICT_OFFICER",
+    "email": "visakhapatnam.andhrapradesh.district@mplads-demo.local",
+    "passwordFormat": "Visakhapatnam@123",
+    "name": "District Magistrate - Visakhapatnam (Andhra Pradesh)",
+    "scope": "District: Visakhapatnam (Andhra Pradesh)",
+    "state": "Andhra Pradesh",
+    "district": "Visakhapatnam(DISTRICT COLLECTOR VISAKHAPATNAM_IDA)"
+  },
+  {
+    "role": "IMPLEMENTING_AGENCY",
+    "email": "agency.pwd@mplads-demo.local",
+    "passwordFormat": "AgencyPWD@123",
+    "name": "Executive Engineer (DRDA / PWD)",
+    "scope": "Agency: DRDA",
+    "agency": "DRDA"
+  },
+  {
+    "role": "AUDITOR",
+    "email": "auditor@mplads-demo.local",
+    "passwordFormat": "AuditorMoSPI@123",
+    "name": "Senior Audit Officer (Audit & Verification Desk)",
+    "scope": "Authorized Audit Scope"
+  },
+  {
+    "role": "MP",
+    "email": "priyasaroj.ls@mplads-demo.local",
+    "passwordFormat": "PriyaSaroj@123",
+    "name": "Hon'ble MP PRIYA SAROJ",
+    "scope": "Lok Sabha · MACHHLISHAHR(SC) (Uttar Pradesh)",
+    "house": "Lok Sabha",
+    "state": "Uttar Pradesh",
+    "constituency": "MACHHLISHAHR(SC)",
+    "mpName": "PRIYA SAROJ"
+  },
+  {
+    "role": "MP",
+    "email": "sambitpatra.ls@mplads-demo.local",
+    "passwordFormat": "SambitPatra@123",
+    "name": "Hon'ble MP SAMBIT PATRA",
+    "scope": "Lok Sabha · PURI (Odisha)",
+    "house": "Lok Sabha",
+    "state": "Odisha",
+    "constituency": "PURI",
+    "mpName": "SAMBIT PATRA"
+  },
+  {
+    "role": "MP",
+    "email": "priyasaroj.rs@mplads-demo.local",
+    "passwordFormat": "PriyaSaroj@123",
+    "name": "Hon'ble MP PRIYA SAROJ (2024-2029)",
+    "scope": "Rajya Sabha · Uttar Pradesh",
+    "house": "Rajya Sabha",
+    "state": "Uttar Pradesh",
+    "mpName": "PRIYA SAROJ (2024-2029)"
+  },
+  {
+    "role": "MP",
+    "email": "sambitpatra.rs@mplads-demo.local",
+    "passwordFormat": "SambitPatra@123",
+    "name": "Hon'ble MP SAMBIT PATRA (2024-2029)",
+    "scope": "Rajya Sabha · Odisha",
+    "house": "Rajya Sabha",
+    "state": "Odisha",
+    "mpName": "SAMBIT PATRA (2024-2029)"
+  }
+]

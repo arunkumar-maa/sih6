@@ -1,6 +1,7 @@
 import { supabase, getTableName } from './supabase.service.js';
 import { getRiskLevel } from '../risk/riskEngine.js';
 import type { EnrichedProject, ProjectFilters, RiskLevel, WorkStatus, PaymentStatus, VerificationStatus } from '../types/index.js';
+import { RAJYA_SABHA_MPS, getRajyaSabhaMPsByState } from '../data/rajyaSabhaMPs.js';
 
 export function rowToEnrichedProject(row: any): EnrichedProject {
   return {
@@ -40,14 +41,65 @@ export function rowToEnrichedProject(row: any): EnrichedProject {
     daysToComplete: row.days_to_complete !== null ? Number(row.days_to_complete) : null,
     vendorName: row.vendor_name || null,
 
-    risk: {
-      score: Number(row.risk_score || 0),
-      level: (row.risk_level as RiskLevel) || getRiskLevel(Number(row.risk_score || 0)),
-      factors: Array.isArray(row.risk_factors) ? row.risk_factors : [],
-      explanation: row.risk_explanation || '',
-      factorsAvailable: Array.isArray(row.risk_factors) ? row.risk_factors.filter((f: any) => f.available).length : 0,
-      factorsTotal: 6,
-    },
+    risk: (() => {
+      const daysSinceSanction = row.days_since_sanction !== null ? Number(row.days_since_sanction) : null;
+      const sanctionAmount = row.sanction_amount !== null ? Number(row.sanction_amount) : null;
+      const totalPaid = row.total_paid !== null ? Number(row.total_paid) : null;
+      const workStatus = row.work_status || 'Unknown';
+      const isCompleted = !!row.is_completed;
+
+      let computedFactors = Array.isArray(row.risk_factors) && row.risk_factors.length > 0 ? row.risk_factors : [];
+      if (computedFactors.length === 0) {
+        const staleSeverity = (!isCompleted && daysSinceSanction && daysSinceSanction > 730) ? 'HIGH' : (!isCompleted && daysSinceSanction && daysSinceSanction > 365) ? 'MEDIUM' : 'LOW';
+        const staleScore = staleSeverity === 'HIGH' ? 60 : staleSeverity === 'MEDIUM' ? 35 : 10;
+
+        const costSeverity = (sanctionAmount && sanctionAmount > 5000000) ? 'HIGH' : (sanctionAmount && sanctionAmount > 2500000) ? 'MEDIUM' : 'LOW';
+        const costScore = costSeverity === 'HIGH' ? 60 : costSeverity === 'MEDIUM' ? 30 : 10;
+
+        const ratio = (sanctionAmount && totalPaid) ? Math.round((totalPaid / sanctionAmount) * 100) : 0;
+        const disbSeverity = (ratio > 95 && !isCompleted) ? 'HIGH' : (ratio > 80 && !isCompleted) ? 'MEDIUM' : 'LOW';
+        const disbScore = disbSeverity === 'HIGH' ? 55 : disbSeverity === 'MEDIUM' ? 30 : 10;
+
+        computedFactors = [
+          {
+            id: 'stale_status',
+            label: 'Stale Implementation Phase',
+            description: daysSinceSanction ? `In "${workStatus}" for ${daysSinceSanction} days without completion. Verification Recommended.` : `Status: ${workStatus}. Verification Recommended.`,
+            severity: staleSeverity,
+            score: staleScore,
+            available: daysSinceSanction !== null && !isCompleted,
+          },
+          {
+            id: 'high_amount_anomaly',
+            label: 'Outlier Cost Allocation',
+            description: sanctionAmount ? `Sanction allocation: ₹${sanctionAmount.toLocaleString('en-IN')}. Expenditure tracking recommended.` : 'Sanction amount not recorded.',
+            severity: costSeverity,
+            score: costScore,
+            available: sanctionAmount !== null,
+          },
+          {
+            id: 'disbursement_anomaly',
+            label: 'Disbursement vs Progress Discrepancy',
+            description: `${ratio}% of funds disbursed while work status is "${workStatus}". Site verification recommended.`,
+            severity: disbSeverity,
+            score: disbScore,
+            available: sanctionAmount !== null && totalPaid !== null && !isCompleted,
+          },
+        ];
+      }
+
+      const primaryFactor = computedFactors.find((f: any) => f.available && (f.severity === 'HIGH' || f.severity === 'MEDIUM'));
+      const explanation = row.risk_explanation || (primaryFactor ? primaryFactor.description : 'Standard progress monitoring parameters applied.');
+
+      return {
+        score: Number(row.risk_score || 0),
+        level: (row.risk_level as RiskLevel) || getRiskLevel(Number(row.risk_score || 0)),
+        factors: computedFactors,
+        explanation,
+        factorsAvailable: computedFactors.filter((f: any) => f.available).length,
+        factorsTotal: computedFactors.length,
+      };
+    })(),
   };
 }
 
@@ -69,11 +121,21 @@ export async function fetchProjects(filters: ProjectFilters) {
   if (filters.district) {
     query = query.eq('district', filters.district);
   }
-  if (filters.constituency) {
+  if (filters.constituency && house === 'Lok Sabha') {
     query = query.eq('constituency', filters.constituency);
   }
   if (filters.mpName) {
-    query = query.ilike('mp_name', `%${filters.mpName}%`);
+    if (house === 'Rajya Sabha') {
+      const cleanName = filters.mpName.replace(/\s*\([^)]*\)/g, '').trim();
+      const rsMp = RAJYA_SABHA_MPS.find(m => m.name === filters.mpName || m.cleanName === cleanName);
+      if (rsMp && rsMp.state) {
+        query = query.or(`mp_name.ilike.%${cleanName}%,state.eq.${rsMp.state}`);
+      } else {
+        query = query.ilike('mp_name', `%${cleanName}%`);
+      }
+    } else {
+      query = query.ilike('mp_name', `%${filters.mpName}%`);
+    }
   }
   if (filters.workCategory) {
     query = query.eq('work_category', filters.workCategory);
@@ -105,7 +167,11 @@ export async function fetchProjects(filters: ProjectFilters) {
   }
   if (filters.search) {
     const s = filters.search.trim();
-    query = query.or(`work_id.ilike.%${s}%,work_description.ilike.%${s}%,mp_name.ilike.%${s}%,constituency.ilike.%${s}%`);
+    if (house === 'Lok Sabha') {
+      query = query.or(`work_id.ilike.%${s}%,work_description.ilike.%${s}%,mp_name.ilike.%${s}%,district.ilike.%${s}%,constituency.ilike.%${s}%`);
+    } else {
+      query = query.or(`work_id.ilike.%${s}%,work_description.ilike.%${s}%,mp_name.ilike.%${s}%,district.ilike.%${s}%`);
+    }
   }
 
   let sortField = filters.sortBy || 'sanction_amount';
@@ -149,10 +215,34 @@ export async function fetchProjectById(workId: string, house: 'Lok Sabha' | 'Raj
   return rowToEnrichedProject(data);
 }
 
-export async function fetchFilterOptions(house: 'Lok Sabha' | 'Rajya Sabha' = 'Lok Sabha') {
+export async function fetchFilterOptions(house: 'Lok Sabha' | 'Rajya Sabha' = 'Lok Sabha', state?: string) {
+  if (house === 'Rajya Sabha') {
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_distinct_filter_options', {
+        p_house: 'Rajya Sabha',
+        p_state: state || null,
+      });
+      if (!rpcError && rpcData) {
+        return rpcData;
+      }
+    } catch {
+      // Fall back
+    }
+    return {
+      states: [],
+      districts: [],
+      constituencies: [],
+      mps: getRajyaSabhaMPsByState(state),
+      categories: [],
+      years: [],
+      statuses: [],
+    };
+  }
+
   try {
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_distinct_filter_options', {
       p_house: house,
+      p_state: state || null,
     });
     if (!rpcError && rpcData) {
       return rpcData;
@@ -168,7 +258,7 @@ export async function fetchFilterOptions(house: 'Lok Sabha' | 'Rajya Sabha' = 'L
     .limit(3000);
 
   if (error || !data) {
-    return { states: [], districts: [], categories: [], years: [], statuses: [] };
+    return { states: [], districts: [], constituencies: [], categories: [], years: [], statuses: [] };
   }
 
   const states = Array.from(new Set(data.map(d => d.state).filter(Boolean))).sort();

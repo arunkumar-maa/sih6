@@ -1,6 +1,8 @@
 import { supabase } from './client';
 import { normalizeStateName, normalizeConstituencyName, CONSTITUENCY_ALIASES } from '../utils/geoMatching';
 
+import { useAuthStore } from '../store/authStore';
+
 export interface GISAggregateRegion {
   id: string;
   name: string;
@@ -19,6 +21,7 @@ export interface GISAggregateRegion {
 
 export interface GISFilters {
   state?: string;
+  district?: string;
   constituency?: string;
   mpName?: string;
   riskLevel?: string;
@@ -31,8 +34,18 @@ export interface GISFilters {
 export async function getConstituencyGISAggregation(
   filters: GISFilters = {}
 ): Promise<Map<string, GISAggregateRegion>> {
+  let effectiveState = filters.state;
+  let effectiveDistrict = filters.district;
+  const authProfile = useAuthStore.getState().profile;
+  if (authProfile?.role === 'STATE_NODAL_OFFICER' && authProfile.state) {
+    effectiveState = authProfile.state;
+  } else if (authProfile?.role === 'DISTRICT_OFFICER') {
+    if (authProfile.state) effectiveState = authProfile.state;
+    if (authProfile.district) effectiveDistrict = authProfile.district;
+  }
+
   const { data, error } = await supabase.rpc('get_constituency_gis_metrics', {
-    p_state: filters.state || null,
+    p_state: effectiveState || null,
     p_constituency: filters.constituency || null,
     p_mp: filters.mpName || null,
     p_risk: filters.riskLevel || null,
@@ -40,6 +53,7 @@ export async function getConstituencyGISAggregation(
     p_category: filters.category || null,
     p_tenure: filters.tenure || null,
     p_search: filters.search || null,
+    p_district: effectiveDistrict || null,
   });
 
   if (error) {
@@ -68,8 +82,8 @@ export async function getConstituencyGISAggregation(
       state: item.state || 'State',
       constituency: item.constituency,
       totalWorks,
-      sanctionedAmount: Number(item.sanctioned_amount || 0),
-      disbursedAmount: Number(item.disbursed_amount || 0),
+      sanctionedAmount: Number(item.sanctioned_amount ?? item.total_sanctioned ?? 0),
+      disbursedAmount: Number(item.disbursed_amount ?? item.total_disbursed ?? 0),
       completedWorks: Number(item.completed_works || 0),
       highRiskCount: highRisk,
       medRiskCount: Number(item.med_risk_count || 0),
@@ -87,6 +101,7 @@ export async function getStateGISAggregation(
 ): Promise<Map<string, GISAggregateRegion>> {
   const { data, error } = await supabase.rpc('get_state_gis_metrics', {
     p_state: filters.state || null,
+    p_constituency: null,
     p_mp: filters.mpName || null,
     p_risk: filters.riskLevel || null,
     p_status: filters.status || null,
@@ -113,8 +128,8 @@ export async function getStateGISAggregation(
       name: item.state || 'State',
       state: item.state || 'State',
       totalWorks,
-      sanctionedAmount: Number(item.sanctioned_amount || 0),
-      disbursedAmount: Number(item.disbursed_amount || 0),
+      sanctionedAmount: Number(item.sanctioned_amount ?? item.total_sanctioned ?? 0),
+      disbursedAmount: Number(item.disbursed_amount ?? item.total_disbursed ?? 0),
       completedWorks: Number(item.completed_works || 0),
       highRiskCount: highRisk,
       medRiskCount: Number(item.med_risk_count || 0),
