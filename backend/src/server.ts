@@ -8,6 +8,8 @@ import analyticsRouter from './api/routes/analytics.routes.js';
 import gisRouter from './api/routes/gis.routes.js';
 import auditorRouter from './api/routes/auditor.routes.js';
 import implementingAgencyRouter from './api/routes/implementingAgency.routes.js';
+import mpRouter from './api/routes/mp.routes.js';
+import publicRouter from './api/routes/public.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { validateHouse } from './middleware/validation.js';
 import { optionalAuth } from './middleware/auth.middleware.js';
@@ -45,6 +47,7 @@ app.get(['/', '/api'], (req, res) => {
       '/api/gis',
       '/api/auditor',
       '/api/implementing-agency',
+      '/api/mp',
     ],
   });
 });
@@ -57,6 +60,8 @@ app.use('/api/analytics', analyticsRouter);
 app.use('/api/gis', gisRouter);
 app.use('/api/auditor', auditorRouter);
 app.use('/api/implementing-agency', implementingAgencyRouter);
+app.use('/api/mp', mpRouter);
+app.use('/api/public', publicRouter);
 
 // Global error handler
 app.use(errorHandler);

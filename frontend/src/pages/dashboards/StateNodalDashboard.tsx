@@ -1,6 +1,6 @@
 
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/store';
 import {
@@ -11,8 +11,11 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../../utils';
 import { getStateNodalOverview, type StateNodalOverview } from '../../services/projectService';
+import { PublicService } from '../../services/publicService';
+import type { StateEscalatedComplaintItem } from '../../types/public';
 import { ComparativeIntelligence } from '../../components/ComparativeIntelligence';
 import { MpAvatar } from '../../components/MpAvatar';
+
 
 export function StateNodalDashboard() {
   const { profile, user } = useAuthStore();
@@ -28,9 +31,66 @@ export function StateNodalDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [districtSearch, setDistrictSearch] = useState<string>('');
   const [repSearch, setRepSearch] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'overview' | 'comparative'>('overview');
+  const [viewMode, setViewMode] = useState<'overview' | 'comparative' | 'escalated-grievances'>('overview');
   const [compareDistrictA, setCompareDistrictA] = useState<string>('');
   const [compareDistrictB, setCompareDistrictB] = useState<string>('');
+
+  // Escalated Grievances State
+  const [escalatedComplaints, setEscalatedComplaints] = useState<StateEscalatedComplaintItem[]>([]);
+  const [escalatedLoading, setEscalatedLoading] = useState<boolean>(false);
+  const [selectedEscalatedComplaint, setSelectedEscalatedComplaint] = useState<StateEscalatedComplaintItem | null>(null);
+  const [stateDirectionInput, setStateDirectionInput] = useState<string>('');
+  const [stateSubmitting, setStateSubmitting] = useState<boolean>(false);
+  const [stateSuccessMsg, setStateSuccessMsg] = useState<string | null>(null);
+  const [stateErrorMsg, setStateErrorMsg] = useState<string | null>(null);
+
+  const fetchEscalatedComplaints = useCallback(async () => {
+    setEscalatedLoading(true);
+    try {
+      const list = await PublicService.getStateEscalatedComplaints(assignedState);
+      setEscalatedComplaints(list);
+    } catch (err) {
+      console.warn('Failed to load state escalated complaints:', err);
+    } finally {
+      setEscalatedLoading(false);
+    }
+  }, [assignedState]);
+
+  useEffect(() => {
+    fetchEscalatedComplaints();
+  }, [fetchEscalatedComplaints]);
+
+  const handleSubmitStateDirection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEscalatedComplaint) return;
+    if (!stateDirectionInput.trim()) {
+      setStateErrorMsg('Please enter state administrative instructions and guidance.');
+      return;
+    }
+
+    setStateSubmitting(true);
+    setStateErrorMsg(null);
+    setStateSuccessMsg(null);
+
+    try {
+      await PublicService.submitStateNodalDirection(selectedEscalatedComplaint.complaintId, {
+        direction: stateDirectionInput.trim(),
+        officerName,
+      });
+      setStateSuccessMsg('State administrative direction issued and attached to case dossier for District Officer execution.');
+      setStateDirectionInput('');
+      fetchEscalatedComplaints();
+      setTimeout(() => {
+        setSelectedEscalatedComplaint(null);
+        setStateSuccessMsg(null);
+      }, 1500);
+    } catch (err: any) {
+      setStateErrorMsg(err.message || 'Failed to submit direction.');
+    } finally {
+      setStateSubmitting(false);
+    }
+  };
+
 
   const loadData = async (targetHouse: 'Lok Sabha' | 'Rajya Sabha') => {
     setLoading(true);
@@ -204,7 +264,21 @@ export function StateNodalDashboard() {
             </button>
 
             <button
+              onClick={() => setViewMode(viewMode === 'escalated-grievances' ? 'overview' : 'escalated-grievances')}
+              className={`px-3.5 py-2 text-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition-all cursor-pointer ${
+                viewMode === 'escalated-grievances'
+                  ? 'bg-purple-700 text-white hover:bg-purple-800'
+                  : 'bg-white text-purple-900 border border-purple-300 hover:bg-purple-50'
+              }`}
+              title="Review escalated citizen grievances and issue state directions"
+            >
+              <AlertCircle size={14} />
+              <span>Escalated Grievances ({escalatedComplaints.length})</span>
+            </button>
+
+            <button
               onClick={() => loadData(house)}
+
               disabled={loading}
               className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg shadow-sm flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
               title="Refresh State Data"
@@ -330,7 +404,117 @@ export function StateNodalDashboard() {
           subtitle={`Compare MPLADS execution, expenditure velocity, and risk parameters between districts within ${assignedState}.`}
           onBackToOverview={() => setViewMode('overview')}
         />
+      ) : viewMode === 'escalated-grievances' ? (
+        <div className="bg-white border border-[#D5DCE4] rounded-lg p-6 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E9ECEF] pb-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold text-purple-700 uppercase tracking-wider">
+                <AlertCircle size={15} />
+                <span>State Nodal Escalation Authority</span>
+              </div>
+              <h2 className="text-xl font-bold text-[#000a1f] mt-1 font-['Montserrat',sans-serif]">
+                Escalated Citizen Grievances &amp; Appeals
+              </h2>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Reviewing grievances escalated by District Authorities in {assignedState} for administrative direction and inter-departmental guidance.
+              </p>
+            </div>
+            <button
+              onClick={fetchEscalatedComplaints}
+              disabled={escalatedLoading}
+              className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto"
+            >
+              <RotateCw size={12} className={escalatedLoading ? 'animate-spin' : ''} />
+              <span>Refresh Escalations</span>
+            </button>
+          </div>
+
+          {escalatedLoading ? (
+            <div className="py-12 text-center text-slate-500">
+              <RotateCw size={22} className="animate-spin text-[#00204a] mx-auto mb-2" />
+              <p className="text-xs font-semibold">Retrieving escalated complaints from database…</p>
+            </div>
+          ) : escalatedComplaints.length === 0 ? (
+            <div className="py-12 text-center text-slate-500 bg-[#F8F9FA] rounded-lg border border-dashed border-[#CED4DA] space-y-2">
+              <CheckCircle2 size={36} className="text-emerald-600 mx-auto" />
+              <h3 className="text-sm font-bold text-[#000a1f]">No Pending Escalated Grievances</h3>
+              <p className="text-xs max-w-md mx-auto">
+                No citizen grievances in {assignedState} are currently awaiting state nodal review or policy direction.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {escalatedComplaints.map((item) => (
+                <div
+                  key={item.complaintId}
+                  className="p-4 rounded-lg border border-[#CED4DA] bg-white hover:border-purple-600 transition-all shadow-xs space-y-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F1F3F5] pb-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                        {item.complaintId}
+                      </span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                        {item.category}
+                      </span>
+                      <button
+                        onClick={() => handleOpenProject(item.workId)}
+                        className="text-xs font-mono font-semibold text-[#0066CC] hover:underline flex items-center gap-1 cursor-pointer"
+                        title="Inspect in Project Intelligence"
+                      >
+                        <span>Work ID: {item.workId}</span>
+                        <ExternalLink size={11} />
+                      </button>
+
+                      {item.district && (
+                        <span className="text-[11px] text-slate-500">
+                          · District: <strong>{item.district}</strong>
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded bg-purple-50 text-purple-800 border border-purple-200 uppercase">
+                      ESCALATED TO STATE
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-400 block mb-0.5">Sanctioned Work Description:</span>
+                    <p className="text-xs font-bold text-[#000a1f]">{item.workDescription}</p>
+                  </div>
+
+                  <div className="p-2.5 bg-amber-50/70 rounded border border-amber-200 text-xs text-amber-950 space-y-1">
+                    <span className="font-bold text-[10px] uppercase text-amber-900 block">Citizen Allegation:</span>
+                    <p className="italic">"{item.description}"</p>
+                  </div>
+
+                  {item.publicResponse && (
+                    <div className="p-2.5 bg-purple-50/70 rounded border border-purple-200 text-xs text-purple-950 space-y-1">
+                      <span className="font-bold text-[10px] uppercase text-purple-900 block">District Authority Escalation Reason:</span>
+                      <p>{item.publicResponse}</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end pt-1">
+                    <button
+                      onClick={() => {
+                        setSelectedEscalatedComplaint(item);
+                        setStateDirectionInput('');
+                        setStateErrorMsg(null);
+                        setStateSuccessMsg(null);
+                      }}
+                      className="px-4 py-2 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <ShieldCheck size={14} />
+                      <span>Issue State Administrative Direction</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       ) : overview && (
+
         <>
           {/* State KPI Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -724,6 +908,103 @@ export function StateNodalDashboard() {
           </div>
         </>
       )}
+
+      {/* ── State Direction Modal ── */}
+      {selectedEscalatedComplaint && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg border border-[#D5DCE4] shadow-2xl max-w-xl w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E9ECEF] pb-3">
+              <div>
+                <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider bg-purple-50 px-2.5 py-0.5 rounded border border-purple-200">
+                  State Nodal Administrative Desk
+                </span>
+                <h3 className="text-base font-bold text-[#000a1f] mt-1 font-['Montserrat',sans-serif]">
+                  Issue State Nodal Administrative Directive
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedEscalatedComplaint(null)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-[#F8F9FA] p-3 rounded border border-[#E9ECEF] text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Complaint: <strong className="font-mono text-purple-800">{selectedEscalatedComplaint.complaintId}</strong></span>
+                <span className="text-slate-500">Work ID: <strong className="font-mono text-[#0066CC]">{selectedEscalatedComplaint.workId}</strong></span>
+              </div>
+              <p className="font-semibold text-[#000a1f]">{selectedEscalatedComplaint.workDescription}</p>
+              <div className="p-2 rounded bg-amber-50 border border-amber-200 text-amber-950 text-[11px]">
+                <strong>Citizen Allegation:</strong> "{selectedEscalatedComplaint.description}"
+              </div>
+            </div>
+
+            {stateSuccessMsg && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 rounded flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+                <span>{stateSuccessMsg}</span>
+              </div>
+            )}
+
+            {stateErrorMsg && (
+              <div className="p-3 bg-red-50 border border-red-200 text-xs text-red-700 rounded flex items-center gap-2">
+                <AlertCircle size={16} className="text-red-600 flex-shrink-0" />
+                <span>{stateErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitStateDirection} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-[#000a1f] mb-1">
+                  Official Administrative Directive &amp; Instructions: <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={stateDirectionInput}
+                  onChange={e => setStateDirectionInput(e.target.value)}
+                  placeholder="Record binding administrative guidance: inter-departmental clearances, technical sanction reviews, financial adjustments, or field inspection protocols..."
+                  className="w-full p-2.5 border border-[#CED4DA] rounded text-xs focus:outline-none focus:border-purple-700"
+                  required
+                />
+              </div>
+
+              <div className="p-2.5 bg-purple-50/70 rounded border border-purple-200 text-[11px] text-purple-900">
+                <strong>Governance Rule:</strong> State Nodal Directions provide official policy guidance. Dispatched instructions transition the case to <em>ACTION IN PROGRESS</em> and route the case back to the assigned District Officer for resolution.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-[#E9ECEF] pt-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedEscalatedComplaint(null)}
+                  className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={stateSubmitting || !stateDirectionInput.trim()}
+                  className="px-4 py-2 rounded-lg bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {stateSubmitting ? (
+                    <>
+                      <RotateCw size={12} className="animate-spin" />
+                      <span>Dispatching Directive…</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck size={14} />
+                      <span>Dispatch State Direction</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

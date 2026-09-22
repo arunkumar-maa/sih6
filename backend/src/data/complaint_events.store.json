@@ -1,0 +1,635 @@
+[
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "Ramesh Kumar",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "KANPUR NAGAR(DISTRICT MAGISTRAE KANPUR NAGAR_IDA)",
+      "state": "Uttar Pradesh",
+      "workId": "WS/MP507/2025-2026/196288"
+    },
+    "created_at": "2026-09-21T11:41:03.983Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "District Magistrate (Varanasi)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "CLARIFICATION_REQUESTED",
+    "status": "CLARIFICATION_REQUIRED",
+    "remarks": "Please state whether the cracking is superficial plaster peeling or structural slab displacement.",
+    "public_safe": true,
+    "metadata": {
+      "action": "REQUEST_CLARIFICATION"
+    },
+    "created_at": "2026-09-21T11:41:04.576Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "Ramesh Kumar",
+    "actor_role": "CITIZEN",
+    "event_type": "CLARIFICATION_SUBMITTED",
+    "status": "UNDER REVIEW",
+    "remarks": "The cracking extends across the entire sub-base concrete slab with approximately 1.5 inch vertical displacement.",
+    "public_safe": true,
+    "metadata": {},
+    "created_at": "2026-09-21T11:41:04.824Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "District Magistrate (Varanasi)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INFORMATION_REQUESTED",
+    "status": "INFORMATION_REQUESTED",
+    "remarks": "Furnish concrete batch test reports and inspection logs within 48 hours.",
+    "public_safe": true,
+    "metadata": {
+      "action": "REQUEST_AGENCY_INFO"
+    },
+    "created_at": "2026-09-21T11:41:05.059Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "UP State Bridge Corporation / DRDA",
+    "actor_role": "IMPLEMENTING_AGENCY",
+    "event_type": "AGENCY_RESPONSE",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Quality test certificates re-verified. Contractor instructed to excavate defective patch and recast with M25 concrete under AE supervision.",
+    "public_safe": true,
+    "metadata": {
+      "progress": 85
+    },
+    "created_at": "2026-09-21T11:41:05.407Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "District Magistrate (Varanasi)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "VERIFICATION_REQUESTED",
+    "status": "VERIFICATION_REQUIRED",
+    "remarks": "Referred to Auditor Verification Desk for independent measurement reconciliation.",
+    "public_safe": true,
+    "metadata": {
+      "action": "REQUEST_VERIFICATION"
+    },
+    "created_at": "2026-09-21T11:41:05.649Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "Senior Audit Officer (Divisional Accounts)",
+    "actor_role": "AUDITOR",
+    "event_type": "VERIFICATION_RECORDED",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "[Audit Assessment: VERIFIED] Spot measurement confirmed 12-meter slab defect. Material ledger audit indicates sub-standard aggregate proportion used in batch #4.",
+    "public_safe": true,
+    "metadata": {
+      "outcome": "VERIFIED"
+    },
+    "created_at": "2026-09-21T11:41:05.960Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "District Magistrate (Varanasi)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "ESCALATED",
+    "status": "ESCALATED",
+    "remarks": "Escalated to State Nodal Authority due to contractor blacklisting recommendation and inter-district agency jurisdiction.",
+    "public_safe": true,
+    "metadata": {
+      "action": "ESCALATE"
+    },
+    "created_at": "2026-09-21T11:41:06.186Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "State Nodal Officer (Uttar Pradesh)",
+    "actor_role": "STATE_NODAL_OFFICER",
+    "event_type": "STATE_DIRECTION",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Issue formal showcause notice to contractor. Penalty of Rs. 1,50,000 imposed under clause 14B. DRDA directed to complete rectification by 30-Sep-2026.",
+    "public_safe": true,
+    "metadata": {},
+    "created_at": "2026-09-21T11:41:06.492Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-50040F",
+    "actor_name": "District Magistrate (Varanasi)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "RESOLVED",
+    "status": "RESOLVED",
+    "remarks": "Showcause issued, penalty recovered, and full 12-meter slab recast and certified by Executive Engineer.",
+    "public_safe": true,
+    "metadata": {
+      "action": "RESOLVE"
+    },
+    "created_at": "2026-09-21T11:41:06.776Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-4183E5",
+    "actor_name": "Arunkumar C",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Project Not Progressing",
+      "district": "THANJAVUR(DISTRICT COLLECTOR THANJAVUR_IDA)",
+      "state": "Tamil Nadu",
+      "workId": "WS/MP18183/2025-2026/202355"
+    },
+    "created_at": "2026-09-21T11:52:28.872Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-4183E5",
+    "actor_name": "District Magistrate - THANJAVUR (Tamil Nadu)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "UNDER_REVIEW",
+    "status": "UNDER REVIEW",
+    "remarks": "summa",
+    "public_safe": true,
+    "metadata": {
+      "action": "START_REVIEW",
+      "internalNotes": "pathukallam"
+    },
+    "created_at": "2026-09-21T11:55:02.390Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-3193A2",
+    "actor_name": "Sunil Verma",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "KANPUR NAGAR(DISTRICT MAGISTRAE KANPUR NAGAR_IDA)",
+      "state": "Uttar Pradesh",
+      "workId": "WS/MP507/2025-2026/196288"
+    },
+    "created_at": "2026-09-21T12:38:14.429Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-3193A2",
+    "actor_name": "District Magistrate",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INSPECTION_COMPLETED",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Physical inspection completed. High mast pole foundation verified with slump test.",
+    "public_safe": true,
+    "metadata": {
+      "action": "RECORD_INSPECTION"
+    },
+    "created_at": "2026-09-21T12:38:14.705Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-292A52",
+    "actor_name": "Sunil Verma",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "KANPUR NAGAR(DISTRICT MAGISTRAE KANPUR NAGAR_IDA)",
+      "state": "Uttar Pradesh",
+      "workId": "WS/MP507/2025-2026/196288"
+    },
+    "created_at": "2026-09-21T12:39:05.235Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-292A52",
+    "actor_name": "District Magistrate",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INSPECTION_COMPLETED",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Physical inspection completed. High mast pole foundation verified with slump test.",
+    "public_safe": true,
+    "metadata": {
+      "action": "RECORD_INSPECTION",
+      "evidence": {
+        "fileName": "Inspection_Measurement_Book_Sec4.pdf",
+        "fileType": "application/pdf"
+      }
+    },
+    "created_at": "2026-09-21T12:39:05.588Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-05D2DC",
+    "actor_name": "Sunil Verma",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "KANPUR NAGAR(DISTRICT MAGISTRAE KANPUR NAGAR_IDA)",
+      "state": "Uttar Pradesh",
+      "workId": "WS/MP507/2025-2026/196288"
+    },
+    "created_at": "2026-09-21T12:42:17.659Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-05D2DC",
+    "actor_name": "District Magistrate",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INSPECTION_COMPLETED",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Physical inspection completed. High mast pole foundation verified with slump test.",
+    "public_safe": true,
+    "metadata": {
+      "action": "RECORD_INSPECTION",
+      "evidence": {
+        "fileName": "Inspection_Measurement_Book_Sec4.pdf",
+        "fileType": "application/pdf"
+      }
+    },
+    "created_at": "2026-09-21T12:42:18.105Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-18D421",
+    "actor_name": "Sunil Verma",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "KANPUR NAGAR(DISTRICT MAGISTRAE KANPUR NAGAR_IDA)",
+      "state": "Uttar Pradesh",
+      "workId": "WS/MP507/2025-2026/196288"
+    },
+    "created_at": "2026-09-21T12:44:04.093Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-18D421",
+    "actor_name": "District Magistrate",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INSPECTION_COMPLETED",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Physical inspection completed. High mast pole foundation verified with slump test.",
+    "public_safe": true,
+    "metadata": {
+      "action": "RECORD_INSPECTION",
+      "internalNotes": null,
+      "evidence": {
+        "fileName": "Inspection_Measurement_Book_Sec4.pdf",
+        "fileType": "application/pdf",
+        "evidenceId": "7bd6d4dc-f87a-45a8-8a26-d14d0ac30f73"
+      }
+    },
+    "created_at": "2026-09-21T12:44:04.402Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-C73197",
+    "actor_name": "Sunil Verma",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "KANPUR NAGAR(DISTRICT MAGISTRAE KANPUR NAGAR_IDA)",
+      "state": "Uttar Pradesh",
+      "workId": "WS/MP507/2025-2026/196288"
+    },
+    "created_at": "2026-09-21T12:44:21.319Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-C73197",
+    "actor_name": "District Magistrate",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INSPECTION_COMPLETED",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Physical inspection completed. High mast pole foundation verified with slump test.",
+    "public_safe": true,
+    "metadata": {
+      "action": "RECORD_INSPECTION",
+      "internalNotes": null,
+      "evidence": {
+        "fileName": "Inspection_Measurement_Book_Sec4.pdf",
+        "fileType": "application/pdf",
+        "evidenceId": "6ef894f5-3918-4984-8b54-2e9a091b00fc"
+      }
+    },
+    "created_at": "2026-09-21T12:44:21.633Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-261E89",
+    "actor_name": "Arunkumar C",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "THANJAVUR(DISTRICT COLLECTOR THANJAVUR_IDA)",
+      "state": "Tamil Nadu",
+      "workId": "WS/MP18183/2025-2026/192872"
+    },
+    "created_at": "2026-09-21T12:56:11.942Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-261E89",
+    "actor_name": "District Magistrate - THANJAVUR (Tamil Nadu)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "UNDER_REVIEW",
+    "status": "UNDER REVIEW",
+    "remarks": "summa poi paruda",
+    "public_safe": true,
+    "metadata": {
+      "action": "START_REVIEW",
+      "internalNotes": "ava kedakuran ithu nala irukku",
+      "evidence": {
+        "fileName": "end_sem_cloud_1.pdf",
+        "fileType": "application/pdf",
+        "evidenceId": "f3f99d2f-51ff-4f16-916f-6b033a9c1702"
+      }
+    },
+    "created_at": "2026-09-21T12:57:48.612Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-45C93F",
+    "actor_name": "Kishore Patil",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Project Not Progressing",
+      "district": "THANE(DISTRICT COLLECTOR THANE_IDA)",
+      "state": "Maharashtra",
+      "workId": "WS/MP18116/2025-2026/235751"
+    },
+    "created_at": "2026-09-21T13:31:18.856Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-45C93F",
+    "actor_name": "District Magistrate (Thane)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INFORMATION_REQUESTED",
+    "status": "INFORMATION_REQUESTED",
+    "remarks": "Please submit physical progress percentage and technical delay justification report.",
+    "public_safe": true,
+    "metadata": {
+      "action": "REQUEST_AGENCY_INFO",
+      "internalNotes": null
+    },
+    "created_at": "2026-09-21T13:31:19.280Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-45C93F",
+    "actor_name": "THANE(DISTRICT COLLECTOR THANE_IDA)",
+    "actor_role": "IMPLEMENTING_AGENCY",
+    "event_type": "AGENCY_RESPONSE",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Site mobilization completed. Concrete mix batching plant approved. Work resuming on 23-Sep-2026.",
+    "public_safe": true,
+    "metadata": {
+      "progress": 45
+    },
+    "created_at": "2026-09-21T13:31:22.985Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-543EC7",
+    "actor_name": "arun",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "THANJAVUR(DISTRICT COLLECTOR THANJAVUR_IDA)",
+      "state": "Tamil Nadu",
+      "workId": "WS/MP18183/2025-2026/192872"
+    },
+    "created_at": "2026-09-21T13:41:22.915Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-543EC7",
+    "actor_name": "District Magistrate - THANJAVUR (Tamil Nadu)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INSPECTION_REQUESTED",
+    "status": "INSPECTION_REQUESTED",
+    "remarks": "Field engineer deputed for ground verification and measurement check.",
+    "public_safe": true,
+    "metadata": {
+      "action": "REQUEST_INSPECTION",
+      "internalNotes": "kjl;",
+      "evidence": {
+        "fileName": "endsemcloud1.docx",
+        "fileType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "evidenceId": "207fa27e-ff24-4755-9bcd-f029d0b4cd21"
+      }
+    },
+    "created_at": "2026-09-21T13:42:48.265Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-25AC7F",
+    "actor_name": "THANJAVUR(DISTRICT COLLECTOR THANJAVUR_IDA)",
+    "actor_role": "IMPLEMENTING_AGENCY",
+    "event_type": "AGENCY_RESPONSE",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "hjkl",
+    "public_safe": true,
+    "metadata": {
+      "progress": 50
+    },
+    "created_at": "2026-09-21T13:43:54.737Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-543EC7",
+    "actor_name": "THANJAVUR(DISTRICT COLLECTOR THANJAVUR_IDA)",
+    "actor_role": "IMPLEMENTING_AGENCY",
+    "event_type": "AGENCY_RESPONSE",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "perfect",
+    "public_safe": true,
+    "metadata": {
+      "progress": 55
+    },
+    "created_at": "2026-09-21T13:47:46.681Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-543EC7",
+    "actor_name": "District Magistrate - THANJAVUR (Tamil Nadu)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "CLOSED",
+    "status": "CLOSED",
+    "remarks": "super",
+    "public_safe": true,
+    "metadata": {
+      "action": "RESOLVE",
+      "internalNotes": "kjl;"
+    },
+    "created_at": "2026-09-21T13:48:37.100Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-DD1668",
+    "actor_name": "Kishore Patil",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Project Not Progressing",
+      "district": "THANE(DISTRICT COLLECTOR THANE_IDA)",
+      "state": "Maharashtra",
+      "workId": "WS/MP18116/2025-2026/235751"
+    },
+    "created_at": "2026-09-21T16:21:27.879Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-DD1668",
+    "actor_name": "District Magistrate (Thane)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INFORMATION_REQUESTED",
+    "status": "INFORMATION_REQUESTED",
+    "remarks": "Please submit physical progress percentage and technical delay justification report.",
+    "public_safe": true,
+    "metadata": {
+      "action": "REQUEST_AGENCY_INFO",
+      "internalNotes": null
+    },
+    "created_at": "2026-09-21T16:21:28.068Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-DD1668",
+    "actor_name": "THANE(DISTRICT COLLECTOR THANE_IDA)",
+    "actor_role": "IMPLEMENTING_AGENCY",
+    "event_type": "AGENCY_RESPONSE",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Site mobilization completed. Concrete mix batching plant approved. Work resuming on 23-Sep-2026.",
+    "public_safe": true,
+    "metadata": {
+      "progress": 45
+    },
+    "created_at": "2026-09-21T16:21:31.586Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-336C58",
+    "actor_name": "Sunil Verma",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "KANPUR NAGAR(DISTRICT MAGISTRAE KANPUR NAGAR_IDA)",
+      "state": "Uttar Pradesh",
+      "workId": "WS/MP507/2025-2026/196288"
+    },
+    "created_at": "2026-09-21T16:21:38.997Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-336C58",
+    "actor_name": "District Magistrate",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INSPECTION_COMPLETED",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Physical inspection completed. High mast pole foundation verified with slump test.",
+    "public_safe": true,
+    "metadata": {
+      "action": "RECORD_INSPECTION",
+      "internalNotes": null,
+      "evidence": {
+        "fileName": "Inspection_Measurement_Book_Sec4.pdf",
+        "fileType": "application/pdf",
+        "evidenceId": "7e71d9ac-daab-4f80-84da-6b5b097b8aef"
+      }
+    },
+    "created_at": "2026-09-21T16:21:39.266Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-8DFB9F",
+    "actor_name": "Kishore Patil",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Project Not Progressing",
+      "district": "THANE(DISTRICT COLLECTOR THANE_IDA)",
+      "state": "Maharashtra",
+      "workId": "WS/MP18116/2025-2026/235751"
+    },
+    "created_at": "2026-09-21T17:02:59.589Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-8DFB9F",
+    "actor_name": "District Magistrate (Thane)",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INFORMATION_REQUESTED",
+    "status": "INFORMATION_REQUESTED",
+    "remarks": "Please submit physical progress percentage and technical delay justification report.",
+    "public_safe": true,
+    "metadata": {
+      "action": "REQUEST_AGENCY_INFO",
+      "internalNotes": null
+    },
+    "created_at": "2026-09-21T17:02:59.825Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-8DFB9F",
+    "actor_name": "THANE(DISTRICT COLLECTOR THANE_IDA)",
+    "actor_role": "IMPLEMENTING_AGENCY",
+    "event_type": "AGENCY_RESPONSE",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Site mobilization completed. Concrete mix batching plant approved. Work resuming on 23-Sep-2026.",
+    "public_safe": true,
+    "metadata": {
+      "progress": 45
+    },
+    "created_at": "2026-09-21T17:03:03.274Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-9E6DB1",
+    "actor_name": "Sunil Verma",
+    "actor_role": "CITIZEN",
+    "event_type": "SUBMITTED",
+    "status": "SUBMITTED",
+    "remarks": "Public grievance submitted for administrative review by the competent district authority.",
+    "public_safe": true,
+    "metadata": {
+      "category": "Work Quality Concern",
+      "district": "KANPUR NAGAR(DISTRICT MAGISTRAE KANPUR NAGAR_IDA)",
+      "state": "Uttar Pradesh",
+      "workId": "WS/MP507/2025-2026/196288"
+    },
+    "created_at": "2026-09-21T17:03:10.013Z"
+  },
+  {
+    "complaint_id": "MPLADS-CMP-9E6DB1",
+    "actor_name": "District Magistrate",
+    "actor_role": "DISTRICT_OFFICER",
+    "event_type": "INSPECTION_COMPLETED",
+    "status": "ACTION IN PROGRESS",
+    "remarks": "Physical inspection completed. High mast pole foundation verified with slump test.",
+    "public_safe": true,
+    "metadata": {
+      "action": "RECORD_INSPECTION",
+      "internalNotes": null,
+      "evidence": {
+        "fileName": "Inspection_Measurement_Book_Sec4.pdf",
+        "fileType": "application/pdf",
+        "evidenceId": "30b6f590-6309-42bd-9c1f-f88d69ecbdae"
+      }
+    },
+    "created_at": "2026-09-21T17:03:10.275Z"
+  }
+]

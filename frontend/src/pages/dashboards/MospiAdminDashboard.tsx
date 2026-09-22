@@ -5,6 +5,7 @@ import {
   CheckCircle, X, ExternalLink, Globe, ChevronRight,
   RefreshCw, Zap, Building2, Info, Search, ArrowUpRight,
   ArrowLeftRight, Landmark, Key, Edit2, Lock, Unlock,
+  Plus, KeyRound, ShieldAlert,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useAppStore } from '../../store/store';
@@ -12,6 +13,7 @@ import { supabase } from '../../services/client';
 import { IntelligenceDashboard } from '../IntelligenceDashboard';
 import { KPICard } from '../../components/KPICard';
 import { ComparativeIntelligence } from '../../components/ComparativeIntelligence';
+import { UserRole } from '../../types/auth';
 import demoAccounts from '../../data/demoAccounts.json';
 
 const ALL_REAL_STATES = [
@@ -79,6 +81,7 @@ const QUICK_MODULES = [
   { label: 'Comparative Intelligence', path: '/comparative', icon: ArrowLeftRight, color: '#6F42C1', desc: 'Multi-entity comparative analytics' },
   { label: 'Analytics',             path: '/analytics',  icon: BarChart2,      color: '#E67E22',   desc: 'Trend & expenditure charts' },
   { label: 'Dataset Explorer',      path: '/explorer',   icon: Database,       color: '#20C997',   desc: 'Raw data browsing' },
+  { label: 'User Governance',       path: '/admin/dashboard?tab=users', icon: Users, color: '#00204a', desc: 'Manage users & credentials' },
 ];
 
 // ─── Helper: risk color gradient ─────────────────────────────────────────────
@@ -118,15 +121,30 @@ export function MospiAdminDashboard() {
   const [liveProfiles, setLiveProfiles]       = useState<LiveProfile[]>([]);
   const [stateOfficers, setStateOfficers]     = useState<LiveProfile[]>([]);
   const [districtOfficers, setDistrictOfficers] = useState<LiveProfile[]>([]);
+  const [auditorOfficers, setAuditorOfficers] = useState<LiveProfile[]>([]);
   const [districtStateFilter, setDistrictStateFilter] = useState<string>('');
   const [profilesLoading, setProfilesLoading] = useState(false);
   const [profilesError, setProfilesError]     = useState<string | null>(null);
   const [userSearch, setUserSearch]           = useState('');
-  const [userModalTab, setUserModalTab]       = useState<'state_nodal' | 'district_officer' | 'all'>('state_nodal');
+  const [userModalTab, setUserModalTab]       = useState<'state_nodal' | 'district_officer' | 'auditor' | 'all'>('state_nodal');
+  const [roleFilter, setRoleFilter]           = useState<string>('ALL');
   const [editingOfficerId, setEditingOfficerId] = useState<string | null>(null);
   const [editStateValue, setEditStateValue]   = useState<string>('');
   const [officerActionLoading, setOfficerActionLoading] = useState<string | null>(null);
   const [actionToast, setActionToast]         = useState<string | null>(null);
+
+  // User Provisioning State
+  const [showProvisionModal, setShowProvisionModal] = useState(false);
+  const [provisionSubmitting, setProvisionSubmitting] = useState(false);
+  const [provisionForm, setProvisionForm] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    role: 'DISTRICT_OFFICER' as UserRole,
+    state: '',
+    district: '',
+    constituency: '',
+  });
 
   // ── Fetch National Stats ─────────────────────────────────────────────────
   const fetchNationalStats = useCallback(async () => {
@@ -253,16 +271,24 @@ export function MospiAdminDashboard() {
         setDistrictOfficers((doData || []) as LiveProfile[]);
       }
 
-      // 3. Fetch other non-MP roles for general directory
-      const { data: othersData, error: othersErr } = await supabase
+      // 3. Fetch Auditors
+      const { data: audData } = await supabase
         .from('profiles')
         .select('id, full_name, role, state, district, is_active, email')
-        .neq('role', 'MP')
-        .order('role', { ascending: true })
-        .limit(100);
+        .eq('role', 'AUDITOR')
+        .order('full_name', { ascending: true });
 
-      if (othersErr) throw othersErr;
-      setLiveProfiles((othersData || []) as LiveProfile[]);
+      setAuditorOfficers((audData || []) as LiveProfile[]);
+
+      // 4. Fetch all user profiles for comprehensive directory
+      const { data: allData, error: allErr } = await supabase
+        .from('profiles')
+        .select('id, full_name, role, state, district, is_active, email')
+        .order('role', { ascending: true })
+        .limit(2000);
+
+      if (allErr) throw allErr;
+      setLiveProfiles((allData || []) as LiveProfile[]);
     } catch (err: any) {
       console.error('Failed to load profiles:', err);
       setProfilesError('Unable to load live user directory from database.');
@@ -283,6 +309,7 @@ export function MospiAdminDashboard() {
 
       setStateOfficers(prev => prev.map(o => o.id === officer.id ? { ...o, is_active: nextActive } : o));
       setDistrictOfficers(prev => prev.map(o => o.id === officer.id ? { ...o, is_active: nextActive } : o));
+      setAuditorOfficers(prev => prev.map(o => o.id === officer.id ? { ...o, is_active: nextActive } : o));
       setLiveProfiles(prev => prev.map(o => o.id === officer.id ? { ...o, is_active: nextActive } : o));
       setActionToast(`${officer.full_name} is now ${nextActive ? 'ACTIVE' : 'DEACTIVATED'}`);
       setTimeout(() => setActionToast(null), 3500);
@@ -304,6 +331,7 @@ export function MospiAdminDashboard() {
       if (error) throw error;
 
       setStateOfficers(prev => prev.map(o => o.id === officerId ? { ...o, state: newState } : o));
+      setDistrictOfficers(prev => prev.map(o => o.id === officerId ? { ...o, state: newState } : o));
       setLiveProfiles(prev => prev.map(o => o.id === officerId ? { ...o, state: newState } : o));
       setEditingOfficerId(null);
       setActionToast(`Assigned state jurisdiction updated to "${newState}"`);
@@ -315,6 +343,54 @@ export function MospiAdminDashboard() {
     }
   };
 
+  const handleProvisionUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!provisionForm.fullName.trim() || !provisionForm.email.trim() || !provisionForm.password) {
+      alert('Full Name, Email, and Password are required.');
+      return;
+    }
+    if (provisionForm.password.length < 6) {
+      alert('Password must be at least 6 characters.');
+      return;
+    }
+    setProvisionSubmitting(true);
+    try {
+      const { data, error } = await supabase.rpc('admin_provision_user', {
+        p_full_name: provisionForm.fullName.trim(),
+        p_email: provisionForm.email.trim().toLowerCase(),
+        p_password: provisionForm.password,
+        p_role: provisionForm.role,
+        p_state: provisionForm.state.trim() || null,
+        p_district: provisionForm.district.trim() || null,
+        p_constituency: provisionForm.constituency.trim() || null,
+      } as any);
+
+      if (error) throw error;
+      const res = data as any;
+      if (res && res.success === false) {
+        throw new Error(res.error || 'Provisioning failed');
+      }
+
+      setActionToast(`Successfully provisioned account for ${provisionForm.fullName} (${provisionForm.role})`);
+      setTimeout(() => setActionToast(null), 4500);
+      setShowProvisionModal(false);
+      setProvisionForm({
+        fullName: '',
+        email: '',
+        password: '',
+        role: 'DISTRICT_OFFICER',
+        state: '',
+        district: '',
+        constituency: '',
+      });
+      fetchProfiles();
+    } catch (err: any) {
+      alert(`Failed to provision user: ${err.message}`);
+    } finally {
+      setProvisionSubmitting(false);
+    }
+  };
+
   // ── Effects ──────────────────────────────────────────────────────────────
   useEffect(() => {
     fetchNationalStats();
@@ -323,6 +399,19 @@ export function MospiAdminDashboard() {
   useEffect(() => {
     fetchStateRisk();
   }, [fetchStateRisk]);
+
+  useEffect(() => {
+    const checkTab = () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('tab') === 'users') {
+        fetchProfiles();
+        setShowUsers(true);
+      }
+    };
+    checkTab();
+    window.addEventListener('popstate', checkTab);
+    return () => window.removeEventListener('popstate', checkTab);
+  }, [fetchProfiles]);
 
   // ── Computed ─────────────────────────────────────────────────────────────
   const ns = nationalStats;
@@ -338,11 +427,18 @@ export function MospiAdminDashboard() {
     : 0;
 
   // Filtered user search
-  const filteredProfiles = liveProfiles.filter(p =>
-    p.full_name.toLowerCase().includes(userSearch.toLowerCase()) ||
-    p.role.toLowerCase().includes(userSearch.toLowerCase()) ||
-    (p.state || '').toLowerCase().includes(userSearch.toLowerCase())
-  );
+  const filteredProfiles = liveProfiles.filter(p => {
+    if (roleFilter !== 'ALL' && p.role !== roleFilter) return false;
+    if (!userSearch.trim()) return true;
+    const q = userSearch.toLowerCase();
+    return (
+      p.full_name.toLowerCase().includes(q) ||
+      p.role.toLowerCase().includes(q) ||
+      (p.email || '').toLowerCase().includes(q) ||
+      (p.state || '').toLowerCase().includes(q) ||
+      (p.district || '').toLowerCase().includes(q)
+    );
+  });
 
   // State risk max for bar scale
   const maxHighRisk = stateRisk.length > 0 ? stateRisk[0].high_risk : 1;
@@ -719,16 +815,25 @@ export function MospiAdminDashboard() {
                   <Users size={16} className="text-white" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-[#000a1f]">Role & User Management Center</h3>
-                  <p className="text-[10px] text-[#747780]">Direct management of State Nodal Officers and authorized personnel</p>
+                  <h3 className="text-sm font-bold text-[#000a1f]">Role &amp; User Governance Center</h3>
+                  <p className="text-[10px] text-[#747780]">Comprehensive governance across all system roles, credentials &amp; jurisdictions</p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowUsers(false)}
-                className="w-7 h-7 flex items-center justify-center rounded hover:bg-[#F8F9FA] text-[#747780] hover:text-[#000a1f] transition-colors"
-              >
-                <X size={15} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowProvisionModal(true)}
+                  className="px-3 py-1.5 bg-[#00204a] hover:bg-[#001737] text-white rounded text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                >
+                  <Plus size={13} />
+                  <span>Provision New User</span>
+                </button>
+                <button
+                  onClick={() => setShowUsers(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded hover:bg-[#F8F9FA] text-[#747780] hover:text-[#000a1f] transition-colors"
+                >
+                  <X size={15} />
+                </button>
+              </div>
             </div>
 
             {/* Action Toast Notification */}
@@ -740,22 +845,22 @@ export function MospiAdminDashboard() {
             )}
 
             {/* Tabs */}
-            <div className="flex border-b border-[#E9ECEF] bg-[#F8F9FA] px-4 pt-2 gap-2 flex-shrink-0">
+            <div className="flex border-b border-[#E9ECEF] bg-[#F8F9FA] px-4 pt-2 gap-2 flex-shrink-0 overflow-x-auto">
               <button
                 onClick={() => setUserModalTab('state_nodal')}
-                className={`px-4 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   userModalTab === 'state_nodal'
                     ? 'border-[#00204a] text-[#00204a] bg-white rounded-t-md shadow-xs'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 <Landmark size={14} className="text-[#0066CC]" />
-                <span>State Nodal Officers ({stateOfficers.length || 36})</span>
+                <span>State Nodal ({stateOfficers.length || 36})</span>
               </button>
 
               <button
                 onClick={() => setUserModalTab('district_officer')}
-                className={`px-4 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   userModalTab === 'district_officer'
                     ? 'border-[#00204a] text-[#00204a] bg-white rounded-t-md shadow-xs'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -766,15 +871,27 @@ export function MospiAdminDashboard() {
               </button>
 
               <button
+                onClick={() => setUserModalTab('auditor')}
+                className={`px-3.5 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  userModalTab === 'auditor'
+                    ? 'border-[#00204a] text-[#00204a] bg-white rounded-t-md shadow-xs'
+                    : 'border-transparent text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <ShieldAlert size={14} className="text-[#DC3545]" />
+                <span>Auditors ({auditorOfficers.length})</span>
+              </button>
+
+              <button
                 onClick={() => setUserModalTab('all')}
-                className={`px-4 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   userModalTab === 'all'
                     ? 'border-[#00204a] text-[#00204a] bg-white rounded-t-md shadow-xs'
                     : 'border-transparent text-slate-500 hover:text-slate-800'
                 }`}
               >
                 <Users size={14} className="text-slate-600" />
-                <span>All System Roles</span>
+                <span>All Roles &amp; MPs</span>
               </button>
             </div>
 
@@ -789,7 +906,9 @@ export function MospiAdminDashboard() {
                       ? "Search state nodal officers by state or name…"
                       : userModalTab === 'district_officer'
                       ? "Search district officers by district, state, or name…"
-                      : "Search all users by name, role, or state…"
+                      : userModalTab === 'auditor'
+                      ? "Search auditors by name or email…"
+                      : "Search all users by name, role, email, or state…"
                   }
                   value={userSearch}
                   onChange={e => setUserSearch(e.target.value)}
@@ -807,6 +926,22 @@ export function MospiAdminDashboard() {
                   {ALL_REAL_STATES.map(st => (
                     <option key={st} value={st}>{st}</option>
                   ))}
+                </select>
+              )}
+
+              {userModalTab === 'all' && (
+                <select
+                  value={roleFilter}
+                  onChange={e => setRoleFilter(e.target.value)}
+                  className="px-2.5 py-2 text-xs border border-[#CED4DA] rounded bg-white text-[#00204a] font-semibold outline-none max-w-[200px]"
+                >
+                  <option value="ALL">All Roles</option>
+                  <option value="MOSPI_ADMIN">MoSPI Admin</option>
+                  <option value="STATE_NODAL_OFFICER">State Nodal Officer</option>
+                  <option value="DISTRICT_OFFICER">District Officer</option>
+                  <option value="AUDITOR">Auditor</option>
+                  <option value="IMPLEMENTING_AGENCY">Implementing Agency</option>
+                  <option value="MP">Member of Parliament</option>
                 </select>
               )}
             </div>
@@ -1079,45 +1214,170 @@ export function MospiAdminDashboard() {
                       );
                     })}
                 </>
+              ) : userModalTab === 'auditor' ? (
+                /* Auditors Management View */
+                <>
+                  <div className="flex items-center justify-between p-2.5 bg-rose-50/80 border border-rose-200 rounded text-xs text-rose-950 mb-2">
+                    <div className="flex items-center gap-2">
+                      <ShieldAlert size={14} className="text-[#DC3545] flex-shrink-0" />
+                      <span>
+                        <strong>CAG &amp; Independent Verification Auditors</strong> authorized for national project verification &amp; anomaly audits.
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold bg-white px-2 py-0.5 rounded border border-rose-200">
+                      {auditorOfficers.filter(o => o.is_active).length} / {auditorOfficers.length} Active
+                    </span>
+                  </div>
+
+                  {auditorOfficers
+                    .filter(o =>
+                      !userSearch.trim() ||
+                      (o.full_name || '').toLowerCase().includes(userSearch.toLowerCase()) ||
+                      (o.email || '').toLowerCase().includes(userSearch.toLowerCase())
+                    )
+                    .map(o => (
+                      <div
+                        key={o.id}
+                        className="p-3.5 border border-[#E9ECEF] rounded-lg bg-white hover:border-[#00204a] transition-all shadow-xs space-y-2"
+                      >
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-2.5 py-0.5 rounded text-[11px] font-extrabold bg-rose-50 text-[#DC3545] border border-rose-200">
+                              AUDITOR
+                            </span>
+                            <span className="font-bold text-xs text-[#000a1f]">
+                              {o.full_name}
+                            </span>
+                            {o.is_active ? (
+                              <span className="text-[9px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                ACTIVE
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-red-800 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                                INACTIVE
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleToggleOfficerActive(o)}
+                              disabled={officerActionLoading === o.id}
+                              className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors flex items-center gap-1 cursor-pointer ${
+                                o.is_active
+                                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300'
+                              }`}
+                            >
+                              {officerActionLoading === o.id ? (
+                                <RefreshCw size={10} className="animate-spin" />
+                              ) : o.is_active ? (
+                                <>
+                                  <Lock size={10} />
+                                  <span>Deactivate</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Unlock size={10} />
+                                  <span>Activate</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 flex-wrap gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-slate-800">
+                              {o.email || 'auditor@mplads-demo.local'}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                              Pass: Auditor@123
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              setShowUsers(false);
+                              navigateTo('/auditor/dashboard');
+                            }}
+                            className="text-xs font-bold text-[#DC3545] hover:underline flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <span>Inspect Verification Desk</span>
+                            <ExternalLink size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                </>
               ) : (
                 /* All Roles General View */
                 filteredProfiles.length > 0 ? (
                   filteredProfiles.map(p => (
-                    <div key={p.id} className="p-3 border border-[#E9ECEF] rounded bg-white flex items-center justify-between text-xs hover:bg-[#F8F9FA] transition-colors">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                    <div key={p.id} className="p-3 border border-[#E9ECEF] rounded-lg bg-white flex items-center justify-between text-xs hover:bg-[#F8F9FA] transition-colors gap-3">
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <div className="font-bold text-[#000a1f] truncate">{p.full_name}</div>
+                          <span
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-sm border flex-shrink-0"
+                            style={{
+                              color: ROLE_COLOUR[p.role] || '#44474f',
+                              backgroundColor: `${ROLE_COLOUR[p.role] || '#44474f'}14`,
+                              borderColor: `${ROLE_COLOUR[p.role] || '#44474f'}40`,
+                            }}
+                          >
+                            {ROLE_LABEL[p.role] || p.role.replace(/_/g, ' ')}
+                          </span>
                           {p.is_active ? (
                             <span className="text-[9px] font-bold text-[#198754] bg-[#E8F5E9] px-1.5 py-0.5 rounded border border-[#C8E6C9] flex-shrink-0">
                               Active
                             </span>
                           ) : (
-                            <span className="text-[9px] font-bold text-[#747780] bg-[#F8F9FA] px-1.5 py-0.5 rounded border border-[#E9ECEF] flex-shrink-0">
+                            <span className="text-[9px] font-bold text-[#DC3545] bg-[#FFF5F5] px-1.5 py-0.5 rounded border border-[#F5C2C7] flex-shrink-0">
                               Inactive
                             </span>
                           )}
                         </div>
-                        {(p.state || p.district) && (
-                          <div className="text-[10px] text-[#747780] mt-0.5">
-                            {[p.district, p.state].filter(Boolean).join(' · ')}
-                          </div>
-                        )}
+                        <div className="text-[11px] text-slate-500 font-mono flex items-center gap-2 flex-wrap">
+                          <span>{p.email || 'No email registered'}</span>
+                          {(p.state || p.district) && (
+                            <span className="text-[10px] font-sans text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded">
+                              {[p.district, p.state].filter(Boolean).join(' · ')}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <span
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-sm border ml-3 flex-shrink-0"
-                        style={{
-                          color: ROLE_COLOUR[p.role] || '#44474f',
-                          backgroundColor: `${ROLE_COLOUR[p.role] || '#44474f'}14`,
-                          borderColor: `${ROLE_COLOUR[p.role] || '#44474f'}40`,
-                        }}
-                      >
-                        {ROLE_LABEL[p.role] || p.role.replace(/_/g, ' ')}
-                      </span>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => handleToggleOfficerActive(p)}
+                          disabled={officerActionLoading === p.id}
+                          className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors flex items-center gap-1 cursor-pointer ${
+                            p.is_active
+                              ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300'
+                          }`}
+                        >
+                          {officerActionLoading === p.id ? (
+                            <RefreshCw size={10} className="animate-spin" />
+                          ) : p.is_active ? (
+                            <>
+                              <Lock size={10} />
+                              <span>Deactivate</span>
+                            </>
+                          ) : (
+                            <>
+                              <Unlock size={10} />
+                              <span>Activate</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
                   <div className="text-center py-8 text-xs text-[#747780]">
-                    No profiles match the current search query.
+                    No profiles match the current search query or filter.
                   </div>
                 )
               )}
@@ -1128,6 +1388,10 @@ export function MospiAdminDashboard() {
               <span>
                 {userModalTab === 'state_nodal'
                   ? `Managed 36 State Nodal Officers across all dataset States / UTs`
+                  : userModalTab === 'district_officer'
+                  ? `Showing District Officers · ${districtOfficers.filter(o => o.is_active).length} active`
+                  : userModalTab === 'auditor'
+                  ? `Showing Auditors · ${auditorOfficers.filter(o => o.is_active).length} active`
                   : `Showing ${filteredProfiles.length} profiles · ${liveProfiles.filter(p => p.is_active).length} active`}
               </span>
               <button
@@ -1137,6 +1401,170 @@ export function MospiAdminDashboard() {
                 <RefreshCw size={10} /> Refresh Directory
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Provision New User Modal ────────────────────────────────────────── */}
+      {showProvisionModal && (
+        <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg border border-[#E9ECEF] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="p-4 bg-[#00204a] text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield size={16} className="text-[#64B5F6]" />
+                <div>
+                  <h3 className="text-sm font-bold">Provision New User Account</h3>
+                  <p className="text-[11px] text-blue-200">Issue official credentials &amp; assign jurisdictional authority</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowProvisionModal(false)}
+                className="w-7 h-7 flex items-center justify-center rounded hover:bg-white/10 text-white/80 hover:text-white"
+              >
+                <X size={15} />
+              </button>
+            </div>
+
+            <form onSubmit={handleProvisionUser} className="p-5 space-y-3.5 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  System Role <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={provisionForm.role}
+                  onChange={e => setProvisionForm(prev => ({ ...prev, role: e.target.value as UserRole }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded text-xs font-semibold text-slate-800 outline-none focus:border-[#00204a]"
+                >
+                  <option value="DISTRICT_OFFICER">District Officer</option>
+                  <option value="STATE_NODAL_OFFICER">State Nodal Officer</option>
+                  <option value="AUDITOR">Auditor (CAG / Verification Desk)</option>
+                  <option value="IMPLEMENTING_AGENCY">Implementing Agency (IA)</option>
+                  <option value="MP">Member of Parliament (MP)</option>
+                  <option value="MOSPI_ADMIN">MoSPI Administrator</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Ramesh Chandra, IAS"
+                    value={provisionForm.fullName}
+                    onChange={e => setProvisionForm(prev => ({ ...prev, fullName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-[#00204a]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Official Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. officer@mplads-demo.local"
+                    value={provisionForm.email}
+                    onChange={e => setProvisionForm(prev => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-[#00204a]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Initial Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <KeyRound size={13} className="absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    required
+                    minLength={6}
+                    placeholder="Min. 6 characters (e.g. Officer@123)"
+                    value={provisionForm.password}
+                    onChange={e => setProvisionForm(prev => ({ ...prev, password: e.target.value }))}
+                    className="w-full pl-8 pr-3 py-2 border border-slate-300 rounded text-xs font-mono text-slate-800 outline-none focus:border-[#00204a]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    State Jurisdiction
+                  </label>
+                  <select
+                    value={provisionForm.state}
+                    onChange={e => setProvisionForm(prev => ({ ...prev, state: e.target.value }))}
+                    className="w-full px-3 py-2 border border-slate-300 rounded text-xs font-semibold text-slate-800 outline-none focus:border-[#00204a]"
+                  >
+                    <option value="">National / None</option>
+                    {ALL_REAL_STATES.map(st => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {provisionForm.role === 'DISTRICT_OFFICER' ? (
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      District Jurisdiction
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Varanasi, Lucknow..."
+                      value={provisionForm.district}
+                      onChange={e => setProvisionForm(prev => ({ ...prev, district: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-[#00204a]"
+                    />
+                  </div>
+                ) : provisionForm.role === 'MP' ? (
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      Constituency Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Varanasi, Amethi..."
+                      value={provisionForm.constituency}
+                      onChange={e => setProvisionForm(prev => ({ ...prev, constituency: e.target.value }))}
+                      className="w-full px-3 py-2 border border-slate-300 rounded text-xs text-slate-800 outline-none focus:border-[#00204a]"
+                    />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowProvisionModal(false)}
+                  className="px-4 py-2 border border-slate-300 rounded text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={provisionSubmitting}
+                  className="px-4 py-2 bg-[#00204a] hover:bg-[#001737] text-white rounded text-xs font-bold disabled:opacity-50 flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  {provisionSubmitting ? (
+                    <>
+                      <RefreshCw size={12} className="animate-spin" />
+                      <span>Provisioning...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={12} />
+                      <span>Provision Account</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

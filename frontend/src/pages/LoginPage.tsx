@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, ShieldCheck, Lock, Mail, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
+import { Activity, ShieldCheck, Lock, Mail, ArrowRight, AlertCircle, Sparkles, Search } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import demoAccounts from '../data/demoAccounts.json';
 
@@ -10,7 +10,8 @@ interface LoginPageProps {
 export function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState<'admin' | 'mps'>('admin');
+  const [activeTab, setActiveTab] = useState<'admin' | 'agencies' | 'mps'>('admin');
+  const [mpSearch, setMpSearch] = useState('');
   const { login, isLoading, authError } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -42,8 +43,19 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLocalError(null);
   };
 
-  const adminRoles = demoAccounts.filter(a => a.role !== 'MP');
+  const adminRoles = demoAccounts.filter(a => a.role !== 'MP' && a.role !== 'IMPLEMENTING_AGENCY');
+  const agencyRoles = demoAccounts.filter(a => a.role === 'IMPLEMENTING_AGENCY');
   const mpRoles = demoAccounts.filter(a => a.role === 'MP');
+  const filteredMpRoles = mpRoles.filter(a => {
+    if (!mpSearch.trim()) return true;
+    const q = mpSearch.toLowerCase().trim();
+    return (
+      (a.constituency && a.constituency.toLowerCase().includes(q)) ||
+      (a.state && a.state.toLowerCase().includes(q)) ||
+      (a.email && a.email.toLowerCase().includes(q)) ||
+      (a.name && a.name.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="min-h-screen bg-[#f6faff] flex flex-col justify-between font-sans">
@@ -167,67 +179,97 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
             </div>
 
             <p className="text-[11px] text-[#44474f] leading-snug">
-              Select any role below to pre-populate credentials. Password format follows strictly:{' '}
+              Select any role below to pre-populate credentials. For Lok Sabha MPs, credentials use Constituency Name:{' '}
               <code className="bg-[#F8F9FA] px-1 py-0.5 rounded border border-[#E9ECEF] font-mono text-[#00204a]">
-                &lt;NormalizedName&gt;@123
-              </code>
+                mp.&lt;constituency&gt;@mplads-demo.local
+              </code>{' '}
+              with password <code className="bg-[#F8F9FA] px-1 py-0.5 rounded border border-[#E9ECEF] font-mono text-[#00204a]">Mplads@123</code>.
             </p>
 
             {/* Toggle Tabs */}
-            <div className="flex border border-[#E9ECEF] rounded-sm p-0.5 bg-[#F8F9FA]">
+            <div className="flex border border-[#E9ECEF] rounded-sm p-0.5 bg-[#F8F9FA] gap-0.5">
               <button
                 type="button"
                 onClick={() => setActiveTab('admin')}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
+                className={`flex-1 py-1.5 px-1 text-[11px] font-semibold rounded-sm transition-colors text-center ${
                   activeTab === 'admin' ? 'bg-white text-[#00204a] shadow-xs' : 'text-[#747780] hover:text-[#000a1f]'
                 }`}
               >
-                Officers & Admin (5 Roles)
+                Officers &amp; Admin
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('agencies')}
+                className={`flex-1 py-1.5 px-1 text-[11px] font-semibold rounded-sm transition-colors text-center ${
+                  activeTab === 'agencies' ? 'bg-white text-[#00204a] shadow-xs' : 'text-[#747780] hover:text-[#000a1f]'
+                }`}
+              >
+                Implementing Agencies
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('mps')}
-                className={`flex-1 py-1.5 text-xs font-semibold rounded-sm transition-colors ${
+                className={`flex-1 py-1.5 px-1 text-[11px] font-semibold rounded-sm transition-colors text-center ${
                   activeTab === 'mps' ? 'bg-white text-[#00204a] shadow-xs' : 'text-[#747780] hover:text-[#000a1f]'
                 }`}
               >
-                Hon'ble MPs (Real Dataset)
+                Hon'ble MPs
               </button>
             </div>
 
+            {/* Constituency Search (when on MPs tab) */}
+            {activeTab === 'mps' && (
+              <div className="relative">
+                <Search size={14} className="absolute left-2.5 top-2.5 text-[#747780]" />
+                <input
+                  type="text"
+                  placeholder="Search by constituency or state (e.g. Puri, Varanasi, Kalyan, Badaun)..."
+                  value={mpSearch}
+                  onChange={(e) => setMpSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs border border-[#CED4DA] rounded-sm focus:border-[#00204a] outline-none"
+                />
+              </div>
+            )}
+
             {/* Account List */}
             <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-              {(activeTab === 'admin' ? adminRoles : mpRoles).map((acc: any, i) => {
-                const isSelected = email === acc.email;
-                return (
-                  <div
-                    key={i}
-                    onClick={() => handleSelectDemo(acc.email, acc.passwordFormat)}
-                    className={`p-3 rounded-sm border cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-[#00204a] bg-[#F0F4F8] shadow-xs'
-                        : 'border-[#E9ECEF] hover:border-[#CED4DA] hover:bg-[#F8F9FA]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold text-[#00204a] uppercase tracking-wider">
-                        {acc.role.replace(/_/g, ' ')}
-                      </span>
-                      {acc.house && (
-                        <span className="text-[9px] font-semibold text-[#44474f] bg-white px-1.5 py-0.5 rounded border border-[#E9ECEF]">
-                          {acc.house}
+              {((activeTab === 'admin' ? adminRoles : activeTab === 'agencies' ? agencyRoles : filteredMpRoles)).length === 0 ? (
+                <div className="text-center py-6 text-xs text-[#747780]">
+                  {activeTab === 'mps' ? `No parliamentary constituency matching "${mpSearch}".` : 'No accounts available.'}
+                </div>
+              ) : (
+                ((activeTab === 'admin' ? adminRoles : activeTab === 'agencies' ? agencyRoles : filteredMpRoles)).slice(0, 100).map((acc: any, i) => {
+                  const isSelected = email === acc.email;
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => handleSelectDemo(acc.email, acc.passwordFormat)}
+                      className={`p-3 rounded-sm border cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-[#00204a] bg-[#F0F4F8] shadow-xs'
+                          : 'border-[#E9ECEF] hover:border-[#CED4DA] hover:bg-[#F8F9FA]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-[#00204a] uppercase tracking-wider">
+                          {acc.constituency ? `Constituency: ${acc.constituency}` : acc.role.replace(/_/g, ' ')}
                         </span>
-                      )}
+                        {acc.house && (
+                          <span className="text-[9px] font-semibold text-[#44474f] bg-white px-1.5 py-0.5 rounded border border-[#E9ECEF]">
+                            {acc.house}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs font-bold text-[#000a1f]">{acc.name}</div>
+                      <div className="text-[11px] text-[#747780] mt-0.5">{acc.scope}</div>
+                      <div className="mt-2 pt-1.5 border-t border-[#E9ECEF]/60 flex items-center justify-between text-[10px] font-mono text-[#44474f]">
+                        <span>{acc.email}</span>
+                        <span className="text-[#0066CC] font-bold">Use Credentials →</span>
+                      </div>
                     </div>
-                    <div className="text-xs font-bold text-[#000a1f]">{acc.name}</div>
-                    <div className="text-[11px] text-[#747780] mt-0.5">{acc.scope}</div>
-                    <div className="mt-2 pt-1.5 border-t border-[#E9ECEF]/60 flex items-center justify-between text-[10px] font-mono text-[#44474f]">
-                      <span>{acc.email}</span>
-                      <span className="text-[#0066CC] font-bold">Use Credentials →</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
 

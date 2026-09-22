@@ -121,10 +121,12 @@ export async function getProjects(params: ProjectQueryParams): Promise<Paginated
 
   // Filters
   if (params.search && params.search.trim()) {
-    const s = params.search.trim();
-    query = query.or(
-      `work_description.ilike.%${s}%,mp_name.ilike.%${s}%,work_id.ilike.%${s}%,district.ilike.%${s}%`
-    );
+    const s = params.search.trim().replace(/[,%]/g, ' ').replace(/\s+/g, ' ').trim();
+    if (s) {
+      query = query.or(
+        `work_description.ilike.%${s}%,mp_name.ilike.%${s}%,work_id.ilike.%${s}%,district.ilike.%${s}%`
+      );
+    }
   }
 
   // Strict Role Data Scope Enforcement
@@ -137,14 +139,27 @@ export async function getProjects(params: ProjectQueryParams): Promise<Paginated
     query = query.eq('state', assignedState);
   } else if (authProfile?.role === 'DISTRICT_OFFICER') {
     if (authProfile.state) {
-      if (params.state && params.state.trim().toLowerCase() !== authProfile.state.trim().toLowerCase()) {
-        throw new Error(`Access Denied: You are not authorized to view projects outside your assigned state (${authProfile.state}).`);
-      }
       query = query.eq('state', authProfile.state);
     }
     if (authProfile.district) {
       const cleanD = authProfile.district.split('(')[0].trim();
-      query = query.or(`district.eq.${authProfile.district},district.ilike.${cleanD}%`);
+      query = query.ilike('district', `${cleanD}%`);
+    }
+  } else if (authProfile?.role === 'MP') {
+    if (authProfile.constituency) {
+      query = query.eq('constituency', authProfile.constituency);
+    }
+    if (authProfile.state) {
+      query = query.eq('state', authProfile.state);
+    }
+    if (authProfile.mp_name || authProfile.full_name) {
+      const mName = (authProfile.mp_name || authProfile.full_name).trim();
+      query = query.ilike('mp_name', `%${mName}%`);
+    }
+  } else if (authProfile?.role === 'IMPLEMENTING_AGENCY') {
+    if (authProfile.agency_name) {
+      const cleanAgency = authProfile.agency_name.split('(')[0].trim();
+      query = query.ilike('ida', `%${cleanAgency}%`);
     }
   } else if (params.state) {
     query = query.eq('state', params.state);

@@ -6,6 +6,8 @@ export async function getConstituencyGIS(req: Request, res: Response) {
   try {
     let state = req.query.state as string;
     let district = req.query.district as string;
+    let constituency = req.query.constituency as string;
+    let mpName = req.query.mp as string;
 
     if (req.profile) {
       const scope = getUserDataScope(req.profile);
@@ -28,14 +30,18 @@ export async function getConstituencyGIS(req: Request, res: Response) {
           state = scope.state;
         }
         district = scope.district;
+      } else if (scope.scope === 'MP') {
+        state = scope.state || state;
+        constituency = scope.constituency || constituency;
+        mpName = scope.mpName || mpName;
       }
     }
 
     const filters = {
       state,
       district,
-      constituency: req.query.constituency as string,
-      mpName: req.query.mp as string,
+      constituency,
+      mpName,
       riskLevel: req.query.risk as string,
       status: req.query.status as string,
       category: req.query.category as string,
@@ -74,6 +80,10 @@ export async function getStateGIS(req: Request, res: Response) {
         if (scope.state) {
           state = scope.state;
         }
+      } else if (scope.scope === 'MP') {
+        if (scope.state) {
+          state = scope.state;
+        }
       }
     }
 
@@ -90,8 +100,11 @@ export async function getStateGIS(req: Request, res: Response) {
     let metrics = await fetchStateGIS(filters);
     if (req.profile) {
       const scope = getUserDataScope(req.profile);
-      if (scope.scope === 'STATE') {
-        metrics = metrics.filter((m: any) => m.state?.toLowerCase() === scope.state.toLowerCase());
+      if (scope.scope === 'STATE' || scope.scope === 'MP') {
+        const assignedState = scope.state;
+        if (assignedState) {
+          metrics = metrics.filter((m: any) => m.state?.toLowerCase() === assignedState.toLowerCase());
+        }
       }
     }
 

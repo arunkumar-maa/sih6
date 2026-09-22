@@ -181,7 +181,10 @@ export async function fetchProjects(filters: ProjectFilters) {
   else if (sortField === 'fy') sortField = 'financial_year';
 
   const sortAsc = filters.sortOrder === 'asc';
-  query = query.order(sortField, { ascending: sortAsc }).range(from, to);
+  query = query
+    .order(sortField, { ascending: sortAsc })
+    .order('work_id', { ascending: true })
+    .range(from, to);
 
   const { data, count, error } = await query;
   if (error) {

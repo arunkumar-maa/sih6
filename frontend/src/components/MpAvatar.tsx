@@ -5,7 +5,7 @@ interface MpAvatarProps {
   name?: string | null;
   id?: string | null;
   photoUrl?: string | null;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   showName?: boolean;
   className?: string;
   nameClassName?: string;
@@ -18,6 +18,7 @@ const sizeClasses = {
   md: 'w-9 h-9 text-xs',
   lg: 'w-14 h-14 text-base',
   xl: 'w-20 h-20 text-xl font-bold',
+  '2xl': 'w-28 h-28 text-3xl font-bold',
 };
 
 function getInitials(name?: string | null): string {

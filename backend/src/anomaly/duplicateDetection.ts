@@ -73,7 +73,7 @@ export function detectDuplicates(
     for (let i = 0; i < group.length; i++) {
       let best = { workId: '', similarity: 0 };
       for (let j = 0; j < group.length; j++) {
-        if (i === j) continue;
+        if (i === j || group[i].workId === group[j].workId) continue; // prevent self-comparison
         const sim = cosineSimilarity(vectors[i], vectors[j]);
         if (sim > best.similarity) best = { workId: group[j].workId, similarity: sim };
       }
@@ -82,4 +82,54 @@ export function detectDuplicates(
   });
 
   return results;
+}
+
+export interface SimilarWorkPair {
+  workId1: string;
+  workId2: string;
+  similarity: number;
+}
+
+/**
+ * Returns canonical pairs of potential similar work (min(workA, workB), max(workA, workB))
+ * eliminating duplicate A->B and B->A pairs and preventing self-comparison.
+ */
+export function detectSimilarWorkPairs(
+  projects: EnrichedProject[],
+  threshold = 0.6
+): SimilarWorkPair[] {
+  const pairMap = new Map<string, SimilarWorkPair>();
+  const buckets = new Map<string, EnrichedProject[]>();
+
+  for (const p of projects) {
+    const locality = p.constituency || p.district;
+    const cat = normalizeCategory(p.workCategory);
+    if (!p.workDescription || !locality || !cat) continue;
+    const key = `${p.state}|||${locality}|||${cat}`.toLowerCase();
+    const arr = buckets.get(key) ?? [];
+    arr.push(p);
+    buckets.set(key, arr);
+  }
+
+  buckets.forEach(group => {
+    if (group.length < 2) return;
+    const vectors = buildTfIdf(group.map(p => tokenize(p.workDescription)));
+    for (let i = 0; i < group.length; i++) {
+      for (let j = i + 1; j < group.length; j++) {
+        if (group[i].workId === group[j].workId) continue;
+        const sim = cosineSimilarity(vectors[i], vectors[j]);
+        if (sim >= threshold) {
+          const idA = group[i].workId < group[j].workId ? group[i].workId : group[j].workId;
+          const idB = group[i].workId < group[j].workId ? group[j].workId : group[i].workId;
+          const pairKey = `${idA}:::${idB}`;
+          const existing = pairMap.get(pairKey);
+          if (!existing || sim > existing.similarity) {
+            pairMap.set(pairKey, { workId1: idA, workId2: idB, similarity: Math.round(sim * 100) / 100 });
+          }
+        }
+      }
+    }
+  });
+
+  return Array.from(pairMap.values());
 }

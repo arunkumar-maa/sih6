@@ -30,11 +30,16 @@ export function Analytics() {
 
   const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
   const isStateNodal = profile?.role === 'STATE_NODAL_OFFICER';
-  const lockedState = (isStateNodal || isDistrictOfficer) ? (profile?.state || '') : '';
+  const isMP = profile?.role === 'MP';
+  const lockedState = (isStateNodal || isDistrictOfficer || isMP) ? (profile?.state || '') : '';
   const lockedDistrict = isDistrictOfficer ? (profile?.district || '') : '';
   const cleanDistrict = lockedDistrict ? lockedDistrict.split('(')[0].trim() : '';
+  const lockedConstituency = isMP ? (profile?.constituency || '') : '';
+  const lockedMPName = isMP ? (profile?.mp_name || profile?.full_name || '') : '';
 
-  const scopeBadge = isDistrictOfficer
+  const scopeBadge = isMP
+    ? `Constituency: ${profile?.constituency} (${profile?.state}) · Hon'ble MP ${profile?.mp_name || profile?.full_name}`
+    : isDistrictOfficer
     ? `District: ${cleanDistrict}, ${profile?.state}`
     : isStateNodal
     ? `State: ${profile?.state}`
@@ -42,11 +47,11 @@ export function Analytics() {
 
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
-    house: activeHouse,
-    tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+    house: isMP ? 'Lok Sabha' : activeHouse,
+    tenure: (isMP || activeHouse === 'Lok Sabha') ? '18th Lok Sabha' : 'Current Rajya Sabha',
     state: lockedState,
-    constituency: '',
-    mpName: '',
+    constituency: lockedConstituency,
+    mpName: lockedMPName,
     riskLevel: '',
     status: '',
     category: '',
@@ -59,6 +64,7 @@ export function Analytics() {
   // Sync house when global activeHouse changes
   const prevHouseRef = React.useRef(activeHouse);
   useEffect(() => {
+    if (isMP) return; // MP is locked to Lok Sabha
     if (prevHouseRef.current !== activeHouse) {
       prevHouseRef.current = activeHouse;
       setFilters(f => ({
@@ -74,17 +80,23 @@ export function Analytics() {
         search: '',
       }));
     }
-  }, [activeHouse, lockedState]);
+  }, [activeHouse, lockedState, isMP]);
 
   // Fetch unified observatory analytics from backend / Supabase RPC
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAnalyticsObservatory(activeHouse, {
-        ...filters,
-        state: lockedState || filters.state,
+      const data = await getAnalyticsObservatory(isMP ? 'Lok Sabha' : activeHouse, {
+        state: isMP ? (profile?.state || filters.state) : (lockedState || filters.state),
+        constituency: isMP ? (profile?.constituency || filters.constituency) : filters.constituency,
+        mpName: isMP ? (profile?.mp_name || filters.mpName) : filters.mpName,
         district: isDistrictOfficer ? lockedDistrict : undefined,
+        riskLevel: filters.riskLevel,
+        status: filters.status,
+        category: filters.category,
+        tenure: filters.tenure,
+        search: filters.search,
       });
       setObservatoryData(data);
     } catch (err: any) {
@@ -93,7 +105,7 @@ export function Analytics() {
     } finally {
       setLoading(false);
     }
-  }, [activeHouse, filters, lockedState, isDistrictOfficer, lockedDistrict]);
+  }, [activeHouse, filters, lockedState, isDistrictOfficer, lockedDistrict, isMP, profile]);
 
   useEffect(() => {
     fetchAnalytics();
@@ -113,11 +125,55 @@ export function Analytics() {
   }, [observatoryData]);
 
   const districtData = useMemo(() => {
-    return observatoryData?.districtRisk || [];
-  }, [observatoryData]);
+    const raw = observatoryData?.districtRisk || [];
+    const userRole = profile?.role;
+
+    const formatted = raw.map((d: any) => {
+      // Clean district name: remove parenthetical IDA suffixes, e.g. "PRAYAGRAJ(DISTRICT MAGISTRATE PRAYAGRAJ_IDA)" -> "PRAYAGRAJ"
+      const cleanName = (d.district || '')
+        .replace(/\([^)]*\)/g, '')
+        .replace(/_/g, ' ')
+        .trim() || d.district;
+
+      const total = d.total || ((d.high || 0) + (d.med || 0) + (d.low || 0)) || 1;
+      const high = d.high || 0;
+      const med = d.med || 0;
+      const highPct = Math.round((high / total) * 100);
+      const medPct = Math.round((med / total) * 100);
+
+      return {
+        ...d,
+        district: cleanName,
+        rawDistrict: d.district,
+        total,
+        high,
+        med,
+        highPct,
+        medPct,
+      };
+    });
+
+    // If District Officer: show their assigned district
+    if (userRole === 'DISTRICT_OFFICER' && profile?.district) {
+      const cleanTarget = profile.district.split('(')[0].trim().toLowerCase();
+      const match = formatted.filter((d: any) =>
+        d.rawDistrict?.toLowerCase().includes(cleanTarget) ||
+        d.district?.toLowerCase().includes(cleanTarget)
+      );
+      if (match.length > 0) return match.slice(0, 10);
+    }
+
+    // Sort by high risk count descending, then total descending
+    const sorted = formatted
+      .filter((d: any) => d.high > 0 || d.med > 0)
+      .sort((a: any, b: any) => (b.high - a.high) || (b.total - a.total));
+
+    // STRICTLY Top 10 districts!
+    return sorted.slice(0, 10);
+  }, [observatoryData, profile]);
 
   const hasHighRiskInDistricts = useMemo(() => {
-    return districtData.some(d => d.high > 0);
+    return districtData.some(d => d.high > 0 || d.med > 0);
   }, [districtData]);
 
   const categoryData = useMemo(() => {
@@ -151,7 +207,9 @@ export function Analytics() {
             MPLADS Analytics &amp; Empirical Insights
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
-            {isDistrictOfficer
+            {isMP
+              ? `Aggregated statistical analysis for ${profile?.constituency} (${profile?.state}) under Hon'ble MP ${profile?.mp_name || profile?.full_name}`
+              : isDistrictOfficer
               ? `Aggregated statistical analysis for ${cleanDistrict} (${profile?.state}) derived dynamically from active ${activeHouse} dataset`
               : isStateNodal
               ? `Aggregated statistical analysis for ${profile?.state} derived dynamically from active ${activeHouse} dataset`
@@ -190,14 +248,26 @@ export function Analytics() {
           filteredCount={kpis.total}
           totalCount={houseTotalCount}
           filters={filters}
-          onFilterChange={(f) => setFilters(lockedState ? { ...f, state: lockedState } : f)}
+          onFilterChange={(f) => {
+            if (isMP) {
+              setFilters({
+                ...f,
+                house: 'Lok Sabha',
+                state: lockedState,
+                constituency: lockedConstituency,
+                mpName: lockedMPName,
+              });
+            } else {
+              setFilters(lockedState ? { ...f, state: lockedState } : f);
+            }
+          }}
           onReset={() => setFilters({
             search: '',
-            house: activeHouse,
-            tenure: activeHouse === 'Lok Sabha' ? '18th Lok Sabha' : 'Current Rajya Sabha',
+            house: isMP ? 'Lok Sabha' : activeHouse,
+            tenure: (isMP || activeHouse === 'Lok Sabha') ? '18th Lok Sabha' : 'Current Rajya Sabha',
             state: lockedState,
-            constituency: '',
-            mpName: '',
+            constituency: lockedConstituency,
+            mpName: lockedMPName,
             riskLevel: '',
             status: '',
             category: '',
@@ -318,15 +388,16 @@ export function Analytics() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={districtData} margin={{ top: 10, right: 10, left: -20, bottom: 25 }}>
+                <BarChart data={districtData} margin={{ top: 10, right: 15, left: -15, bottom: 40 }}>
                   <XAxis
                     dataKey="district"
                     stroke="#c4c6d0"
                     fontSize={10}
                     interval={0}
-                    angle={-25}
+                    angle={-20}
                     textAnchor="end"
                     tick={{ fill: '#44474f' }}
+                    height={50}
                   />
                   <YAxis stroke="#c4c6d0" fontSize={10} tick={{ fill: '#44474f' }} />
                   <Tooltip
@@ -338,14 +409,16 @@ export function Analytics() {
                       fontSize: '11px',
                       boxShadow: '0 4px 16px rgba(0,10,31,0.1)',
                     }}
-                    formatter={(val: number, name: string, item: any) => [
-                      `${val} projects (${item.payload.concentration}% high-risk)`,
-                      name,
-                    ]}
+                    formatter={(val: number, name: string, item: any) => {
+                      if (name === 'High Risk') {
+                        return [`${val} projects (${item.payload.highPct}% of district works)`, name];
+                      }
+                      return [`${val} projects (${item.payload.medPct}% of district works)`, name];
+                    }}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px', color: '#44474f' }} />
-                  <Bar dataKey="high" name="High Risk" fill="#DC3545" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="med" name="Medium Risk" fill="#FFC107" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="high" name="High Risk" fill="#DC3545" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                  <Bar dataKey="med" name="Medium Risk" fill="#FFC107" radius={[4, 4, 0, 0]} maxBarSize={28} />
                 </BarChart>
               </ResponsiveContainer>
             )}

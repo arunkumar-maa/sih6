@@ -17,6 +17,7 @@ export interface GISAggregateRegion {
 }
 
 export interface GISFilters {
+  house?: string;
   state?: string;
   district?: string;
   constituency?: string;
@@ -69,6 +70,7 @@ export async function fetchConstituencyGIS(filters: GISFilters = {}): Promise<GI
 export async function fetchStateGIS(filters: GISFilters = {}): Promise<GISAggregateRegion[]> {
   try {
     const { data, error } = await supabase.rpc('get_state_gis_metrics', {
+      p_house: filters.house || 'Lok Sabha',
       p_state: filters.state || null,
       p_constituency: null,
       p_mp: filters.mpName || null,

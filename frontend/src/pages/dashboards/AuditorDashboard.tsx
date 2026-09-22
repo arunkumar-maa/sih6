@@ -17,7 +17,10 @@ import {
   AuditTrailRecord
 } from '../../services/auditorService';
 import { AuditorCaseFileModal } from '../../components/AuditorCaseFileModal';
+import { PublicService } from '../../services/publicService';
+import type { AuditorComplaintItem } from '../../types/public';
 import type { VerificationStatus } from '../../types';
+
 
 const ALL_STATES = [
   'Andaman And Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam',
@@ -32,6 +35,7 @@ const FY_OPTIONS = ['all', '2024-2025', '2023-2024', '2022-2023', '2021-2022', '
 
 export function AuditorDashboard() {
   const { profile } = useAuthStore();
+  const auditorName = profile?.full_name || 'Senior Audit Officer';
 
   const [house, setHouse] = useState<'Lok Sabha' | 'Rajya Sabha'>('Lok Sabha');
 
@@ -68,6 +72,66 @@ export function AuditorDashboard() {
   // Review Case File Modal
   const [reviewingWorkId, setReviewingWorkId] = useState<string | null>(null);
 
+  // Grievance Verification Queue State
+  const [deskView, setDeskView] = useState<'algorithmic-anomalies' | 'grievance-verification'>('algorithmic-anomalies');
+  const [auditorComplaints, setAuditorComplaints] = useState<AuditorComplaintItem[]>([]);
+  const [auditorComplaintsLoading, setAuditorComplaintsLoading] = useState<boolean>(false);
+  const [selectedAuditorComplaint, setSelectedAuditorComplaint] = useState<AuditorComplaintItem | null>(null);
+  const [auditorOutcome, setAuditorOutcome] = useState<string>('VERIFIED');
+  const [auditorRemarksInput, setAuditorRemarksInput] = useState<string>('');
+  const [auditorSubmitting, setAuditorSubmitting] = useState<boolean>(false);
+  const [auditorSuccessMsg, setAuditorSuccessMsg] = useState<string | null>(null);
+  const [auditorErrorMsg, setAuditorErrorMsg] = useState<string | null>(null);
+
+  const fetchAuditorComplaints = useCallback(async () => {
+    setAuditorComplaintsLoading(true);
+    try {
+      const list = await PublicService.getAuditorVerificationComplaints();
+      setAuditorComplaints(list);
+    } catch (err) {
+      console.warn('Failed to load auditor complaints:', err);
+    } finally {
+      setAuditorComplaintsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAuditorComplaints();
+  }, [fetchAuditorComplaints]);
+
+  const handleSubmitAuditorFinding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAuditorComplaint) return;
+    if (!auditorRemarksInput.trim()) {
+      setAuditorErrorMsg('Please provide your audit finding and observation assessment.');
+      return;
+    }
+
+    setAuditorSubmitting(true);
+    setAuditorErrorMsg(null);
+    setAuditorSuccessMsg(null);
+
+    try {
+      await PublicService.submitAuditorFinding(selectedAuditorComplaint.complaintId, {
+        outcome: auditorOutcome,
+        remarks: auditorRemarksInput.trim(),
+        auditorName,
+      });
+      setAuditorSuccessMsg(`Audit assessment recorded as "${auditorOutcome}". Findings linked to official case dossier for District Authority.`);
+      setAuditorRemarksInput('');
+      fetchAuditorComplaints();
+      setTimeout(() => {
+        setSelectedAuditorComplaint(null);
+        setAuditorSuccessMsg(null);
+      }, 1500);
+    } catch (err: any) {
+      setAuditorErrorMsg(err.message || 'Failed to submit verification finding.');
+    } finally {
+      setAuditorSubmitting(false);
+    }
+  };
+
+
   // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -78,7 +142,6 @@ export function AuditorDashboard() {
   }, [search]);
 
   // Auditor display metadata
-  const auditorName = profile?.full_name || 'Senior Audit Officer';
   const authorizedScope = useMemo(() => {
     if (profile?.state && profile?.district) return `${profile.district}, ${profile.state}`;
     if (profile?.state) return `State: ${profile.state}`;
@@ -225,36 +288,64 @@ export function AuditorDashboard() {
             </div>
           </div>
 
-          {/* Current House Selector */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-950/80 p-2 rounded-2xl border border-slate-800 shadow-inner">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">
-              Parliamentary Chamber:
-            </span>
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Workspace Mode Switch */}
+            <div className="flex items-center gap-1.5 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
               <button
-                onClick={() => handleHouseChange('Lok Sabha')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  house === 'Lok Sabha'
+                onClick={() => setDeskView('algorithmic-anomalies')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  deskView === 'algorithmic-anomalies'
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-950 border border-purple-500'
                     : 'text-slate-400 hover:text-white hover:bg-slate-900'
                 }`}
               >
-                Lok Sabha
+                Anomaly Verification Queue
               </button>
               <button
-                onClick={() => handleHouseChange('Rajya Sabha')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  house === 'Rajya Sabha'
+                onClick={() => setDeskView('grievance-verification')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  deskView === 'grievance-verification'
                     ? 'bg-purple-600 text-white shadow-lg shadow-purple-950 border border-purple-500'
                     : 'text-slate-400 hover:text-white hover:bg-slate-900'
                 }`}
               >
-                Rajya Sabha
+                <AlertCircle size={13} />
+                <span>Grievance Verification Desk ({auditorComplaints.length})</span>
               </button>
+            </div>
+
+            {/* Current House Selector */}
+            <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 shadow-inner">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">
+                Chamber:
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => handleHouseChange('Lok Sabha')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    house === 'Lok Sabha'
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-950 border border-purple-500'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  }`}
+                >
+                  Lok Sabha
+                </button>
+                <button
+                  onClick={() => handleHouseChange('Rajya Sabha')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    house === 'Rajya Sabha'
+                      ? 'bg-purple-600 text-white shadow-lg shadow-purple-950 border border-purple-500'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                  }`}
+                >
+                  Rajya Sabha
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
 
       {/* ==================================================================== */}
       {/* 2. SUMMARY KPI CARDS (Real Database Records) */}
@@ -368,14 +459,127 @@ export function AuditorDashboard() {
       </div>
 
       {/* ==================================================================== */}
-      {/* 3. OFFICIAL FILTER BAR */}
+      {/* 2b. GRIEVANCE VERIFICATION DESK                                      */}
       {/* ==================================================================== */}
+      {deskView === 'grievance-verification' && (
+        <div className="bg-[#0f172a] border border-purple-900/60 rounded-2xl p-6 shadow-2xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold text-purple-400 uppercase tracking-wider">
+                <Scale className="w-4 h-4" />
+                <span>Independent Auditor Grievance Verification Queue</span>
+              </div>
+              <h2 className="text-xl font-bold text-white mt-1">
+                Referred Citizen Grievance Cases
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Official grievances referred by District Authorities requiring neutral physical &amp; ledger verification before final order.
+              </p>
+            </div>
+            <button
+              onClick={fetchAuditorComplaints}
+              disabled={auditorComplaintsLoading}
+              className="px-3 py-1.5 rounded-xl bg-purple-950/60 hover:bg-purple-900/80 border border-purple-700/60 text-purple-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${auditorComplaintsLoading ? 'animate-spin' : ''}`} />
+              <span>Refresh Queue</span>
+            </button>
+          </div>
+
+          {auditorComplaintsLoading ? (
+            <div className="py-12 text-center text-slate-400">
+              <RotateCcw className="w-6 h-6 animate-spin text-purple-400 mx-auto mb-2" />
+              <p className="text-xs font-semibold">Retrieving referred grievance cases…</p>
+            </div>
+          ) : auditorComplaints.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 bg-slate-950/60 rounded-xl border border-dashed border-slate-800 space-y-2">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
+              <h3 className="text-sm font-bold text-white">No Grievances Requiring Audit Verification</h3>
+              <p className="text-xs max-w-md mx-auto">
+                No active citizen grievances are currently flagged with status <code>VERIFICATION_REQUIRED</code>.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {auditorComplaints.map((item) => (
+                <div
+                  key={item.complaintId}
+                  className="p-4 rounded-xl border border-slate-800 bg-slate-950/80 hover:border-purple-600/70 transition-all space-y-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs font-bold text-purple-400 bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800">
+                        {item.complaintId}
+                      </span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-900 text-slate-300 border border-slate-700">
+                        {item.category}
+                      </span>
+                      <span className="font-mono text-xs text-white font-semibold">
+                        Work ID: {item.workId}
+                      </span>
+                      {item.district && (
+                        <span className="text-[11px] text-slate-400">
+                          · {item.district}, {item.state}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-700 uppercase">
+                      VERIFICATION REQUIRED
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block mb-0.5">Sanctioned Work Description:</span>
+                    <p className="text-xs font-bold text-slate-200">{item.workDescription}</p>
+                  </div>
+
+                  <div className="p-2.5 bg-amber-950/30 rounded-lg border border-amber-900/50 text-xs text-amber-200 space-y-1">
+                    <span className="font-bold text-[10px] uppercase text-amber-400 block">Citizen Allegation / Observation:</span>
+                    <p className="italic">"{item.description}"</p>
+                  </div>
+
+                  {item.publicResponse && (
+                    <div className="p-2.5 bg-purple-950/30 rounded-lg border border-purple-900/50 text-xs text-purple-200 space-y-1">
+                      <span className="font-bold text-[10px] uppercase text-purple-400 block">District Authority Inquiry / Referral Note:</span>
+                      <p>{item.publicResponse}</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end pt-1">
+                    <button
+                      onClick={() => {
+                        setSelectedAuditorComplaint(item);
+                        setAuditorOutcome('VERIFIED');
+                        setAuditorRemarksInput('');
+                        setAuditorErrorMsg(null);
+                        setAuditorSuccessMsg(null);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-lg shadow-purple-950 transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Scale className="w-3.5 h-3.5" />
+                      <span>Conduct Verification Assessment</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* 3. OFFICIAL FILTER BAR (Visible in Anomaly Verification Queue mode) */}
+      {/* ==================================================================== */}
+      {deskView === 'algorithmic-anomalies' && (
+      <>
       <div className="bg-[#0f172a] border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider">
             <Filter className="w-4 h-4 text-purple-400" />
             <span>Official Scrutiny Filters &bull; Server Query Controls</span>
           </div>
+
 
           <div className="flex items-center gap-3">
             <button
@@ -812,6 +1016,134 @@ export function AuditorDashboard() {
           </div>
         </div>
       </div>
+      </>
+      )}
+
+
+      {/* ==================================================================== */}
+      {/* GRIEVANCE AUDIT ASSESSMENT MODAL                                     */}
+      {/* ==================================================================== */}
+      {selectedAuditorComplaint && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#0f172a] rounded-2xl border border-purple-800 shadow-2xl max-w-xl w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-[10px] font-bold text-purple-300 uppercase tracking-wider bg-purple-950/80 px-2.5 py-0.5 rounded-full border border-purple-800">
+                  Auditor Verification Desk
+                </span>
+                <h3 className="text-base font-bold text-white mt-1">
+                  Neutral Verification Finding Order
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedAuditorComplaint(null)}
+                className="text-slate-400 hover:text-white text-lg font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Complaint: <strong className="font-mono text-purple-400">{selectedAuditorComplaint.complaintId}</strong></span>
+                <span className="text-slate-400">Work ID: <strong className="font-mono text-white">{selectedAuditorComplaint.workId}</strong></span>
+              </div>
+              <p className="font-semibold text-slate-200">{selectedAuditorComplaint.workDescription}</p>
+              <div className="p-2 rounded bg-amber-950/30 border border-amber-900/50 text-amber-200 text-[11px]">
+                <strong>Citizen Allegation:</strong> "{selectedAuditorComplaint.description}"
+              </div>
+            </div>
+
+            {auditorSuccessMsg && (
+              <div className="p-3 bg-emerald-950/40 border border-emerald-800 text-xs text-emerald-300 rounded-xl flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-400 flex-shrink-0" />
+                <span>{auditorSuccessMsg}</span>
+              </div>
+            )}
+
+            {auditorErrorMsg && (
+              <div className="p-3 bg-rose-950/40 border border-rose-800 text-xs text-rose-300 rounded-xl flex items-center gap-2">
+                <AlertCircle size={16} className="text-rose-400 flex-shrink-0" />
+                <span>{auditorErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitAuditorFinding} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-white mb-1.5">
+                  Neutral Audit Verification Outcome: <span className="text-rose-400">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { id: 'VERIFIED', label: 'VERIFIED', desc: 'Concern validated via physical / ledger reconciliation' },
+                    { id: 'NEEDS FURTHER INVESTIGATION', label: 'NEEDS FURTHER INVESTIGATION', desc: 'Irregularities / discrepancies detected; recommends comprehensive inquiry' },
+                    { id: 'INSUFFICIENT EVIDENCE', label: 'INSUFFICIENT EVIDENCE', desc: 'Available ground or financial records are inconclusive' },
+                    { id: 'NO ISSUE ESTABLISHED', label: 'NO ISSUE ESTABLISHED', desc: 'Work executed in accordance with technical sanctions' },
+                  ].map((opt) => (
+                    <label
+                      key={opt.id}
+                      onClick={() => setAuditorOutcome(opt.id)}
+                      className={`p-2.5 rounded-xl border transition-all cursor-pointer block ${
+                        auditorOutcome === opt.id
+                          ? 'border-purple-500 bg-purple-950/60 text-white ring-1 ring-purple-500'
+                          : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="font-bold text-[11px] text-purple-300">{opt.label}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5 leading-tight">{opt.desc}</div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-white mb-1">
+                  Verification Findings &amp; Ledger Assessment Remarks: <span className="text-rose-400">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={auditorRemarksInput}
+                  onChange={e => setAuditorRemarksInput(e.target.value)}
+                  placeholder="Record your independent analysis: check of measurement book entries, voucher concordance, physical spot verification observations..."
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs focus:outline-none focus:border-purple-500"
+                  required
+                />
+              </div>
+
+              <div className="p-2.5 bg-purple-950/40 rounded-xl border border-purple-800 text-[11px] text-purple-200">
+                <strong>Governance Rule:</strong> Auditor verification outcomes are entered as neutral administrative findings and automatically forwarded back to the competent District Officer. Auditors cannot close citizen grievances.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-slate-800 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAuditorComplaint(null)}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={auditorSubmitting || !auditorRemarksInput.trim()}
+                  className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-lg shadow-purple-950 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {auditorSubmitting ? (
+                    <>
+                      <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Submitting Assessment…</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Submit Neutral Assessment</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ==================================================================== */}
       {/* CASE FILE MODAL (Opened on Review action) */}
@@ -831,3 +1163,4 @@ export function AuditorDashboard() {
     </div>
   );
 }
+

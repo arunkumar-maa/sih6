@@ -74,22 +74,51 @@ export function OfficialFilterBar({
 }: OfficialFilterBarProps) {
   const { setActiveHouse, isLoadingRajyaSabha, activeHouse, filterOptions, loadFilterOptions, isUsingSupabase } = useAppStore();
   const { profile } = useAuthStore();
+  const isMP = profile?.role === 'MP';
   const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
-  const isStateLocked = (profile?.role === 'STATE_NODAL_OFFICER' || isDistrictOfficer) && !!profile?.state;
+  const isStateLocked = (profile?.role === 'STATE_NODAL_OFFICER' || isDistrictOfficer || isMP) && !!profile?.state;
   const lockedState = isStateLocked ? (profile.state as string) : '';
   const isDistrictLocked = isDistrictOfficer && !!profile?.district;
   const lockedDistrictRaw = isDistrictLocked ? (profile.district as string) : '';
   const lockedDistrictClean = lockedDistrictRaw.split('(')[0].trim();
+  const isConstituencyLocked = isMP && !!profile?.constituency;
+  const lockedConstituency = isConstituencyLocked ? (profile.constituency as string) : '';
+  const isMPLocked = isMP && (!!profile?.mp_name || !!profile?.full_name);
+  const lockedMPName = isMP ? ((profile?.mp_name || profile?.full_name) as string) : '';
 
   const [popoverOpen, setPopoverOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
 
-  // Toast state
   const [toast, setToast] = useState<string | null>(null);
+
+  // Debounced search input state
+  const [localSearch, setLocalSearch] = useState(filters.search || '');
+
+  useEffect(() => {
+    setLocalSearch(filters.search || '');
+  }, [filters.search]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch !== filters.search) {
+        onFilterChange({ ...filters, search: localSearch });
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [localSearch, filters, onFilterChange]);
 
   // Draft filters inside popover before clicking "Search"
   const [draft, setDraft] = useState<OfficialFilterState>(() => {
+    if (isMP) {
+      return {
+        ...filters,
+        house: 'Lok Sabha',
+        state: lockedState,
+        constituency: lockedConstituency,
+        mpName: lockedMPName,
+      };
+    }
     if (isStateLocked) {
       return { ...filters, state: lockedState };
     }
@@ -98,7 +127,24 @@ export function OfficialFilterBar({
 
   // Sync draft when external filters change
   useEffect(() => {
-    if (isStateLocked) {
+    if (isMP) {
+      const enforced: OfficialFilterState = {
+        ...filters,
+        house: 'Lok Sabha',
+        state: lockedState,
+        constituency: lockedConstituency,
+        mpName: lockedMPName,
+      };
+      setDraft(enforced);
+      if (
+        filters.house !== 'Lok Sabha' ||
+        filters.state !== lockedState ||
+        filters.constituency !== lockedConstituency ||
+        filters.mpName !== lockedMPName
+      ) {
+        onFilterChange(enforced);
+      }
+    } else if (isStateLocked) {
       setDraft({ ...filters, state: lockedState });
       if (filters.state !== lockedState) {
         onFilterChange({ ...filters, state: lockedState });
@@ -106,7 +152,7 @@ export function OfficialFilterBar({
     } else {
       setDraft(filters);
     }
-  }, [filters, isStateLocked, lockedState, onFilterChange]);
+  }, [filters, isMP, isStateLocked, lockedState, lockedConstituency, lockedMPName, onFilterChange]);
 
   // Dynamically load options from Supabase when draft state changes
   useEffect(() => {
@@ -208,6 +254,7 @@ export function OfficialFilterBar({
 
   // Handlers
   const handleHouseChange = (newHouse: 'Lok Sabha' | 'Rajya Sabha') => {
+    if (isMP) return; // MP is strictly locked to Lok Sabha
     const updated: OfficialFilterState = {
       ...filters,
       house: newHouse,
@@ -228,7 +275,18 @@ export function OfficialFilterBar({
 
   const handleApplySearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const finalDraft = isStateLocked ? { ...draft, state: lockedState } : draft;
+    let finalDraft = draft;
+    if (isMP) {
+      finalDraft = {
+        ...draft,
+        house: 'Lok Sabha',
+        state: lockedState,
+        constituency: lockedConstituency,
+        mpName: lockedMPName,
+      };
+    } else if (isStateLocked) {
+      finalDraft = { ...draft, state: lockedState };
+    }
     onFilterChange(finalDraft);
     setPopoverOpen(false);
   };
@@ -236,11 +294,11 @@ export function OfficialFilterBar({
   const handleResetFilters = () => {
     const resetState: OfficialFilterState = {
       search: '',
-      house: filters.house,
+      house: isMP ? 'Lok Sabha' : filters.house,
       tenure: '',
       state: isStateLocked ? lockedState : '',
-      constituency: '',
-      mpName: '',
+      constituency: isMP ? lockedConstituency : '',
+      mpName: isMP ? lockedMPName : '',
       riskLevel: '',
       status: '',
       category: '',
@@ -252,6 +310,7 @@ export function OfficialFilterBar({
   };
 
   const removeFilter = (key: keyof OfficialFilterState) => {
+    if (isMP && (key === 'state' || key === 'constituency' || key === 'mpName' || key === 'house')) return;
     if (isStateLocked && key === 'state') return; // Cannot remove assigned state
     const updated = { ...filters, [key]: '' };
     onFilterChange(updated);
@@ -354,23 +413,52 @@ export function OfficialFilterBar({
           >
             <input
               type="text"
-              placeholder="Search MP, Constituency, Work ID..."
-              value={filters.search}
+              placeholder={
+                isMP
+                  ? `Search ${lockedConstituency || 'Constituency'} works, ID...`
+                  : isDistrictLocked
+                  ? `Search ${lockedDistrictClean || 'District'} works, ID...`
+                  : isStateLocked
+                  ? `Search ${lockedState} projects, ID, MP...`
+                  : "Search MP, Constituency, Work ID..."
+              }
+              value={localSearch}
               onChange={e => {
                 const val = e.target.value;
+                setLocalSearch(val);
                 setDraft(prev => ({ ...prev, search: val }));
-                onFilterChange({ ...filters, search: val });
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  onFilterChange({ ...filters, search: localSearch });
+                }
               }}
               onClick={e => e.stopPropagation()}
               className="flex-1 bg-transparent text-sm text-slate-800 placeholder-slate-400 outline-none min-w-0"
             />
-            <div className="flex items-center gap-2 pl-2 flex-shrink-0">
+            {localSearch && (
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  setLocalSearch('');
+                  setDraft(prev => ({ ...prev, search: '' }));
+                  onFilterChange({ ...filters, search: '' });
+                }}
+                className="text-slate-400 hover:text-slate-600 mr-1 p-0.5"
+                title="Clear search"
+              >
+                <X size={13} />
+              </button>
+            )}
+            <div className="flex items-center gap-2 pl-1 flex-shrink-0">
               <Search
                 size={17}
                 className="text-slate-700 hover:text-[#0084ff] transition-colors cursor-pointer"
                 onClick={e => {
                   e.stopPropagation();
-                  setPopoverOpen(prev => !prev);
+                  onFilterChange({ ...filters, search: localSearch });
                 }}
               />
               <button
@@ -435,7 +523,7 @@ export function OfficialFilterBar({
                     </label>
                     {isStateLocked && (
                       <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                        ASSIGNED STATE (LOCKED)
+                        {isMP ? 'MP STATE (LOCKED)' : 'ASSIGNED STATE (LOCKED)'}
                       </span>
                     )}
                   </div>
@@ -483,37 +571,65 @@ export function OfficialFilterBar({
 
                 {/* Constituency / Representation */}
                 <div>
-                  <label className="block text-sm font-normal text-slate-600 mb-1.5">
-                    {draft.house === 'Rajya Sabha' ? 'Constituency (Lok Sabha Only)' : 'Constituency'}
-                  </label>
-                  <select
-                    value={draft.house === 'Rajya Sabha' ? '' : draft.constituency}
-                    onChange={e => setDraft(prev => ({ ...prev, constituency: e.target.value, mpName: '' }))}
-                    disabled={draft.house === 'Rajya Sabha'}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/30 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
-                  >
-                    <option value="">{draft.house === 'Rajya Sabha' ? 'State Representation (N/A)' : 'Please Select'}</option>
-                    {draft.house !== 'Rajya Sabha' && constituencies.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-normal text-slate-600">
+                      {draft.house === 'Rajya Sabha' ? 'Constituency (Lok Sabha Only)' : 'Constituency'}
+                    </label>
+                    {isConstituencyLocked && (
+                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                        CONSTITUENCY (LOCKED)
+                      </span>
+                    )}
+                  </div>
+                  {isConstituencyLocked ? (
+                    <div className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-slate-800 font-semibold flex items-center justify-between cursor-not-allowed">
+                      <span>{lockedConstituency}</span>
+                      <span className="text-xs text-slate-400 font-normal">Constituency Locked</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={draft.house === 'Rajya Sabha' ? '' : draft.constituency}
+                      onChange={e => setDraft(prev => ({ ...prev, constituency: e.target.value, mpName: '' }))}
+                      disabled={draft.house === 'Rajya Sabha'}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/30 transition-all cursor-pointer disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+                    >
+                      <option value="">{draft.house === 'Rajya Sabha' ? 'State Representation (N/A)' : 'Please Select'}</option>
+                      {draft.house !== 'Rajya Sabha' && constituencies.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {/* MP Name */}
                 <div>
-                  <label className="block text-sm font-normal text-slate-600 mb-1.5">
-                    {draft.house === 'Rajya Sabha' ? 'Member of Rajya Sabha (MP)' : 'MP Name'}
-                  </label>
-                  <select
-                    value={draft.mpName}
-                    onChange={e => setDraft(prev => ({ ...prev, mpName: e.target.value }))}
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/30 transition-all cursor-pointer"
-                  >
-                    <option value="">Please Select</option>
-                    {mps.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-sm font-normal text-slate-600">
+                      {draft.house === 'Rajya Sabha' ? 'Member of Rajya Sabha (MP)' : 'MP Name'}
+                    </label>
+                    {isMPLocked && (
+                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                        HON'BLE MP (LOCKED)
+                      </span>
+                    )}
+                  </div>
+                  {isMPLocked ? (
+                    <div className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-lg text-sm text-slate-800 font-semibold flex items-center justify-between cursor-not-allowed">
+                      <span>{lockedMPName}</span>
+                      <span className="text-xs text-slate-400 font-normal">MP Profile Locked</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={draft.mpName}
+                      onChange={e => setDraft(prev => ({ ...prev, mpName: e.target.value }))}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-[#0084ff] focus:ring-1 focus:ring-[#0084ff]/30 transition-all cursor-pointer"
+                    >
+                      <option value="">Please Select</option>
+                      {mps.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 {/* Risk Level */}
@@ -593,38 +709,47 @@ export function OfficialFilterBar({
         </div>
 
         {/* Right Side: Lok Sabha / Rajya Sabha Toggle */}
-        <div className="flex items-center gap-3 self-end sm:self-auto">
-          <button
-            type="button"
-            onClick={() => handleHouseChange('Lok Sabha')}
-            className={`px-5 py-2 text-sm font-bold transition-all rounded-lg ${
-              filters.house === 'Lok Sabha'
-                ? 'bg-[#0084ff] text-white shadow-sm'
-                : 'text-slate-900 hover:text-[#0084ff] bg-transparent'
-            }`}
-          >
-            Lok Sabha
-          </button>
-          <button
-            type="button"
-            onClick={() => handleHouseChange('Rajya Sabha')}
-            disabled={isLoadingRajyaSabha}
-            className={`px-5 py-2 text-sm font-bold transition-all rounded-lg relative ${
-              filters.house === 'Rajya Sabha'
-                ? 'bg-[#0084ff] text-white shadow-sm'
-                : 'text-slate-900 hover:text-[#0084ff] bg-transparent'
-            } disabled:opacity-60 disabled:cursor-wait`}
-          >
-            {isLoadingRajyaSabha && filters.house === 'Rajya Sabha' ? (
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                Loading…
-              </span>
-            ) : (
-              'Rajya Sabha'
-            )}
-          </button>
-        </div>
+        {isMP ? (
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <div className="px-4 py-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 text-xs font-bold shadow-sm flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-600" />
+              Lok Sabha · {lockedConstituency || 'Constituency Scope'}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={() => handleHouseChange('Lok Sabha')}
+              className={`px-5 py-2 text-sm font-bold transition-all rounded-lg ${
+                filters.house === 'Lok Sabha'
+                  ? 'bg-[#0084ff] text-white shadow-sm'
+                  : 'text-slate-900 hover:text-[#0084ff] bg-transparent'
+              }`}
+            >
+              Lok Sabha
+            </button>
+            <button
+              type="button"
+              onClick={() => handleHouseChange('Rajya Sabha')}
+              disabled={isLoadingRajyaSabha}
+              className={`px-5 py-2 text-sm font-bold transition-all rounded-lg relative ${
+                filters.house === 'Rajya Sabha'
+                  ? 'bg-[#0084ff] text-white shadow-sm'
+                  : 'text-slate-900 hover:text-[#0084ff] bg-transparent'
+              } disabled:opacity-60 disabled:cursor-wait`}
+            >
+              {isLoadingRajyaSabha && filters.house === 'Rajya Sabha' ? (
+                <span className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  Loading…
+                </span>
+              ) : (
+                'Rajya Sabha'
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Bottom Row: Active Filter Chips & Export Buttons ── */}
@@ -658,15 +783,23 @@ export function OfficialFilterBar({
             </span>
           )}
           {filters.constituency && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e0e9f2] text-[#00204a] text-xs font-semibold">
-              {filters.house === 'Rajya Sabha' ? 'Rep' : 'Const'}: {filters.constituency}
-              <button onClick={() => removeFilter('constituency')} className="hover:text-red-600 ml-0.5"><X size={11} /></button>
+            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+              isConstituencyLocked ? 'bg-blue-100 text-blue-900 border border-blue-200' : 'bg-[#e0e9f2] text-[#00204a]'
+            }`}>
+              {filters.house === 'Rajya Sabha' ? 'Rep' : 'Const'}: {filters.constituency} {isConstituencyLocked && '(Locked)'}
+              {!isConstituencyLocked && (
+                <button onClick={() => removeFilter('constituency')} className="hover:text-red-600 ml-0.5"><X size={11} /></button>
+              )}
             </span>
           )}
           {filters.mpName && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#e0e9f2] text-[#00204a] text-xs font-semibold">
-              {filters.house === 'Rajya Sabha' ? 'RS MP' : 'MP'}: {filters.mpName.replace(/\s*\([^)]*\)/g, '').trim()}
-              <button onClick={() => removeFilter('mpName')} className="hover:text-red-600 ml-0.5"><X size={11} /></button>
+            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+              isMPLocked ? 'bg-blue-100 text-blue-900 border border-blue-200' : 'bg-[#e0e9f2] text-[#00204a]'
+            }`}>
+              {filters.house === 'Rajya Sabha' ? 'RS MP' : 'MP'}: {filters.mpName.replace(/\s*\([^)]*\)/g, '').trim()} {isMPLocked && '(Locked)'}
+              {!isMPLocked && (
+                <button onClick={() => removeFilter('mpName')} className="hover:text-red-600 ml-0.5"><X size={11} /></button>
+              )}
             </span>
           )}
           {filters.riskLevel && (

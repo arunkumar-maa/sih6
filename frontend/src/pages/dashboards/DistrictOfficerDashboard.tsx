@@ -6,7 +6,8 @@ import {
   Layers, ShieldCheck, ArrowUpRight, RotateCw,
   Search, Building2, User, ChevronRight, AlertCircle,
   ExternalLink, FileText, CheckCircle, ArrowLeftRight,
-  Filter, Clock, ShieldAlert, Eye, DollarSign
+  Filter, Clock, ShieldAlert, Eye, DollarSign,
+  Paperclip, Upload, Trash2
 } from 'lucide-react';
 import { formatCurrency } from '../../utils';
 import {
@@ -14,6 +15,8 @@ import {
   type DistrictOfficerOverview,
   updateProjectVerification
 } from '../../services/projectService';
+import { PublicService } from '../../services/publicService';
+import type { DistrictComplaintItem, ComplaintEvent } from '../../types/public';
 import type { VerificationStatus } from '../../types';
 import { MpAvatar } from '../../components/MpAvatar';
 
@@ -32,21 +35,51 @@ export function DistrictOfficerDashboard() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter & Search states
-  const [queueSearch, setQueueSearch] = useState<string>('');
+  // Tab State
   const [activeQueueTab, setActiveQueueTab] = useState<'all' | 'unverified' | 'high_risk' | 'stale' | 'cost' | 'disbursement'>('all');
+  const [queueSearch, setQueueSearch] = useState<string>('');
   const [repSearch, setRepSearch] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'overview' | 'comparative' | 'grievances'>('overview');
 
-  // Intra-district comparison state
-  const [viewMode, setViewMode] = useState<'overview' | 'comparative'>('overview');
+  // Inspection Modal State
+  const [inspectingWork, setInspectingWork] = useState<any | null>(null);
+  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('Verified');
+  const [verificationComment, setVerificationComment] = useState<string>('');
+  const [isSavingVerification, setIsSavingVerification] = useState<boolean>(false);
+
+  // Cross-Constituency Comparison State
   const [compareConstituencyA, setCompareConstituencyA] = useState<string>('');
   const [compareConstituencyB, setCompareConstituencyB] = useState<string>('');
 
-  // Inspection & Verification modal state
-  const [inspectingWork, setInspectingWork] = useState<any | null>(null);
-  const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>('Under Review');
-  const [verificationComment, setVerificationComment] = useState<string>('');
-  const [isSavingVerification, setIsSavingVerification] = useState<boolean>(false);
+  // Public Grievances Desk State
+  const [complaints, setComplaints] = useState<DistrictComplaintItem[]>([]);
+  const [complaintsLoading, setComplaintsLoading] = useState<boolean>(false);
+  const [selectedComplaint, setSelectedComplaint] = useState<DistrictComplaintItem | null>(null);
+  const [complaintStatusInput, setComplaintStatusInput] = useState<string>('UNDER REVIEW');
+  const [complaintResponseInput, setComplaintResponseInput] = useState<string>('');
+  const [complaintNotesInput, setComplaintNotesInput] = useState<string>('');
+  const [isUpdatingComplaint, setIsUpdatingComplaint] = useState<boolean>(false);
+  const [complaintSearch, setComplaintSearch] = useState<string>('');
+  const [complaintCategoryFilter, setComplaintCategoryFilter] = useState<string>('all');
+  const [complaintStatusFilter, setComplaintStatusFilter] = useState<string>('all');
+
+  // Timeline and Structured Workflow Action State
+  const [complaintTimeline, setComplaintTimeline] = useState<ComplaintEvent[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState<boolean>(false);
+  const [selectedAction, setSelectedAction] = useState<string>('START_REVIEW');
+  const [actionRemarks, setActionRemarks] = useState<string>('');
+  const [actionPublicResponse, setActionPublicResponse] = useState<string>('');
+
+  // Evidence attachment state for Grievance
+  const [complaintEvidenceList, setComplaintEvidenceList] = useState<any[]>([]);
+  const [attachedFile, setAttachedFile] = useState<{
+    name: string;
+    type: string;
+    size: number;
+    dataUrl: string;
+    description: string;
+  } | null>(null);
+  const [evidenceDescription, setEvidenceDescription] = useState<string>('');
 
   const loadData = async (targetHouse: 'Lok Sabha' | 'Rajya Sabha') => {
     setLoading(true);
@@ -66,8 +99,135 @@ export function DistrictOfficerDashboard() {
     }
   };
 
+  const loadComplaints = async () => {
+    setComplaintsLoading(true);
+    try {
+      const data = await PublicService.getDistrictComplaints(assignedDistrictClean, assignedState);
+      setComplaints(data);
+    } catch (err) {
+      console.warn('[DistrictOfficerDashboard] Could not fetch district complaints:', err);
+    } finally {
+      setComplaintsLoading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      alert('File size exceeds 15MB limit. Please upload a smaller document.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachedFile({
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        dataUrl: (reader.result as string) || '',
+        description: evidenceDescription || file.name,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleOpenComplaintReview = async (c: DistrictComplaintItem) => {
+    setSelectedComplaint(c);
+    setComplaintStatusInput(c.status);
+    setComplaintResponseInput(c.publicResponse || '');
+    setComplaintNotesInput(c.internalNotes || '');
+    setActionRemarks('');
+    setActionPublicResponse('');
+    setAttachedFile(null);
+    setEvidenceDescription('');
+    setSelectedAction(
+      c.status === 'SUBMITTED' ? 'START_REVIEW' :
+      c.status === 'UNDER REVIEW' ? 'REQUEST_CLARIFICATION' :
+      c.status === 'INSPECTION_REQUESTED' ? 'RECORD_INSPECTION' :
+      c.status === 'ACTION IN PROGRESS' ? 'RESOLVE' : 'RESOLVE'
+    );
+    setTimelineLoading(true);
+    try {
+      const [events, evidence] = await Promise.all([
+        PublicService.getComplaintTimeline(c.complaintId, false),
+        PublicService.getEvidence(c.complaintId).catch(() => []),
+      ]);
+      setComplaintTimeline(events);
+      setComplaintEvidenceList(evidence);
+    } catch (err) {
+      console.warn('Could not load complaint events/evidence:', err);
+      setComplaintTimeline([]);
+      setComplaintEvidenceList([]);
+    } finally {
+      setTimelineLoading(false);
+    }
+  };
+
+  const handleExecuteStructuredAction = async (action: string) => {
+    if (!selectedComplaint) return;
+    setIsUpdatingComplaint(true);
+    try {
+      await PublicService.executeOfficerAction(selectedComplaint.complaintId, action, {
+        remarks: actionRemarks,
+        publicResponse: actionPublicResponse,
+        internalNotes: complaintNotesInput,
+        officerName,
+        evidence: attachedFile ? {
+          fileName: attachedFile.name,
+          fileType: attachedFile.type,
+          fileSize: attachedFile.size,
+          fileData: attachedFile.dataUrl,
+          description: evidenceDescription || attachedFile.description || `Officer inspection document for action ${action}`,
+        } : undefined,
+      });
+      setAttachedFile(null);
+      setEvidenceDescription('');
+      await loadComplaints();
+      const [events, updatedEvidence] = await Promise.all([
+        PublicService.getComplaintTimeline(selectedComplaint.complaintId, false),
+        PublicService.getEvidence(selectedComplaint.complaintId).catch(() => []),
+      ]);
+      setComplaintTimeline(events);
+      setComplaintEvidenceList(updatedEvidence);
+      const updatedList = await PublicService.getDistrictComplaints(assignedDistrictClean, assignedState);
+      setComplaints(updatedList);
+      const found = updatedList.find(x => x.complaintId === selectedComplaint.complaintId);
+      if (found) {
+        setSelectedComplaint(found);
+        setComplaintStatusInput(found.status);
+        setComplaintResponseInput(found.publicResponse || '');
+      }
+      setActionRemarks('');
+      alert(`Action "${action.replace(/_/g, ' ')}" executed successfully!`);
+    } catch (err: any) {
+      alert(`Failed to execute action: ${err.message}`);
+    } finally {
+      setIsUpdatingComplaint(false);
+    }
+  };
+
+  const handleUpdateComplaint = async () => {
+    if (!selectedComplaint) return;
+    setIsUpdatingComplaint(true);
+    try {
+      await PublicService.updateComplaintStatus(selectedComplaint.complaintId, {
+        status: complaintStatusInput,
+        publicResponse: complaintResponseInput,
+        internalNotes: complaintNotesInput,
+        assignedOfficer: officerName,
+      });
+      await loadComplaints();
+      setSelectedComplaint(null);
+    } catch (err: any) {
+      alert(`Failed to update complaint status: ${err.message}`);
+    } finally {
+      setIsUpdatingComplaint(false);
+    }
+  };
+
   useEffect(() => {
     loadData(house);
+    loadComplaints();
   }, [house, assignedState, assignedDistrictRaw]);
 
   const kpis = overview?.kpis || {
@@ -356,7 +516,7 @@ export function DistrictOfficerDashboard() {
         {house === 'Lok Sabha' && overview?.constituencies && overview.constituencies.length >= 2 && (
           <button
             onClick={() => setViewMode('comparative')}
-            className={`pb-2.5 flex items-center gap-2 transition-all ${
+            className={`pb-2.5 flex items-center gap-2 transition-all cursor-pointer ${
               viewMode === 'comparative'
                 ? 'border-b-2 border-[#00204a] text-[#00204a]'
                 : 'text-[#6C757D] hover:text-[#00204a]'
@@ -366,6 +526,23 @@ export function DistrictOfficerDashboard() {
             Intra-District Constituency Comparison
           </button>
         )}
+
+        <button
+          onClick={() => setViewMode('grievances')}
+          className={`pb-2.5 flex items-center gap-2 transition-all cursor-pointer ${
+            viewMode === 'grievances'
+              ? 'border-b-2 border-[#00204a] text-[#00204a]'
+              : 'text-[#6C757D] hover:text-[#00204a]'
+          }`}
+        >
+          <AlertCircle size={16} className={complaints.length > 0 ? 'text-[#DC3545]' : ''} />
+          <span>Public Grievances & Citizen Reports</span>
+          {complaints.length > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#DC3545] text-white">
+              {complaints.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {/* 3. Executive KPI Cards */}
@@ -840,7 +1017,7 @@ export function DistrictOfficerDashboard() {
             </div>
           </div>
         </>
-      ) : (
+      ) : viewMode === 'comparative' ? (
         /* 6. Intra-District Constituency Comparative Intelligence */
         <div className="bg-white border border-[#E9ECEF] rounded-sm shadow-sm p-5 space-y-5">
           <div className="border-b border-[#E9ECEF] pb-3">
@@ -978,7 +1155,520 @@ export function DistrictOfficerDashboard() {
             </div>
           )}
         </div>
+      ) : (
+        /* Citizen Grievances & Public Reports Desk */
+        <div className="bg-white border border-[#E9ECEF] rounded-sm shadow-sm overflow-hidden p-5 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-[#E9ECEF] pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 bg-rose-50 text-[#DC3545] rounded border border-rose-200">
+                  <AlertCircle size={16} />
+                </span>
+                <h2 className="text-base font-bold text-[#000a1f]">
+                  Public Grievances & Citizen Reports Desk — {assignedDistrictClean}
+                </h2>
+              </div>
+              <p className="text-xs text-[#6C757D] mt-1">
+                Citizen complaints filed on the public portal against MPLADS works in {assignedDistrictClean} district. Review issues, order field inspections, and record official resolution updates.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-[#00204a] bg-blue-50 px-2.5 py-1 rounded border border-blue-200">
+                {complaints.length} Total Complaints
+              </span>
+              <button
+                onClick={() => loadComplaints()}
+                disabled={complaintsLoading}
+                className="btn-outline text-xs flex items-center gap-1.5 py-1 px-2.5 cursor-pointer"
+                title="Refresh Grievances"
+              >
+                <RotateCw size={12} className={complaintsLoading ? 'animate-spin' : ''} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 bg-[#F8F9FA] p-3 rounded border border-[#E9ECEF] text-xs">
+            <div className="relative flex-1 w-full">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#ADB5BD]" />
+              <input
+                type="text"
+                placeholder="Search complaint ID, work ID, citizen name, description, landmark..."
+                value={complaintSearch}
+                onChange={e => setComplaintSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 rounded border border-[#CED4DA] bg-white focus:outline-none focus:border-[#00204a]"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <select
+                value={complaintCategoryFilter}
+                onChange={e => setComplaintCategoryFilter(e.target.value)}
+                className="px-2.5 py-1.5 rounded border border-[#CED4DA] bg-white text-[#495057] font-medium outline-none text-xs"
+              >
+                <option value="all">All Categories</option>
+                <option value="Project Not Progressing">Project Not Progressing</option>
+                <option value="Work Quality Concern">Work Quality Concern</option>
+                <option value="Work Not Found at Location">Work Not Found at Location</option>
+                <option value="Financial / Expenditure Concern">Financial Concern</option>
+                <option value="Project Information Mismatch">Information Mismatch</option>
+                <option value="Completion Status Concern">Completion Status</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <select
+                value={complaintStatusFilter}
+                onChange={e => setComplaintStatusFilter(e.target.value)}
+                className="px-2.5 py-1.5 rounded border border-[#CED4DA] bg-white text-[#495057] font-medium outline-none text-xs"
+              >
+                <option value="all">All Statuses</option>
+                <option value="SUBMITTED">Submitted</option>
+                <option value="UNDER REVIEW">Under Review</option>
+                <option value="INSPECTION / VERIFICATION">Inspection / Verification</option>
+                <option value="ACTION TAKEN">Action Taken</option>
+                <option value="CLOSED">Closed</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Grievances List */}
+          {complaintsLoading ? (
+            <div className="py-12 text-center text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+              <RotateCw size={18} className="animate-spin text-[#00204a]" />
+              <span>Loading district grievances from database…</span>
+            </div>
+          ) : (
+            (() => {
+              const filtered = complaints.filter(c => {
+                if (complaintCategoryFilter !== 'all' && c.category !== complaintCategoryFilter) return false;
+                if (complaintStatusFilter !== 'all' && c.status !== complaintStatusFilter) return false;
+                if (!complaintSearch.trim()) return true;
+                const q = complaintSearch.toLowerCase();
+                return (
+                  c.complaintId.toLowerCase().includes(q) ||
+                  c.workId.toLowerCase().includes(q) ||
+                  c.description.toLowerCase().includes(q) ||
+                  c.complainantName.toLowerCase().includes(q) ||
+                  (c.locationLandmark && c.locationLandmark.toLowerCase().includes(q)) ||
+                  (c.workDescription && c.workDescription.toLowerCase().includes(q))
+                );
+              });
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="text-center py-12 border border-dashed border-[#CED4DA] rounded bg-[#FCFCFD] p-6 space-y-2">
+                    <CheckCircle2 size={32} className="mx-auto text-emerald-600" />
+                    <h3 className="font-bold text-sm text-[#000a1f]">No Citizen Grievances Found</h3>
+                    <p className="text-xs text-[#6C757D] max-w-md mx-auto">
+                      {complaints.length === 0
+                        ? `No public complaints have been registered against MPLADS works in ${assignedDistrictClean} district.`
+                        : 'No complaints match the current filter criteria.'}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {filtered.map(c => {
+                    const statusColor =
+                      c.status === 'ACTION TAKEN' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
+                      c.status === 'INSPECTION / VERIFICATION' ? 'bg-purple-50 text-purple-800 border-purple-300' :
+                      c.status === 'UNDER REVIEW' ? 'bg-blue-50 text-blue-800 border-blue-300' :
+                      c.status === 'CLOSED' ? 'bg-slate-100 text-slate-700 border-slate-300' :
+                      'bg-amber-50 text-amber-800 border-amber-300';
+
+                    return (
+                      <div
+                        key={c.complaintId}
+                        className="p-4 border border-[#E9ECEF] rounded-lg bg-white hover:border-[#00204a] transition-all shadow-xs space-y-3"
+                      >
+                        {/* Header bar */}
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F1F3F5] pb-2.5">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs font-bold text-[#005eb2] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                              {c.complaintId}
+                            </span>
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                              {c.category}
+                            </span>
+                            <button
+                              onClick={() => {
+                                selectProject(c.workId);
+                                setCurrentPage('monitoring');
+                                window.history.pushState({}, '', '/monitoring');
+                                window.dispatchEvent(new PopStateEvent('popstate'));
+                              }}
+                              className="text-xs font-mono font-semibold text-[#00204a] hover:underline flex items-center gap-1 cursor-pointer"
+                              title="Inspect this project dossier in Project Intelligence"
+                            >
+                              <span>Work: {c.workId}</span>
+                              <ExternalLink size={10} />
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded border uppercase ${statusColor}`}>
+                              {c.status}
+                            </span>
+                            <button
+                              onClick={() => handleOpenComplaintReview(c)}
+                              className="px-3 py-1 rounded text-xs font-bold bg-[#00204a] hover:bg-[#001737] text-white flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                            >
+                              <ShieldCheck size={12} />
+                              <span>Review &amp; Take Action</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Work description */}
+                        <div>
+                          <p className="text-xs font-bold text-[#000a1f]">
+                            {c.workDescription}
+                          </p>
+                        </div>
+
+                        {/* Citizen Allegation */}
+                        <div className="p-3 bg-amber-50/60 rounded border border-amber-200/80 text-xs text-amber-950 space-y-1">
+                          <div className="font-bold text-[10px] text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                            <AlertCircle size={11} />
+                            Citizen Grievance Submission:
+                          </div>
+                          <p className="italic text-slate-800">
+                            "{c.description}"
+                          </p>
+                        </div>
+
+                        {/* Complainant metadata row */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-slate-600 bg-[#F8F9FA] p-2.5 rounded border border-[#E9ECEF]">
+                          <div>
+                            <span className="text-slate-400 font-semibold">Complainant: </span>
+                            <strong className="text-slate-800">{c.complainantName}</strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 font-semibold">Contact: </span>
+                            <span className="font-mono text-slate-700">{c.complainantMobile || c.complainantEmail || 'Anonymous submission'}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 font-semibold">Landmark: </span>
+                            <span className="text-slate-700">{c.locationLandmark}</span>
+                          </div>
+                        </div>
+
+                        {/* Current official response if exists */}
+                        {c.publicResponse && (
+                          <div className="p-2.5 bg-blue-50/50 rounded border border-blue-200/60 text-xs text-blue-950 flex items-start gap-2">
+                            <CheckCircle2 size={13} className="text-blue-700 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <span className="font-bold text-[10px] uppercase tracking-wider text-blue-900">Current Official Public Response:</span>
+                              <p className="text-slate-700 text-[11px] mt-0.5">{c.publicResponse}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()
+          )}
+        </div>
       )}
+
+      {/* 7. Citizen Complaint Review & Resolution Modal */}
+      {selectedComplaint && (
+        <div className="fixed inset-0 z-50 bg-[#000a1f]/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-sm border border-[#CED4DA] shadow-2xl max-w-2xl w-full p-6 space-y-4 my-8">
+            <div className="flex items-center justify-between border-b border-[#E9ECEF] pb-3">
+              <div>
+                <span className="text-[10px] font-bold text-[#00204a] uppercase tracking-wider bg-[#EEF2F6] px-2 py-0.5 rounded">
+                  District Officer Grievance &amp; Workflow Desk
+                </span>
+                <h3 className="text-base font-bold text-[#000a1f] mt-1">
+                  Administrative Review &amp; Routing Action
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedComplaint(null)}
+                className="text-[#ADB5BD] hover:text-[#000a1f] text-lg font-bold p-1 cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Case file context */}
+            <div className="bg-[#F8F9FA] p-3 rounded border border-[#E9ECEF] text-xs space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <span className="text-[#6C757D]">Complaint ID: </span>
+                  <strong className="font-mono text-[#00204a]">{selectedComplaint.complaintId}</strong>
+                </div>
+                <div>
+                  <span className="text-[#6C757D]">Work ID: </span>
+                  <strong className="font-mono text-[#005eb2]">{selectedComplaint.workId}</strong>
+                </div>
+                <div>
+                  <span className="text-[#6C757D]">Current Status: </span>
+                  <strong className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-blue-100 text-blue-800">
+                    {selectedComplaint.status}
+                  </strong>
+                </div>
+              </div>
+              <div>
+                <span className="text-[#6C757D]">Work Title: </span>
+                <span className="text-[#000a1f] font-semibold">{selectedComplaint.workDescription}</span>
+              </div>
+              <div className="p-2.5 bg-amber-50 rounded border border-amber-200 text-amber-950">
+                <span className="font-bold text-[10px] uppercase text-amber-900 block mb-0.5">Reported Citizen Concern ({selectedComplaint.category}):</span>
+                <p className="italic text-slate-800">"{selectedComplaint.description}"</p>
+              </div>
+              <button
+                onClick={() => {
+                  selectProject(selectedComplaint.workId);
+                  setCurrentPage('monitoring');
+                  window.history.pushState({}, '', '/monitoring');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
+                className="text-xs font-bold text-[#0066CC] hover:underline flex items-center gap-1 cursor-pointer pt-1"
+              >
+                <span>Inspect full project dossier in Project Intelligence</span>
+                <ExternalLink size={11} />
+              </button>
+            </div>
+
+            {/* Case History & Timeline */}
+            <div className="border border-[#E9ECEF] rounded p-3 bg-white space-y-2 max-h-48 overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase text-[#00204a] flex items-center gap-1">
+                  <Clock size={12} className="text-[#005eb2]" />
+                  <span>Administrative Dossier Timeline</span>
+                </span>
+                {timelineLoading && <span className="text-[10px] text-[#6C757D]">Refreshing timeline…</span>}
+              </div>
+              {complaintTimeline.length === 0 ? (
+                <p className="text-[11px] text-[#6C757D] italic">No prior events recorded.</p>
+              ) : (
+                <div className="space-y-1.5 border-l-2 border-[#005eb2]/30 pl-3">
+                  {complaintTimeline.map((ev, i) => (
+                    <div key={ev.id || i} className="text-[11px] pb-1">
+                      <div className="flex items-center justify-between text-[10px] text-[#6C757D]">
+                        <span className="font-bold text-[#00204a]">{ev.eventType.replace(/_/g, ' ')} ({ev.status})</span>
+                        <span>{new Date(ev.createdAt).toLocaleString()}</span>
+                      </div>
+                      <div className="text-[10px] text-[#005eb2] font-medium">
+                        By {ev.actorRole} ({ev.actorName})
+                      </div>
+                      <p className="text-[#495057] bg-slate-50 p-1.5 rounded border border-slate-100 mt-0.5">
+                        {ev.remarks}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Structured Workflow Action Dispatcher */}
+            <div className="border-t border-[#E9ECEF] pt-3 space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-[#000a1f] mb-1">
+                  Select Administrative Workflow Action: <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={selectedAction}
+                  onChange={e => {
+                    const act = e.target.value;
+                    setSelectedAction(act);
+                    if (act === 'START_REVIEW') {
+                      setActionRemarks('Commenced desk examination and project dossier validation.');
+                    } else if (act === 'REQUEST_CLARIFICATION') {
+                      setActionRemarks('Please state specific milestone or physical landmark observations.');
+                    } else if (act === 'REQUEST_AGENCY_INFO') {
+                      setActionRemarks('Please furnish physical progress status and latest expenditure justification.');
+                    } else if (act === 'REQUEST_INSPECTION') {
+                      setActionRemarks('Field engineer deputed for ground verification and measurement check.');
+                    } else if (act === 'RECORD_INSPECTION') {
+                      setActionRemarks('Physical inspection conducted on-site. Verified foundation and structure alignment.');
+                    } else if (act === 'REQUEST_VERIFICATION') {
+                      setActionRemarks('Referred to Auditor Verification Desk for physical/financial ledger concordance.');
+                    } else if (act === 'ESCALATE') {
+                      setActionRemarks('Escalated to State Nodal Authority due to cross-jurisdiction or fund clearance requirements.');
+                    } else if (act === 'RESOLVE') {
+                      setActionRemarks('Rectification completed by agency and verified by Assistant Engineer.');
+                    } else if (act === 'CLOSE') {
+                      setActionRemarks('Case reviewed, verified, and officially closed.');
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-[#00204a] rounded bg-white text-[#00204a] font-bold outline-none"
+                >
+                  <option value="START_REVIEW">1. START_REVIEW — Commence Desk Examination</option>
+                  <option value="REQUEST_CLARIFICATION">2. REQUEST_CLARIFICATION — Request Details from Citizen</option>
+                  <option value="REQUEST_AGENCY_INFO">3. REQUEST_AGENCY_INFO — Request Progress &amp; Explanation from Agency</option>
+                  <option value="REQUEST_INSPECTION">4. REQUEST_INSPECTION — Dispatch Field Inspection Order</option>
+                  <option value="RECORD_INSPECTION">5. RECORD_INSPECTION — Record Physical Inspection Findings</option>
+                  <option value="REQUEST_VERIFICATION">6. REQUEST_VERIFICATION — Route to Auditor Verification Desk</option>
+                  <option value="ESCALATE">7. ESCALATE — Escalate to State Nodal Authority</option>
+                  <option value="RESOLVE">8. RESOLVE — Issue Official Grievance Resolution Order</option>
+                  <option value="CLOSE">9. CLOSE — Final Administrative Closure</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#000a1f] mb-1">
+                  Action Remarks / Specific Instructions: <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={actionRemarks}
+                  onChange={e => setActionRemarks(e.target.value)}
+                  placeholder="Enter specific instructions, query details, or inspection observations..."
+                  className="w-full p-2 border border-[#CED4DA] rounded text-xs focus:outline-none focus:border-[#00204a]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#000a1f] mb-1">
+                  Public Summary for Citizen Tracker (Optional Customization)
+                </label>
+                <input
+                  type="text"
+                  value={actionPublicResponse}
+                  onChange={e => setActionPublicResponse(e.target.value)}
+                  placeholder="Leave empty to use standard transparent notification for this action..."
+                  className="w-full px-3 py-1.5 border border-[#CED4DA] rounded text-xs focus:outline-none focus:border-[#00204a]"
+                />
+              </div>
+
+              {/* Supporting Document / Inspection Proof Upload */}
+              <div className="p-3 bg-blue-50/50 border border-blue-200/70 rounded space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-[#00204a] text-xs flex items-center gap-1.5">
+                    <Paperclip size={13} className="text-[#005eb2]" />
+                    <span>Attach Inspection Proof / Official Verification Document (Optional)</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500">PDF, JPG, PNG (Max 15MB)</span>
+                </div>
+
+                {!attachedFile ? (
+                  <div className="flex items-center gap-2">
+                    <label className="px-3 py-1.5 bg-white border border-dashed border-[#005eb2] text-[#00204a] rounded text-xs font-bold hover:bg-blue-50/80 cursor-pointer flex items-center gap-1.5 transition-colors">
+                      <Upload size={12} className="text-[#005eb2]" />
+                      <span>Choose File to Attach</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-[11px] text-slate-500 italic">No document selected</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-2 bg-white rounded border border-blue-300 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={14} className="text-[#005eb2] flex-shrink-0" />
+                        <span className="font-bold text-slate-800 truncate">{attachedFile.name}</span>
+                        <span className="text-[10px] text-slate-400">({Math.round(attachedFile.size / 1024)} KB)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAttachedFile(null)}
+                        className="text-rose-600 hover:text-rose-800 p-1 cursor-pointer"
+                        title="Remove attached document"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={evidenceDescription}
+                      onChange={e => setEvidenceDescription(e.target.value)}
+                      placeholder="Document label or inspection note (e.g., Joint inspection measurement report)..."
+                      className="w-full px-2.5 py-1 text-xs border border-slate-300 rounded bg-white"
+                    />
+                  </div>
+                )}
+
+                {/* Previously Attached Evidence */}
+                {complaintEvidenceList.length > 0 && (
+                  <div className="pt-1 border-t border-blue-200/50">
+                    <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                      Attached Case Evidence ({complaintEvidenceList.length}):
+                    </span>
+                    <div className="space-y-1">
+                      {complaintEvidenceList.map((ev: any, idx: number) => (
+                        <div key={ev.id || idx} className="flex items-center justify-between text-[11px] bg-white p-1.5 rounded border border-slate-200">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <FileText size={12} className="text-blue-700 flex-shrink-0" />
+                            <span className="font-semibold text-slate-800 truncate">{ev.file_name || ev.fileName}</span>
+                            <span className="text-[10px] text-slate-400">by {ev.uploaded_by || ev.uploadedBy || 'Authority'}</span>
+                          </div>
+                          {ev.storage_path && ev.storage_path.startsWith('data:') ? (
+                            <a
+                              href={ev.storage_path}
+                              download={ev.file_name || 'evidence.pdf'}
+                              className="text-xs font-bold text-[#0066CC] hover:underline flex items-center gap-0.5 ml-2"
+                            >
+                              <span>Download</span>
+                            </a>
+                          ) : (
+                            <span className="text-[10px] text-emerald-700 font-medium px-1.5 py-0.5 bg-emerald-50 rounded">
+                              Verified
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#000a1f] mb-1">
+                  Internal Administrative Notes (Confidential)
+                </label>
+                <input
+                  type="text"
+                  value={complaintNotesInput}
+                  onChange={e => setComplaintNotesInput(e.target.value)}
+                  placeholder="Internal dispatch number, collectorate file reference, or memo id..."
+                  className="w-full px-3 py-1.5 border border-[#CED4DA] rounded text-xs focus:outline-none focus:border-[#00204a]"
+                />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 border-t border-[#E9ECEF] pt-3">
+              <button
+                onClick={() => setSelectedComplaint(null)}
+                className="btn-outline text-xs py-1.5 px-3 cursor-pointer"
+              >
+                Close Desk
+              </button>
+              <button
+                onClick={() => handleExecuteStructuredAction(selectedAction)}
+                disabled={isUpdatingComplaint || !actionRemarks.trim()}
+                className="btn-primary text-xs py-2 px-4 flex items-center gap-1.5 cursor-pointer font-bold disabled:opacity-50"
+              >
+                {isUpdatingComplaint ? (
+                  <>
+                    <RotateCw size={12} className="animate-spin" />
+                    <span>Executing Workflow Action…</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck size={14} />
+                    <span>Execute {selectedAction.replace(/_/g, ' ')}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* 7. Interactive Inspection & Verification Modal */}
       {inspectingWork && (

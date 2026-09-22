@@ -33,16 +33,23 @@ export function ProjectMonitoring() {
   const { profile } = useAuthStore();
   const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
   const isStateNodal = profile?.role === 'STATE_NODAL_OFFICER';
-  const lockedState = (isStateNodal || isDistrictOfficer) ? (profile?.state || '') : '';
+  const isMP = profile?.role === 'MP';
+  const isAgency = profile?.role === 'IMPLEMENTING_AGENCY';
+  const isAuditor = profile?.role === 'AUDITOR';
+  const isAdmin = profile?.role === 'MOSPI_ADMIN';
+
+  const lockedState = (isStateNodal || isDistrictOfficer || isMP) ? (profile?.state || '') : '';
   const lockedDistrictClean = isDistrictOfficer && profile?.district ? profile.district.split('(')[0].trim() : '';
+  const lockedConstituency = isMP ? (profile?.constituency || '') : '';
+  const lockedMPName = isMP ? (profile?.mp_name || profile?.full_name || '') : '';
 
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
-    house: activeHouse,
+    house: isMP ? 'Lok Sabha' : activeHouse,
     tenure: '',
     state: lockedState,
-    constituency: '',
-    mpName: '',
+    constituency: lockedConstituency,
+    mpName: lockedMPName,
     riskLevel: '',
     status: '',
     category: '',
@@ -64,15 +71,16 @@ export function ProjectMonitoring() {
   // Apply pre-filter from GIS Map / drill-down navigation
   useEffect(() => {
     if (monitoringFilter) {
-      if (monitoringFilter.house && monitoringFilter.house !== activeHouse) {
+      if (monitoringFilter.house && monitoringFilter.house !== activeHouse && !isMP) {
         setActiveHouse(monitoringFilter.house);
       }
       setFilters(f => ({
         ...f,
-        house: monitoringFilter.house || activeHouse,
+        house: isMP ? 'Lok Sabha' : (monitoringFilter.house || activeHouse),
         tenure: monitoringFilter.fy || '',
-        state: monitoringFilter.state || '',
-        constituency: monitoringFilter.constituency || '',
+        state: lockedState || monitoringFilter.state || '',
+        constituency: lockedConstituency || monitoringFilter.constituency || '',
+        mpName: lockedMPName || f.mpName,
         category: monitoringFilter.category || '',
         riskLevel: monitoringFilter.riskLevel || '',
         status: monitoringFilter.status || '',
@@ -81,22 +89,29 @@ export function ProjectMonitoring() {
       setPage(1);
       setMonitoringFilter(null);
     }
-  }, [monitoringFilter, activeHouse, setActiveHouse, setMonitoringFilter]);
+  }, [monitoringFilter, activeHouse, setActiveHouse, setMonitoringFilter, isMP, lockedState, lockedConstituency, lockedMPName]);
 
   // Sync house when global activeHouse changes
   const prevHouseRef = React.useRef(activeHouse);
   React.useEffect(() => {
+    if (isMP) return; // MP is locked to Lok Sabha
     if (prevHouseRef.current !== activeHouse) {
       prevHouseRef.current = activeHouse;
       setFilters(f => ({
         ...f,
         house: activeHouse,
         tenure: '',
-        state: '', constituency: '', mpName: '', riskLevel: '', status: '', category: '', search: '',
+        state: lockedState,
+        constituency: lockedConstituency,
+        mpName: lockedMPName,
+        riskLevel: '',
+        status: '',
+        category: '',
+        search: '',
       }));
       setPage(1);
     }
-  }, [activeHouse]);
+  }, [activeHouse, isMP, lockedState, lockedConstituency, lockedMPName]);
 
   // Query projects from backend API when in database mode
   useEffect(() => {
@@ -106,15 +121,16 @@ export function ProjectMonitoring() {
     setIsLoadingList(true);
     setApiError(null);
 
+    const queryHouse = isMP ? 'Lok Sabha' : activeHouse;
     getProjects({
-      house: activeHouse,
+      house: queryHouse,
       page,
       pageSize: PAGE_SIZE,
       search: filters.search,
-      state: lockedState || filters.state,
-      district: isDistrictOfficer ? (profile?.district || undefined) : undefined,
-      constituency: filters.constituency,
-      mpName: filters.mpName,
+      state: isMP ? (profile?.state || filters.state) : (lockedState || filters.state),
+      district: isDistrictOfficer ? (lockedDistrictClean || profile?.district || undefined) : undefined,
+      constituency: isMP ? (profile?.constituency || filters.constituency) : filters.constituency,
+      mpName: isMP ? (lockedMPName || filters.mpName) : filters.mpName,
       riskLevel: filters.riskLevel,
       status: filters.status,
       category: filters.category,
@@ -141,7 +157,23 @@ export function ProjectMonitoring() {
     return () => {
       cancelled = true;
     };
-  }, [isUsingSupabase, activeHouse, page, filters, sortField, sortDir, lockedState, isDistrictOfficer, profile?.district]);
+  }, [
+    isUsingSupabase,
+    activeHouse,
+    page,
+    filters,
+    sortField,
+    sortDir,
+    lockedState,
+    isDistrictOfficer,
+    isMP,
+    lockedDistrictClean,
+    lockedConstituency,
+    lockedMPName,
+    profile?.state,
+    profile?.district,
+    profile?.constituency,
+  ]);
 
   // Fetch single project details when clicked
   useEffect(() => {
@@ -196,9 +228,24 @@ export function ProjectMonitoring() {
         p.workCategory?.toLowerCase().includes(q)
       );
     }
-    if (filters.state) list = list.filter(p => p.state === filters.state);
-    if (filters.constituency) list = list.filter(p => p.constituency === filters.constituency);
-    if (filters.mpName) list = list.filter(p => p.mp === filters.mpName);
+    if (lockedState) list = list.filter(p => p.state === lockedState);
+    else if (filters.state) list = list.filter(p => p.state === filters.state);
+
+    if (lockedDistrictClean) {
+      list = list.filter(p => (p.district || '').toLowerCase().includes(lockedDistrictClean.toLowerCase()));
+    }
+
+    if (lockedConstituency) {
+      list = list.filter(p => (p.constituency || '').toLowerCase().includes(lockedConstituency.toLowerCase()));
+    } else if (filters.constituency) {
+      list = list.filter(p => p.constituency === filters.constituency);
+    }
+
+    if (lockedMPName) {
+      list = list.filter(p => (p.mp || '').toLowerCase().includes(lockedMPName.toLowerCase()));
+    } else if (filters.mpName) {
+      list = list.filter(p => p.mp === filters.mpName);
+    }
     if (filters.riskLevel) list = list.filter(p => p.risk.level === filters.riskLevel);
     if (filters.category) list = list.filter(p => p.workCategory === filters.category);
     if (filters.status) list = list.filter(p => p.workStatus === filters.status);
@@ -283,18 +330,28 @@ export function ProjectMonitoring() {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
             <FolderOpen size={11} />
-            {isDistrictOfficer
+            {isMP
+              ? `Constituency Project Intelligence · ${profile?.constituency} (${profile?.state}) — Hon'ble MP ${lockedMPName}`
+              : isDistrictOfficer
               ? `District Project Intelligence · ${lockedDistrictClean || profile?.district}, ${profile?.state}`
               : isStateNodal
               ? `State Project Intelligence · ${profile?.state}`
+              : isAgency
+              ? `Agency Project Intelligence · ${profile?.agency_name || 'Assigned Agency'}`
+              : isAuditor
+              ? 'National Audit Project Intelligence'
               : 'National Project Intelligence'}
           </p>
           <h1 className="text-2xl font-bold text-[#000a1f]"
               style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            {isDistrictOfficer
+            {isMP
+              ? `Constituency Works — ${profile?.constituency}`
+              : isDistrictOfficer
               ? `District Projects — ${lockedDistrictClean || profile?.district}`
               : isStateNodal
               ? `State Projects — ${profile?.state}`
+              : isAgency
+              ? `Assigned Works — ${profile?.agency_name || 'Agency'}`
               : 'Project Intelligence & Monitoring'}
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
@@ -302,7 +359,7 @@ export function ProjectMonitoring() {
               ? 'Loading MPLADS records…'
               : apiError
               ? 'Unable to load MPLADS records. Please try again.'
-              : `${activeTotalCount.toLocaleString('en-IN')} works · Click a row to open Project Intelligence Profile`}
+              : `${activeTotalCount.toLocaleString('en-IN')} works · Click any work to open Project Intelligence Profile`}
           </p>
         </div>
       </div>
@@ -316,17 +373,22 @@ export function ProjectMonitoring() {
           totalCount={activeTotalCount}
           filters={filters}
           onFilterChange={f => {
-            setFilters(lockedState ? { ...f, state: lockedState } : f);
+            setFilters({
+              ...f,
+              state: lockedState || f.state,
+              constituency: lockedConstituency || f.constituency,
+              mpName: lockedMPName || f.mpName,
+            });
             setPage(1);
           }}
           onReset={() => {
             setFilters({
               search: '',
-              house: filters.house,
+              house: isMP ? 'Lok Sabha' : filters.house,
               tenure: '',
               state: lockedState,
-              constituency: '',
-              mpName: '',
+              constituency: lockedConstituency,
+              mpName: lockedMPName,
               riskLevel: '',
               status: '',
               category: '',

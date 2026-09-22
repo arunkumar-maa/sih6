@@ -11,6 +11,7 @@ import {
   Shield,
   LogOut,
   User,
+  Users,
   ExternalLink,
   ChevronRight,
   Landmark,
@@ -22,6 +23,7 @@ import {
   ShieldAlert,
   TrendingUp,
   Paperclip,
+  AlertCircle,
 } from 'lucide-react';
 import { useAppStore } from '../data/store';
 import { useAuthStore } from '../store/authStore';
@@ -65,17 +67,17 @@ export function Sidebar({ isOpen, onClose, currentPath, onNavigate }: SidebarPro
     onClose();
   };
 
-  // Role dashboard details
+  // Section 14: Dedicated Role-Specific Dashboard Routes
   const getRoleDashboardInfo = (r: UserRole) => {
     switch (r) {
       case 'MOSPI_ADMIN':
-        return { path: '/admin/dashboard', label: 'MoSPI National Desk', Icon: Shield };
+        return { path: '/admin/dashboard', label: 'Command Center', Icon: LayoutDashboard };
       case 'STATE_NODAL_OFFICER':
-        return { path: '/state/dashboard', label: 'State Nodal Desk', Icon: Landmark };
+        return { path: '/state/dashboard', label: 'State Overview', Icon: Building2 };
       case 'DISTRICT_OFFICER':
-        return { path: '/district/dashboard', label: 'District Officer Desk', Icon: Building2 };
+        return { path: '/district/dashboard', label: 'District Operations', Icon: HardHat };
       case 'IMPLEMENTING_AGENCY':
-        return { path: '/implementing-agency', label: 'Implementation Workspace', Icon: HardHat };
+        return { path: '/implementing-agency', label: 'Agency Portal', Icon: HardHat };
       case 'MP':
         return { path: '/mp/dashboard', label: 'MP Portfolio Desk', Icon: Landmark };
       case 'AUDITOR':
@@ -92,13 +94,13 @@ export function Sidebar({ isOpen, onClose, currentPath, onNavigate }: SidebarPro
     switch (r) {
       case 'MOSPI_ADMIN':
         return [
-          { id: 'dashboard', label: 'Command Center', Icon: LayoutDashboard, path: '/' },
           { id: 'monitoring', label: 'Project Intelligence', Icon: FolderOpen, path: '/monitoring' },
           { id: 'anomalies', label: 'Anomaly Center', Icon: AlertTriangle, path: '/anomalies' },
           { id: 'gis', label: 'GIS Intelligence', Icon: Map, path: '/gis' },
           { id: 'comparative', label: 'Comparative Intelligence', Icon: ArrowLeftRight, path: '/comparative' },
           { id: 'analytics', label: 'Analytics', Icon: BarChart2, path: '/analytics' },
           { id: 'explorer', label: 'Dataset Explorer', Icon: Database, path: '/explorer' },
+          { id: 'users', label: 'User Governance', Icon: Users, path: '/admin/dashboard?tab=users' },
         ];
       case 'STATE_NODAL_OFFICER':
         return [
@@ -121,23 +123,26 @@ export function Sidebar({ isOpen, onClose, currentPath, onNavigate }: SidebarPro
         return [
           { id: 'assigned-works', label: 'Assigned Works', Icon: FolderOpen, path: '/implementing-agency?tab=assigned-works' },
           { id: 'action-center', label: 'Action Center', Icon: ShieldAlert, path: '/implementing-agency?tab=action-center' },
+          { id: 'complaints', label: 'Citizen Grievances', Icon: AlertCircle, path: '/implementing-agency?tab=complaints' },
           { id: 'updates', label: 'Execution Updates', Icon: TrendingUp, path: '/implementing-agency?tab=updates' },
           { id: 'evidence', label: 'Evidence & Documents', Icon: Paperclip, path: '/implementing-agency?tab=evidence' },
           { id: 'profile', label: 'Agency Profile', Icon: User, path: '/implementing-agency?tab=profile' },
+          { id: 'monitoring', label: 'Project Intelligence', Icon: HardHat, path: '/monitoring' },
         ];
       case 'MP':
         return [
+          { id: 'profile', label: 'MP Profile Dossier', Icon: User, path: '/mp/profile' },
           { id: 'monitoring', label: 'Constituency Works', Icon: FolderOpen, path: '/monitoring' },
           { id: 'gis', label: 'Constituency GIS Map', Icon: Map, path: '/gis' },
           { id: 'analytics', label: 'Development Analytics', Icon: BarChart2, path: '/analytics' },
         ];
       case 'AUDITOR':
         return [
-          { id: 'verification', label: 'Verification Desk', Icon: ClipboardCheck, path: '/auditor/dashboard' },
-          { id: 'analytics', label: 'Risk Observatory', Icon: BarChart2, path: '/analytics' },
-          { id: 'anomalies', label: 'Anomaly Cases', Icon: AlertTriangle, path: '/anomalies' },
           { id: 'monitoring', label: 'Project Intelligence', Icon: FolderOpen, path: '/monitoring' },
+          { id: 'anomalies', label: 'Anomaly Cases', Icon: AlertTriangle, path: '/anomalies' },
+          { id: 'analytics', label: 'Risk Observatory', Icon: BarChart2, path: '/analytics' },
           { id: 'gis', label: 'GIS Intelligence', Icon: Map, path: '/gis' },
+          { id: 'explorer', label: 'Dataset Explorer', Icon: Database, path: '/explorer' },
           { id: 'audit-trail', label: 'Audit Trail', Icon: History, path: '/audit-trail' },
         ];
       default:
@@ -161,7 +166,11 @@ export function Sidebar({ isOpen, onClose, currentPath, onNavigate }: SidebarPro
     }
   };
 
-  const isRoleDashboardActive = currentPath === roleDashboard.path;
+  const currentSearch = typeof window !== 'undefined' ? window.location.search : '';
+  const currentFull = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : (currentPath || '');
+  const currentBasePath = (currentPath || (typeof window !== 'undefined' ? window.location.pathname : '')).split('?')[0];
+
+  const isRoleDashboardActive = currentBasePath === roleDashboard.path && (!currentSearch || currentSearch === '?tab=overview');
 
   return (
     <>
@@ -235,7 +244,16 @@ export function Sidebar({ isOpen, onClose, currentPath, onNavigate }: SidebarPro
 
             <div className="space-y-0.5">
               {navItems.map(({ id, label, Icon, path }) => {
-                const isActive = !isRoleDashboardActive && (currentPage === id || currentPath === path);
+                const itemBasePath = path.split('?')[0];
+                const itemSearch = path.includes('?') ? path.slice(path.indexOf('?')) : '';
+                let isActive = false;
+                if (itemSearch) {
+                  isActive = (typeof window !== 'undefined' && window.location.pathname === itemBasePath && window.location.search === itemSearch)
+                    || currentFull === path;
+                } else {
+                  isActive = !isRoleDashboardActive && (currentPage === id || currentBasePath === itemBasePath);
+                }
+
                 return (
                   <button
                     key={id}

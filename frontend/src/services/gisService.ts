@@ -36,18 +36,27 @@ export async function getConstituencyGISAggregation(
 ): Promise<Map<string, GISAggregateRegion>> {
   let effectiveState = filters.state;
   let effectiveDistrict = filters.district;
+  let effectiveConstituency = filters.constituency;
+  let effectiveMp = filters.mpName;
+
   const authProfile = useAuthStore.getState().profile;
   if (authProfile?.role === 'STATE_NODAL_OFFICER' && authProfile.state) {
     effectiveState = authProfile.state;
   } else if (authProfile?.role === 'DISTRICT_OFFICER') {
     if (authProfile.state) effectiveState = authProfile.state;
     if (authProfile.district) effectiveDistrict = authProfile.district;
+  } else if (authProfile?.role === 'MP') {
+    if (authProfile.state) effectiveState = authProfile.state;
+    if (authProfile.constituency) effectiveConstituency = authProfile.constituency;
+    if (authProfile.mp_name || authProfile.full_name) {
+      effectiveMp = authProfile.mp_name || authProfile.full_name;
+    }
   }
 
   const { data, error } = await supabase.rpc('get_constituency_gis_metrics', {
     p_state: effectiveState || null,
-    p_constituency: filters.constituency || null,
-    p_mp: filters.mpName || null,
+    p_constituency: effectiveConstituency || null,
+    p_mp: effectiveMp || null,
     p_risk: filters.riskLevel || null,
     p_status: filters.status || null,
     p_category: filters.category || null,
@@ -99,10 +108,20 @@ export async function getConstituencyGISAggregation(
 export async function getStateGISAggregation(
   filters: GISFilters = {}
 ): Promise<Map<string, GISAggregateRegion>> {
+  let effectiveState = filters.state;
+  let effectiveMp = filters.mpName;
+  const authProfile = useAuthStore.getState().profile;
+  if ((authProfile?.role === 'STATE_NODAL_OFFICER' || authProfile?.role === 'MP') && authProfile.state) {
+    effectiveState = authProfile.state;
+  }
+  if (authProfile?.role === 'MP' && (authProfile.mp_name || authProfile.full_name)) {
+    effectiveMp = authProfile.mp_name || authProfile.full_name;
+  }
+
   const { data, error } = await supabase.rpc('get_state_gis_metrics', {
-    p_state: filters.state || null,
+    p_state: effectiveState || null,
     p_constituency: null,
-    p_mp: filters.mpName || null,
+    p_mp: effectiveMp || null,
     p_risk: filters.riskLevel || null,
     p_status: filters.status || null,
     p_category: filters.category || null,

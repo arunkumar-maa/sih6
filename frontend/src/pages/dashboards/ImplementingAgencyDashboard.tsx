@@ -31,6 +31,8 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../../utils';
 import { ImplementingAgencyService } from '../../services/implementingAgencyService';
+import { PublicService } from '../../services/publicService';
+import type { AgencyComplaintItem } from '../../types/public';
 import type {
   AgencyKPIs,
   AgencyProjectItem,
@@ -40,12 +42,13 @@ import type {
 } from '../../types/agency';
 
 export function ImplementingAgencyDashboard() {
+
   const { profile } = useAuthStore();
   const agencyName = profile?.agency_name || 'Implementing Authority';
 
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'assigned-works' | 'action-center' | 'updates' | 'evidence' | 'profile'
+    'overview' | 'assigned-works' | 'action-center' | 'complaints' | 'updates' | 'evidence' | 'profile'
   >('overview');
 
   // Dashboard Data State
@@ -53,6 +56,17 @@ export function ImplementingAgencyDashboard() {
   const [kpiLoading, setKpiLoading] = useState(true);
   const [actionItems, setActionItems] = useState<ExecutionActionItem[]>([]);
   const [actionLoading, setActionLoading] = useState(true);
+
+  // Grievance Information Requests State
+  const [agencyComplaints, setAgencyComplaints] = useState<AgencyComplaintItem[]>([]);
+  const [complaintsLoading, setComplaintsLoading] = useState<boolean>(false);
+  const [selectedAgencyComplaint, setSelectedAgencyComplaint] = useState<AgencyComplaintItem | null>(null);
+  const [agencyRemarksInput, setAgencyRemarksInput] = useState<string>('');
+  const [agencyProgressInput, setAgencyProgressInput] = useState<number>(50);
+  const [agencySubmitting, setAgencySubmitting] = useState<boolean>(false);
+  const [agencySuccessMsg, setAgencySuccessMsg] = useState<string | null>(null);
+  const [agencyErrorMsg, setAgencyErrorMsg] = useState<string | null>(null);
+
 
   // Assigned Works Table State
   const [projects, setProjects] = useState<AgencyProjectItem[]>([]);
@@ -98,13 +112,35 @@ export function ImplementingAgencyDashboard() {
   const [agencyProfileData, setAgencyProfileData] = useState<any | null>(null);
 
   // Listen to URL query params for tab switching (e.g. ?tab=assigned-works)
+  // Grievance status sub-filter: 'INFORMATION_REQUESTED' vs 'ALL'
+  const [complaintStatusFilter, setComplaintStatusFilter] = useState<'INFORMATION_REQUESTED' | 'ALL'>('INFORMATION_REQUESTED');
+
+  // Listen to URL query params and popstate for tab switching (e.g. ?tab=assigned-works)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
-    if (tabParam && ['overview', 'assigned-works', 'action-center', 'updates', 'evidence', 'profile'].includes(tabParam)) {
-      setActiveTab(tabParam as any);
-    }
+    const syncTabFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      let tabParam = params.get('tab');
+      if (tabParam === 'enquiries') tabParam = 'complaints';
+      if (tabParam && ['overview', 'assigned-works', 'action-center', 'complaints', 'updates', 'evidence', 'profile'].includes(tabParam)) {
+        setActiveTab(tabParam as any);
+      } else if (!tabParam) {
+        setActiveTab('overview');
+      }
+    };
+
+    syncTabFromUrl();
+    window.addEventListener('popstate', syncTabFromUrl);
+    return () => {
+      window.removeEventListener('popstate', syncTabFromUrl);
+    };
   }, []);
+
+  const handleTabChange = (tabId: 'overview' | 'assigned-works' | 'action-center' | 'complaints' | 'updates' | 'evidence' | 'profile') => {
+    setActiveTab(tabId);
+    const newUrl = tabId === 'overview' ? '/implementing-agency' : `/implementing-agency?tab=${tabId}`;
+    window.history.pushState({}, '', newUrl);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   // 1. Fetch KPIs
   const fetchKPIs = useCallback(async () => {
@@ -142,7 +178,57 @@ export function ImplementingAgencyDashboard() {
     fetchActionCenter();
   }, [fetchActionCenter]);
 
+  // 2b. Fetch Grievance Information Requests
+  const fetchAgencyComplaints = useCallback(async () => {
+    setComplaintsLoading(true);
+    try {
+      const list = await PublicService.getAgencyComplaintRequests(agencyName, undefined, complaintStatusFilter);
+      setAgencyComplaints(list);
+    } catch (err) {
+      console.warn('Failed to load agency complaints:', err);
+    } finally {
+      setComplaintsLoading(false);
+    }
+  }, [agencyName, complaintStatusFilter]);
+
+  useEffect(() => {
+    fetchAgencyComplaints();
+  }, [fetchAgencyComplaints]);
+
+  const handleSubmitAgencyResponse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAgencyComplaint) return;
+    if (!agencyRemarksInput.trim()) {
+      setAgencyErrorMsg('Please provide technical progress remarks and execution explanation.');
+      return;
+    }
+
+    setAgencySubmitting(true);
+    setAgencyErrorMsg(null);
+    setAgencySuccessMsg(null);
+
+    try {
+      await PublicService.submitAgencyResponse(selectedAgencyComplaint.complaintId, {
+        remarks: agencyRemarksInput.trim(),
+        progress: agencyProgressInput,
+        agencyName,
+      });
+      setAgencySuccessMsg('Agency explanation and progress successfully recorded and forwarded to the District Authority.');
+      setAgencyRemarksInput('');
+      fetchAgencyComplaints();
+      setTimeout(() => {
+        setSelectedAgencyComplaint(null);
+        setAgencySuccessMsg(null);
+      }, 1500);
+    } catch (err: any) {
+      setAgencyErrorMsg(err.message || 'Failed to submit response.');
+    } finally {
+      setAgencySubmitting(false);
+    }
+  };
+
   // 3. Fetch Assigned Projects (Server-side paginated & filtered)
+
   const fetchProjects = useCallback(async () => {
     setTableLoading(true);
     try {
@@ -353,22 +439,24 @@ export function ImplementingAgencyDashboard() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-1 border-b border-[#E9ECEF] bg-white px-4 pt-2 rounded-t-sm">
+      <div className="flex items-center gap-1 border-b border-[#E9ECEF] bg-white px-4 pt-2 rounded-t-sm overflow-x-auto">
         {[
           { id: 'overview', label: 'Workspace Overview', icon: Briefcase },
           { id: 'assigned-works', label: `Assigned Works (${kpis?.assigned_works || totalProjects})`, icon: Layers },
           { id: 'action-center', label: `Execution Action Center (${actionItems.length})`, icon: ShieldAlert },
+          { id: 'complaints', label: `Citizen Grievances (${agencyComplaints.length})`, icon: AlertCircle },
           { id: 'updates', label: 'Execution Updates', icon: TrendingUp },
           { id: 'evidence', label: 'Evidence & Documents', icon: Paperclip },
           { id: 'profile', label: 'Agency Profile', icon: User },
         ].map((tab) => {
+
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-all cursor-pointer ${
+              onClick={() => handleTabChange(tab.id as any)}
+              className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 isActive
                   ? 'border-[#00204a] text-[#00204a] bg-slate-50'
                   : 'border-transparent text-[#747780] hover:text-[#000a1f] hover:bg-slate-50/50'
@@ -1015,6 +1103,254 @@ export function ImplementingAgencyDashboard() {
           </div>
         </div>
       )}
+
+      {/* 7. DISTRICT GRIEVANCES / INFORMATION REQUESTS TAB */}
+      {activeTab === 'complaints' && (
+        <div className="card p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E9ECEF] pb-4">
+            <div>
+              <h2 className="text-base font-bold text-[#000a1f] flex items-center gap-2">
+                <AlertCircle size={18} className="text-[#00204a]" />
+                <span>Citizen Grievances & District Enquiries</span>
+              </h2>
+              <p className="text-xs text-[#747780] mt-0.5">
+                Technical queries forwarded by District Officers requiring agency progress remarks and execution explanations.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center bg-[#F8F9FA] p-1 rounded border border-[#E9ECEF] text-xs">
+                <button
+                  type="button"
+                  onClick={() => setComplaintStatusFilter('INFORMATION_REQUESTED')}
+                  className={`px-3 py-1 rounded font-bold transition-all cursor-pointer ${
+                    complaintStatusFilter === 'INFORMATION_REQUESTED'
+                      ? 'bg-[#00204a] text-white shadow-xs'
+                      : 'text-[#747780] hover:text-[#000a1f]'
+                  }`}
+                >
+                  Action Required ({agencyComplaints.filter(c => c.status === 'INFORMATION_REQUESTED').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setComplaintStatusFilter('ALL')}
+                  className={`px-3 py-1 rounded font-bold transition-all cursor-pointer ${
+                    complaintStatusFilter === 'ALL'
+                      ? 'bg-[#00204a] text-white shadow-xs'
+                      : 'text-[#747780] hover:text-[#000a1f]'
+                  }`}
+                >
+                  All Grievances on Works
+                </button>
+              </div>
+
+              <button
+                onClick={fetchAgencyComplaints}
+                disabled={complaintsLoading}
+                className="btn-outline text-xs py-1 px-3 flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw size={12} className={complaintsLoading ? 'animate-spin' : ''} />
+                <span>Refresh</span>
+              </button>
+            </div>
+          </div>
+
+          {complaintsLoading ? (
+            <div className="py-12 text-center text-[#747780]">
+              <RefreshCw size={20} className="animate-spin text-[#00204a] mx-auto mb-2" />
+              <p className="text-xs font-semibold">Checking for assigned grievance queries…</p>
+            </div>
+          ) : agencyComplaints.length === 0 ? (
+            <div className="py-12 text-center text-[#747780] bg-[#F8F9FA] rounded border border-dashed border-[#CED4DA] space-y-2">
+              <CheckCircle2 size={32} className="mx-auto text-emerald-600" />
+              <h3 className="text-sm font-bold text-[#000a1f]">
+                {complaintStatusFilter === 'INFORMATION_REQUESTED'
+                  ? 'No Pending Information Requests'
+                  : 'No Citizen Grievances Found'}
+              </h3>
+              <p className="text-xs max-w-md mx-auto">
+                {complaintStatusFilter === 'INFORMATION_REQUESTED'
+                  ? 'No active citizen grievances are currently awaiting technical response or progress validation from your agency.'
+                  : 'No citizen grievances are currently recorded for works assigned to your agency.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {agencyComplaints.map((item) => (
+                <div
+                  key={item.complaintId}
+                  className="p-4 rounded border border-[#CED4DA] bg-white hover:border-[#00204a] transition-all space-y-3 shadow-xs"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#F1F3F5] pb-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs font-bold text-[#005eb2] bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                        {item.complaintId}
+                      </span>
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-800 border border-slate-200">
+                        {item.category}
+                      </span>
+                      <span className="font-mono text-xs text-[#00204a] font-semibold">
+                        Work ID: {item.workId}
+                      </span>
+                      {item.district && (
+                        <span className="text-[11px] text-[#747780]">
+                          · {item.district}, {item.state}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 uppercase">
+                      INFORMATION REQUESTED
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-[#747780] block mb-0.5">Assigned Work Title:</span>
+                    <p className="text-xs font-bold text-[#000a1f]">{item.workDescription}</p>
+                  </div>
+
+                  <div className="p-2.5 bg-amber-50/70 rounded border border-amber-200/80 text-xs text-amber-950 space-y-1">
+                    <span className="font-bold text-[10px] uppercase text-amber-900 block">Complainant Concern:</span>
+                    <p className="italic">"{item.description}"</p>
+                  </div>
+
+                  {item.publicResponse && (
+                    <div className="p-2.5 bg-blue-50/60 rounded border border-blue-200/70 text-xs text-blue-950 space-y-1">
+                      <span className="font-bold text-[10px] uppercase text-blue-900 block">District Authority Inquiry / Directive:</span>
+                      <p>{item.publicResponse}</p>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-end pt-1">
+                    <button
+                      onClick={() => {
+                        setSelectedAgencyComplaint(item);
+                        setAgencyRemarksInput('');
+                        setAgencyProgressInput(50);
+                        setAgencyErrorMsg(null);
+                        setAgencySuccessMsg(null);
+                      }}
+                      className="btn-primary text-xs py-1.5 px-4 font-bold flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <TrendingUp size={13} />
+                      <span>Submit Progress &amp; Explanation</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Agency Response Modal */}
+      {selectedAgencyComplaint && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+          <div className="bg-white rounded-sm border border-[#E9ECEF] shadow-2xl max-w-xl w-full p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E9ECEF] pb-3">
+              <div>
+                <span className="text-[10px] font-bold text-[#00204a] uppercase tracking-wider bg-[#EEF2F6] px-2 py-0.5 rounded">
+                  Implementing Agency Response
+                </span>
+                <h3 className="text-base font-bold text-[#000a1f] mt-1">
+                  Submit Technical Explanation &amp; Progress
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedAgencyComplaint(null)}
+                className="text-slate-400 hover:text-slate-700 text-lg font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="bg-[#F8F9FA] p-3 rounded border border-[#E9ECEF] text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[#747780]">Complaint ID: <strong className="font-mono text-[#00204a]">{selectedAgencyComplaint.complaintId}</strong></span>
+                <span className="text-[#747780]">Work ID: <strong className="font-mono text-[#0066CC]">{selectedAgencyComplaint.workId}</strong></span>
+              </div>
+              <p className="font-semibold text-[#000a1f]">{selectedAgencyComplaint.workDescription}</p>
+            </div>
+
+            {agencySuccessMsg && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 rounded flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+                <span>{agencySuccessMsg}</span>
+              </div>
+            )}
+
+            {agencyErrorMsg && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-xs text-rose-700 rounded flex items-center gap-2">
+                <AlertCircle size={16} className="text-rose-600 flex-shrink-0" />
+                <span>{agencyErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitAgencyResponse} className="space-y-4 text-xs">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="font-bold text-[#000a1f]">Current Physical Progress (%):</label>
+                  <span className="font-mono font-bold text-[#00204a] text-sm">{agencyProgressInput}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  value={agencyProgressInput}
+                  onChange={e => setAgencyProgressInput(Number(e.target.value))}
+                  className="w-full cursor-pointer accent-[#00204a]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#000a1f] mb-1">
+                  Technical Remarks &amp; Ground Execution Explanation: <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  value={agencyRemarksInput}
+                  onChange={e => setAgencyRemarksInput(e.target.value)}
+                  placeholder="State the current milestone completed, reasons for any delay, schedule for next phase, or quality inspection certification details..."
+                  className="w-full p-2.5 border border-[#CED4DA] rounded text-xs focus:outline-none focus:border-[#00204a]"
+                  required
+                />
+              </div>
+
+              <div className="p-2.5 bg-blue-50/60 rounded border border-blue-200 text-[11px] text-blue-900">
+                <strong>Administrative Protocol Notice:</strong> Submitting this response transitions the grievance status to <em>ACTION IN PROGRESS</em> and attaches your explanation to the case dossier. Final resolution and closure authority rests strictly with the District Officer.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 border-t border-[#E9ECEF] pt-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedAgencyComplaint(null)}
+                  className="btn-outline text-xs py-1.5 px-3 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={agencySubmitting || !agencyRemarksInput.trim()}
+                  className="btn-primary text-xs py-1.5 px-4 font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {agencySubmitting ? (
+                    <>
+                      <RefreshCw size={12} className="animate-spin" />
+                      <span>Submitting to District Authority…</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={13} />
+                      <span>Submit Explanation</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
 
       {/* ========================================================================= */}
       {/* EXECUTION WORKSPACE MODAL / DRAWER                                        */}

@@ -199,7 +199,10 @@ export async function fetchAuditorQueue(filters: AuditorQueueFilters) {
   // Sorting
   const sortBy = filters.sortBy || 'risk_score';
   const ascending = filters.sortOrder === 'asc';
-  query = query.order(sortBy, { ascending }).order('sanction_amount', { ascending: false });
+  query = query
+    .order(sortBy, { ascending })
+    .order('sanction_amount', { ascending: false })
+    .order('work_id', { ascending: true });
 
   // Pagination
   query = query.range(offset, offset + pageSize - 1);

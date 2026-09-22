@@ -20,6 +20,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   'district-dashboard': { title: 'District Officer Desk', subtitle: 'Field Execution, Stalled Works & Local Approvals' },
   'agency-dashboard':   { title: 'Implementing Agency Desk', subtitle: 'Assigned Works Execution & Milestone Submissions' },
   'mp-dashboard':       { title: 'Parliamentary Constituency Desk', subtitle: 'Hon’ble MP Developmental Portfolio & Tracking' },
+  'mp-profile':         { title: 'Parliamentary Dossier', subtitle: 'Hon’ble Lok Sabha Member Portfolio & Performance Dossier' },
   'auditor-dashboard':  { title: 'Verification Desk', subtitle: 'Risk & Anomaly Verification Workspace' },
   'audit-trail':        { title: 'Audit Trail & Verification Ledger', subtitle: 'Tamper-Evident Governance Log' },
 };
@@ -40,6 +41,7 @@ export function TopBar({ onMenuClick, currentPath }: TopBarProps) {
     else if (currentPath === '/district/dashboard') info = PAGE_TITLES['district-dashboard'];
     else if (currentPath === '/agency/dashboard') info = PAGE_TITLES['agency-dashboard'];
     else if (currentPath === '/mp/dashboard') info = PAGE_TITLES['mp-dashboard'];
+    else if (currentPath === '/mp/profile') info = PAGE_TITLES['mp-profile'];
     else if (currentPath === '/auditor/dashboard') info = PAGE_TITLES['auditor-dashboard'];
     else if (currentPath === '/audit-trail') info = PAGE_TITLES['audit-trail'];
     else if (currentPath === '/comparative') {

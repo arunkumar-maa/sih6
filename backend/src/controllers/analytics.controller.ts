@@ -4,9 +4,11 @@ import { getUserDataScope } from '../utils/rbac.js';
 
 export async function getDashboardKPIs(req: Request, res: Response) {
   try {
-    const house = (req.query.house as 'Lok Sabha' | 'Rajya Sabha') || 'Lok Sabha';
+    let house = (req.query.house as 'Lok Sabha' | 'Rajya Sabha') || 'Lok Sabha';
     let state = req.query.state as string;
     let district = req.query.district as string;
+    let constituency = req.query.constituency as string;
+    let mpName = req.query.mp as string;
 
     if (req.profile) {
       const scope = getUserDataScope(req.profile);
@@ -29,14 +31,19 @@ export async function getDashboardKPIs(req: Request, res: Response) {
           state = scope.state;
         }
         district = scope.district;
+      } else if (scope.scope === 'MP') {
+        house = 'Lok Sabha';
+        state = scope.state || state;
+        constituency = scope.constituency || constituency;
+        mpName = scope.mpName || mpName;
       }
     }
 
     const filters = {
       state,
       district,
-      constituency: req.query.constituency as string,
-      mpName: req.query.mp as string,
+      constituency,
+      mpName,
       riskLevel: req.query.risk as string,
       status: req.query.status as string,
       category: req.query.category as string,
@@ -53,7 +60,13 @@ export async function getDashboardKPIs(req: Request, res: Response) {
 
 export async function getCategoryBreakdown(req: Request, res: Response) {
   try {
-    const house = (req.query.house as 'Lok Sabha' | 'Rajya Sabha') || 'Lok Sabha';
+    let house = (req.query.house as 'Lok Sabha' | 'Rajya Sabha') || 'Lok Sabha';
+    if (req.profile) {
+      const scope = getUserDataScope(req.profile);
+      if (scope.scope === 'MP') {
+        house = 'Lok Sabha';
+      }
+    }
     const categories = await fetchCategoryAnalytics(house);
     return res.json({ success: true, data: categories });
   } catch (error: any) {
@@ -63,9 +76,11 @@ export async function getCategoryBreakdown(req: Request, res: Response) {
 
 export async function getObservatoryAnalytics(req: Request, res: Response) {
   try {
-    const house = (req.query.house as 'Lok Sabha' | 'Rajya Sabha') || 'Lok Sabha';
+    let house = (req.query.house as 'Lok Sabha' | 'Rajya Sabha') || 'Lok Sabha';
     let state = req.query.state as string;
     let district = req.query.district as string;
+    let constituency = req.query.constituency as string;
+    let mpName = req.query.mp as string;
 
     if (req.profile) {
       const scope = getUserDataScope(req.profile);
@@ -88,14 +103,19 @@ export async function getObservatoryAnalytics(req: Request, res: Response) {
           state = scope.state;
         }
         district = scope.district;
+      } else if (scope.scope === 'MP') {
+        house = 'Lok Sabha';
+        state = scope.state || state;
+        constituency = scope.constituency || constituency;
+        mpName = scope.mpName || mpName;
       }
     }
 
     const filters = {
       state,
       district,
-      constituency: req.query.constituency as string,
-      mpName: req.query.mp as string,
+      constituency,
+      mpName,
       riskLevel: req.query.risk as string,
       status: req.query.status as string,
       category: req.query.category as string,

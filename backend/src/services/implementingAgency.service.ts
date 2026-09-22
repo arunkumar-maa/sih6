@@ -137,13 +137,22 @@ export class ImplementingAgencyService {
 
       const { data: rsData, count: rsCount, error: rsErr } = await rsQuery;
       if (!rsErr && rsData) {
-        totalCount += rsCount || 0;
-        results.push(...rsData.map(p => ({ ...p, house: 'Rajya Sabha' })));
+        // If viewing all houses (!params.house), filter out RS records whose work_id is already in LS to prevent logical duplication
+        const existingLsWorkIds = new Set(results.map(p => p.work_id));
+        const filteredRsData = !params.house
+          ? rsData.filter(rs => !existingLsWorkIds.has(rs.work_id))
+          : rsData;
+        totalCount += !params.house ? filteredRsData.length : (rsCount || 0);
+        results.push(...filteredRsData.map(p => ({ ...p, house: 'Rajya Sabha' })));
       }
     }
 
-    // Sort by sanction_amount DESC by default
-    results.sort((a, b) => (Number(b.sanction_amount) || 0) - (Number(a.sanction_amount) || 0));
+    // Sort by sanction_amount DESC by default with deterministic work_id tie-breaker
+    results.sort((a, b) => {
+      const diff = (Number(b.sanction_amount) || 0) - (Number(a.sanction_amount) || 0);
+      if (diff !== 0) return diff;
+      return String(a.work_id || '').localeCompare(String(b.work_id || ''));
+    });
 
     // Slice for server-side pagination
     const paginated = results.slice(offset, offset + pageSize);

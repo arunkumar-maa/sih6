@@ -101,19 +101,22 @@ export function GISIntelligenceMap() {
   const [selectedRegion, setSelectedRegion] = useState<RegionMetrics | null>(null);
 
   const { profile } = useAuthStore();
+  const isMP = profile?.role === 'MP';
   const isDistrictOfficer = profile?.role === 'DISTRICT_OFFICER';
   const isStateNodal = profile?.role === 'STATE_NODAL_OFFICER';
-  const lockedState = (isStateNodal || isDistrictOfficer) ? (profile?.state || '') : '';
+  const lockedState = (isStateNodal || isDistrictOfficer || isMP) ? (profile?.state || '') : '';
   const lockedDistrictClean = isDistrictOfficer && profile?.district ? profile.district.split('(')[0].trim() : '';
+  const lockedConstituency = isMP ? (profile?.constituency || '') : '';
+  const lockedMPName = isMP ? (profile?.mp_name || profile?.full_name || '') : '';
 
   // Filter state for OfficialFilterBar
   const [filters, setFilters] = useState<OfficialFilterState>({
     search: '',
-    house: activeHouse,
+    house: isMP ? 'Lok Sabha' : activeHouse,
     tenure: '',
     state: lockedState,
-    constituency: '',
-    mpName: '',
+    constituency: lockedConstituency,
+    mpName: lockedMPName,
     riskLevel: '',
     status: '',
     category: '',
@@ -126,6 +129,7 @@ export function GISIntelligenceMap() {
 
   // Sync house toggle
   const handleHouseSwitch = (house: 'Lok Sabha' | 'Rajya Sabha') => {
+    if (isMP) return; // MP is strictly locked to Lok Sabha
     if (house === activeHouse) return;
     setActiveHouse(house);
     if (house === 'Rajya Sabha' && rajyaSabhaProjects.length === 0) {
@@ -677,14 +681,71 @@ export function GISIntelligenceMap() {
           mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 9 });
         }
       }
+
+      // Auto-fit and focus map to MP constituency boundary if logged in as MP
+      if (isMP && mapInstanceRef.current && profile?.constituency) {
+        const normTargetConst = normalizeConstituencyName(profile.constituency);
+        const normTargetState = profile.state ? normalizeStateName(profile.state) : '';
+        let matchedLayer: any = null;
+        let matchedKey = '';
+
+        layer.eachLayer((fl: any) => {
+          if (matchedLayer) return;
+          const props = fl.feature?.properties;
+          if (!props) return;
+          const pcName = props.pc_name || '';
+          const stName = props.st_name || props.st_nm || '';
+          const cMatch = normalizeConstituencyName(pcName) === normTargetConst;
+          const sMatch = !normTargetState || normalizeStateName(stName) === normTargetState;
+          if (cMatch && sMatch) {
+            matchedLayer = fl;
+            matchedKey = `${normalizeStateName(stName)}|||${normalizeConstituencyName(pcName)}`;
+          }
+        });
+
+        if (matchedLayer && matchedLayer.getBounds) {
+          if (selectedFeatureLayerRef.current) {
+            layer.resetStyle(selectedFeatureLayerRef.current as any);
+          }
+          selectedFeatureLayerRef.current = matchedLayer;
+          matchedLayer.setStyle({
+            fillColor: '#005eb2',
+            fillOpacity: 0.88,
+            color: '#00204a',
+            weight: 3,
+          });
+          mapInstanceRef.current.fitBounds(matchedLayer.getBounds(), { padding: [50, 50], maxZoom: 9 });
+          if (!selectedRegion) {
+            const metric = regionMetricsMap.get(matchedKey);
+            if (metric) {
+              setSelectedRegion(metric);
+            }
+          }
+        }
+      }
     } catch (err) {
       console.error('Error rendering GeoJSON on Leaflet:', err);
     }
-  }, [geoJsonData, regionMetricsMap, activeHouse, getFeatureStyle, selectedRegion, isDistrictOfficer]);
+  }, [geoJsonData, regionMetricsMap, activeHouse, getFeatureStyle, selectedRegion, isDistrictOfficer, isMP, profile]);
 
   // Reset zoom to view
   const handleResetZoom = () => {
     if (mapInstanceRef.current) {
+      if (isMP && geoLayerRef.current && profile?.constituency) {
+        const normTargetConst = normalizeConstituencyName(profile.constituency);
+        let matchedLayer: any = null;
+        geoLayerRef.current.eachLayer((fl: any) => {
+          if (matchedLayer) return;
+          const props = fl.feature?.properties;
+          if (props && normalizeConstituencyName(props.pc_name || '') === normTargetConst) {
+            matchedLayer = fl;
+          }
+        });
+        if (matchedLayer && matchedLayer.getBounds) {
+          mapInstanceRef.current.fitBounds(matchedLayer.getBounds(), { padding: [50, 50], maxZoom: 9 });
+          return;
+        }
+      }
       if (isDistrictOfficer && geoLayerRef.current && regionMetricsMap.size > 0) {
         const bounds = L.latLngBounds([]);
         geoLayerRef.current.eachLayer((fl: any) => {
@@ -742,21 +803,27 @@ export function GISIntelligenceMap() {
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#005eb2] mb-1 flex items-center gap-2">
             <Compass size={12} />
-            {isDistrictOfficer
+            {isMP
+              ? `Parliamentary Spatial Observatory · ${profile?.constituency} (${profile?.state}) · Hon'ble MP ${profile?.mp_name || profile?.full_name}`
+              : isDistrictOfficer
               ? `District Spatial Risk Observatory · ${lockedDistrictClean || profile?.district}, ${profile?.state}`
               : isStateNodal
               ? `State Spatial Risk Observatory · ${profile?.state}`
               : 'National Spatial Risk Observatory · Geographic Intelligence'}
           </p>
           <h1 className="text-2xl font-bold text-[#000a1f]" style={{ fontFamily: 'Montserrat, sans-serif' }}>
-            {isDistrictOfficer
+            {isMP
+              ? `Constituency Geographic Intelligence — ${profile?.constituency || 'Lok Sabha'}`
+              : isDistrictOfficer
               ? `District Geographic Intelligence — ${lockedDistrictClean || profile?.district}`
               : isStateNodal
               ? `State Geographic Intelligence — ${profile?.state}`
               : 'National MPLADS Geographic Intelligence'}
           </h1>
           <p className="text-xs text-[#747780] mt-0.5">
-            {isDistrictOfficer
+            {isMP
+              ? `Geospatial boundary and infrastructure intelligence localized to ${profile?.constituency}, ${profile?.state} (Hon'ble MP ${profile?.mp_name || profile?.full_name})`
+              : isDistrictOfficer
               ? `Geospatial constituency and boundary intelligence localized to ${lockedDistrictClean || profile?.district}, ${profile?.state}`
               : isStateNodal
               ? `Geospatial anomaly clustering across constituencies in ${profile?.state}`
@@ -767,30 +834,39 @@ export function GISIntelligenceMap() {
         {/* ── Segmented House Selector ─────────────────────────────── */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-semibold text-[#44474f] hidden sm:inline">Parliamentary House:</span>
-          <div className="flex items-center bg-white p-1 rounded-lg border border-[#E9ECEF] shadow-sm">
-            <button
-              onClick={() => handleHouseSwitch('Lok Sabha')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-bold transition-all ${
-                activeHouse === 'Lok Sabha'
-                  ? 'bg-[#005eb2] text-white shadow-sm'
-                  : 'text-[#44474f] hover:text-[#000a1f] hover:bg-[#F8F9FA]'
-              }`}
-            >
-              <Building2 size={13} />
-              Lok Sabha (543 Constituencies)
-            </button>
-            <button
-              onClick={() => handleHouseSwitch('Rajya Sabha')}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-bold transition-all ${
-                activeHouse === 'Rajya Sabha'
-                  ? 'bg-[#005eb2] text-white shadow-sm'
-                  : 'text-[#44474f] hover:text-[#000a1f] hover:bg-[#F8F9FA]'
-              }`}
-            >
-              <Landmark size={13} />
-              Rajya Sabha (State-Level)
-            </button>
-          </div>
+          {isMP ? (
+            <div className="flex items-center bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-200">
+              <span className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                <Building2 size={13} />
+                Lok Sabha · {profile?.constituency || 'Constituency Locked'}
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center bg-white p-1 rounded-lg border border-[#E9ECEF] shadow-sm">
+              <button
+                onClick={() => handleHouseSwitch('Lok Sabha')}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-bold transition-all ${
+                  activeHouse === 'Lok Sabha'
+                    ? 'bg-[#005eb2] text-white shadow-sm'
+                    : 'text-[#44474f] hover:text-[#000a1f] hover:bg-[#F8F9FA]'
+                }`}
+              >
+                <Building2 size={13} />
+                Lok Sabha (543 Constituencies)
+              </button>
+              <button
+                onClick={() => handleHouseSwitch('Rajya Sabha')}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-xs font-bold transition-all ${
+                  activeHouse === 'Rajya Sabha'
+                    ? 'bg-[#005eb2] text-white shadow-sm'
+                    : 'text-[#44474f] hover:text-[#000a1f] hover:bg-[#F8F9FA]'
+                }`}
+              >
+                <Landmark size={13} />
+                Rajya Sabha (State-Level)
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -842,7 +918,15 @@ export function GISIntelligenceMap() {
           totalCount={isUsingSupabase ? (activeHouse === 'Lok Sabha' ? 65000 : 79219) : activeHouseProjects.length}
           filters={filters}
           onFilterChange={(f) => {
-            if (f.house !== activeHouse) {
+            if (isMP) {
+              setFilters({
+                ...f,
+                house: 'Lok Sabha',
+                state: lockedState,
+                constituency: lockedConstituency,
+                mpName: lockedMPName,
+              });
+            } else if (f.house !== activeHouse) {
               handleHouseSwitch(f.house);
             } else {
               setFilters(lockedState ? { ...f, state: lockedState } : f);
@@ -851,11 +935,11 @@ export function GISIntelligenceMap() {
           onReset={() => {
             setFilters({
               search: '',
-              house: activeHouse,
+              house: isMP ? 'Lok Sabha' : activeHouse,
               tenure: '',
               state: lockedState,
-              constituency: '',
-              mpName: '',
+              constituency: lockedConstituency,
+              mpName: lockedMPName,
               riskLevel: '',
               status: '',
               category: '',

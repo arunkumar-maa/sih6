@@ -1,4 +1,5 @@
 import { supabase } from './client';
+import { apiFetch } from './apiClient';
 import type { DistrictSummary, CategorySummary, MPSummary } from '../types';
 import { getRajyaSabhaMPsByState } from '../data/rajyaSabhaMPs';
 import { useAuthStore } from '../store/authStore';
@@ -40,19 +41,30 @@ export async function getDashboardKPIs(
 ): Promise<DashboardKPIs> {
   let effectiveState = filters.state;
   let effectiveDistrict = filters.district;
+  let effectiveConstituency = filters.constituency;
+  let effectiveMp = filters.mpName;
+  let effectiveHouse = house;
+
   const authProfile = useAuthStore.getState().profile;
   if (authProfile?.role === 'STATE_NODAL_OFFICER' && authProfile.state) {
     effectiveState = authProfile.state;
   } else if (authProfile?.role === 'DISTRICT_OFFICER') {
     if (authProfile.state) effectiveState = authProfile.state;
     if (authProfile.district) effectiveDistrict = authProfile.district;
+  } else if (authProfile?.role === 'MP') {
+    effectiveHouse = 'Lok Sabha';
+    if (authProfile.state) effectiveState = authProfile.state;
+    if (authProfile.constituency) effectiveConstituency = authProfile.constituency;
+    if (authProfile.mp_name || authProfile.full_name) {
+      effectiveMp = authProfile.mp_name || authProfile.full_name;
+    }
   }
 
   const { data, error } = await supabase.rpc('get_dashboard_kpis', {
-    p_house: house,
+    p_house: effectiveHouse,
     p_state: effectiveState || null,
-    p_constituency: filters.constituency || null,
-    p_mp: filters.mpName || null,
+    p_constituency: effectiveConstituency || null,
+    p_mp: effectiveMp || null,
     p_risk: filters.riskLevel || null,
     p_status: filters.status || null,
     p_category: filters.category || null,
@@ -143,9 +155,10 @@ export async function getDistrictAnalytics(
 export async function getCategoryAnalytics(
   house: 'Lok Sabha' | 'Rajya Sabha'
 ): Promise<CategorySummary[]> {
+  const authProfile = useAuthStore.getState().profile;
+  const effectiveHouse = authProfile?.role === 'MP' ? 'Lok Sabha' : house;
   try {
-    const apiBase = import.meta.env.VITE_API_URL || '';
-    const res = await fetch(`${apiBase}/api/analytics/categories?house=${encodeURIComponent(house)}`);
+    const res = await apiFetch(`/api/analytics/categories?house=${encodeURIComponent(effectiveHouse)}`);
     if (res.ok) {
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
@@ -157,7 +170,7 @@ export async function getCategoryAnalytics(
   }
 
   try {
-    const obs = await getAnalyticsObservatory(house);
+    const obs = await getAnalyticsObservatory(effectiveHouse);
     if (obs && obs.categoryRisk && obs.categoryRisk.length > 0) {
       return obs.categoryRisk.map(c => ({
         category: c.category,
@@ -177,12 +190,23 @@ export async function getCategoryAnalytics(
 export async function getMPAnalytics(
   house: 'Lok Sabha' | 'Rajya Sabha'
 ): Promise<MPSummary[]> {
-  const tbl = house === 'Rajya Sabha' ? 'rajya_sabha_projects' : 'lok_sabha_projects';
+  const authProfile = useAuthStore.getState().profile;
+  const effectiveHouse = authProfile?.role === 'MP' ? 'Lok Sabha' : house;
+  const tbl = effectiveHouse === 'Rajya Sabha' ? 'rajya_sabha_projects' : 'lok_sabha_projects';
 
-  const { data, error } = await supabase
+  let query = supabase
     .from(tbl)
-    .select('mp_name, constituency, allocated_limit, sanction_amount, risk_level')
-    .limit(3000);
+    .select('mp_name, constituency, allocated_limit, sanction_amount, risk_level');
+
+  if (authProfile?.role === 'MP') {
+    if (authProfile.mp_name) {
+      query = query.ilike('mp_name', `%${authProfile.mp_name.trim()}%`);
+    } else if (authProfile.constituency) {
+      query = query.eq('constituency', authProfile.constituency);
+    }
+  }
+
+  const { data, error } = await query.limit(3000);
 
   if (error || !data) return [];
 
@@ -417,20 +441,31 @@ export async function getAnalyticsObservatory(
 ): Promise<AnalyticsObservatoryData> {
   let effectiveState = filters.state;
   let effectiveDistrict = filters.district;
+  let effectiveConstituency = filters.constituency;
+  let effectiveMp = filters.mpName;
+  let effectiveHouse = house;
+
   const authProfile = useAuthStore.getState().profile;
   if (authProfile?.role === 'STATE_NODAL_OFFICER' && authProfile.state) {
     effectiveState = authProfile.state;
   } else if (authProfile?.role === 'DISTRICT_OFFICER') {
     if (authProfile.state) effectiveState = authProfile.state;
     if (authProfile.district) effectiveDistrict = authProfile.district;
+  } else if (authProfile?.role === 'MP') {
+    effectiveHouse = 'Lok Sabha';
+    if (authProfile.state) effectiveState = authProfile.state;
+    if (authProfile.constituency) effectiveConstituency = authProfile.constituency;
+    if (authProfile.mp_name || authProfile.full_name) {
+      effectiveMp = authProfile.mp_name || authProfile.full_name;
+    }
   }
 
   try {
     const { data, error } = await supabase.rpc('get_analytics_observatory', {
-      p_house: house,
+      p_house: effectiveHouse,
       p_state: effectiveState || null,
-      p_constituency: filters.constituency || null,
-      p_mp: filters.mpName || null,
+      p_constituency: effectiveConstituency || null,
+      p_mp: effectiveMp || null,
       p_risk: filters.riskLevel || null,
       p_status: filters.status || null,
       p_category: filters.category || null,
@@ -451,19 +486,18 @@ export async function getAnalyticsObservatory(
 
   // Fallback to backend API
   const queryParams = new URLSearchParams();
-  queryParams.set('house', house);
+  queryParams.set('house', effectiveHouse);
   if (effectiveState) queryParams.set('state', effectiveState);
   if (effectiveDistrict) queryParams.set('district', effectiveDistrict);
-  if (filters.constituency) queryParams.set('constituency', filters.constituency);
-  if (filters.mpName) queryParams.set('mp', filters.mpName);
+  if (effectiveConstituency) queryParams.set('constituency', effectiveConstituency);
+  if (effectiveMp) queryParams.set('mp', effectiveMp);
   if (filters.riskLevel) queryParams.set('risk', filters.riskLevel);
   if (filters.status) queryParams.set('status', filters.status);
   if (filters.category) queryParams.set('category', filters.category);
   if (filters.tenure) queryParams.set('tenure', filters.tenure);
   if (filters.search) queryParams.set('search', filters.search);
 
-  const apiBase = import.meta.env.VITE_API_URL || '';
-  const resp = await fetch(`${apiBase}/api/analytics/observatory?${queryParams.toString()}`);
+  const resp = await apiFetch(`/api/analytics/observatory?${queryParams.toString()}`);
   if (!resp.ok) {
     throw new Error(`Failed to fetch analytics observatory: ${resp.statusText}`);
   }
